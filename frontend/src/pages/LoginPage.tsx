@@ -84,7 +84,7 @@ export default function LoginPage({ isAdminRoute = false }: LoginPageProps) {
         <div className="relative z-10 flex flex-col justify-center p-12 xl:p-16">
           <div className="mb-8">
             <Logo variant="icon" size="lg" className="mb-4" />
-            <span className="text-2xl font-bold text-primary-foreground">LogiLearn</span>
+            <span className="text-2xl font-bold text-primary-foreground">Logstic Career</span>
           </div>
           
           <h1 className="text-4xl xl:text-5xl font-bold text-primary-foreground mb-6 leading-tight">
@@ -124,7 +124,7 @@ export default function LoginPage({ isAdminRoute = false }: LoginPageProps) {
           {/* Mobile logo */}
           <div className="flex lg:hidden items-center gap-3 mb-8">
             <Logo variant="icon" size="md" />
-            <span className="text-xl font-bold text-foreground">LogiLearn</span>
+            <span className="text-xl font-bold text-foreground">Logstic Career</span>
           </div>
 
           {isAdminRoute || searchParams.get('role') === 'admin' ? (

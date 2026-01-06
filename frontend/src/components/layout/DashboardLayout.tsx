@@ -163,7 +163,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         {/* Logo */}
         <div className="h-16 flex items-center px-6 border-b border-border">
           <Logo variant="icon" size="md" />
-          <span className="ml-3 text-xl font-bold text-foreground">LogiLearn</span>
+          <span className="ml-3 text-xl font-bold text-foreground">Logstic Career</span>
         </div>
 
         {/* Navigation */}
