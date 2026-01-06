@@ -178,7 +178,7 @@ export default function StudentsPage() {
       </div>
 
       {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-4">
+      <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
           <Input
@@ -216,12 +216,12 @@ export default function StudentsPage() {
           <p className="text-muted-foreground">Yuklanmoqda...</p>
         </div>
       ) : (
-        <div className="grid lg:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
           {filteredStudents.map((student) => (
             <div
               key={student._id}
               className={cn(
-                "bg-card rounded-xl p-5 border shadow-card transition-all duration-200",
+                "bg-card rounded-lg sm:rounded-xl p-4 sm:p-5 border shadow-card transition-all duration-200",
                 selectedStudent?._id === student._id 
                   ? "border-primary shadow-card-hover" 
                   : "border-border hover:border-primary/50",
@@ -229,10 +229,10 @@ export default function StudentsPage() {
                 student.isSuspended && "border-warning/50 bg-warning/5"
               )}
             >
-              <div className="flex items-start gap-4">
+              <div className="flex items-start gap-3 sm:gap-4">
                 {/* Avatar */}
                 <div className={cn(
-                  "w-12 h-12 rounded-full flex items-center justify-center text-primary-foreground font-semibold shrink-0",
+                  "w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center text-primary-foreground font-semibold shrink-0 text-sm sm:text-base",
                   !student.isActive ? "bg-destructive" : student.isSuspended ? "bg-warning" : "gradient-primary"
                 )}>
                   {student.firstName.charAt(0)}{student.lastName.charAt(0)}
@@ -240,30 +240,30 @@ export default function StudentsPage() {
 
                 {/* Info */}
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <h3 className="font-semibold text-foreground truncate">
+                  <div className="flex flex-wrap items-center gap-2 mb-1">
+                    <h3 className="font-semibold text-sm sm:text-base text-foreground truncate">
                       {student.firstName} {student.lastName}
                     </h3>
                     {!student.isActive && (
-                      <span className="px-2 py-0.5 bg-destructive/10 text-destructive text-xs rounded-full">
+                      <span className="px-1.5 sm:px-2 py-0.5 bg-destructive/10 text-destructive text-xs rounded-full shrink-0">
                         O'chirilgan
                       </span>
                     )}
                     {student.isSuspended && (
-                      <span className="px-2 py-0.5 bg-warning/10 text-warning text-xs rounded-full">
+                      <span className="px-1.5 sm:px-2 py-0.5 bg-warning/10 text-warning text-xs rounded-full shrink-0">
                         Muzlatilgan
                       </span>
                     )}
                   </div>
-                  <p className="text-sm text-muted-foreground mb-2">{student.email}</p>
-                  <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
+                  <p className="text-xs sm:text-sm text-muted-foreground mb-2 truncate">{student.email}</p>
+                  <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-xs sm:text-sm text-muted-foreground">
                     {student.group && (
                       <span className="px-2 py-0.5 bg-muted rounded-full">{student.group}</span>
                     )}
                     {student.lastActive && (
                       <span className="flex items-center gap-1">
-                        <Clock className="w-3 h-3" />
-                        {student.lastActive}
+                        <Clock className="w-3 h-3 shrink-0" />
+                        <span className="truncate">{student.lastActive}</span>
                       </span>
                     )}
                   </div>
@@ -271,26 +271,26 @@ export default function StudentsPage() {
 
                 {/* Progress */}
                 <div className="text-right shrink-0">
-                  <p className="text-2xl font-bold text-foreground">{student.progress}%</p>
-                  <Progress value={student.progress} className="w-20 h-2 mt-1" />
+                  <p className="text-xl sm:text-2xl font-bold text-foreground">{student.progress}%</p>
+                  <Progress value={student.progress} className="w-16 sm:w-20 h-2 mt-1" />
                 </div>
               </div>
 
               {/* Stats */}
               {student.stats && (
-                <div className="mt-4 pt-4 border-t border-border grid grid-cols-3 gap-4">
+                <div className="mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-border grid grid-cols-3 gap-2 sm:gap-4">
                   <div className="text-center">
-                    <p className="text-lg font-semibold text-foreground">
+                    <p className="text-base sm:text-lg font-semibold text-foreground">
                       {student.stats.completedLessons}/{student.stats.totalLessons}
                     </p>
                     <p className="text-xs text-muted-foreground">Darslar</p>
                   </div>
                   <div className="text-center">
-                    <p className="text-lg font-semibold text-foreground">{student.stats.aiChats}</p>
+                    <p className="text-base sm:text-lg font-semibold text-foreground">{student.stats.aiChats}</p>
                     <p className="text-xs text-muted-foreground">AI suhbatlar</p>
                   </div>
                   <div className="text-center">
-                    <p className="text-lg font-semibold text-foreground">{student.stats.avgScore}%</p>
+                    <p className="text-base sm:text-lg font-semibold text-foreground">{student.stats.avgScore}%</p>
                     <p className="text-xs text-muted-foreground">O'rtacha ball</p>
                   </div>
                 </div>
