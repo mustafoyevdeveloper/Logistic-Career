@@ -341,7 +341,7 @@ export const adminLogin = async (req, res) => {
       const adminEmail = isAdminEmail1 ? 'TeacherAdmin@role.com' : 'mustafoyevdevelopment@gmail.com';
       // Admin parolni aniqlash (boolean emas, string bo'lishi kerak)
       const adminPassword = isAdminEmail1 
-        ? 'mustafoyevdevelopment@gmail.com' 
+        ? 'LogisticCareer?role=Teacher$admin' 
         : '12345678!@WEB';
       
       // Debug: parol to'g'ri ekanligini tekshirish

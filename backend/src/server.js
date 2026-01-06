@@ -16,8 +16,11 @@ import groupRoutes from './routes/groupRoutes.js';
 // Load env vars
 dotenv.config();
 
-// Connect to database
-connectDB();
+// Connect to database (async, lekin server ishga tushishi uchun kutmaymiz)
+connectDB().catch((error) => {
+  console.error('❌ Database connection failed:', error);
+  // Server ishga tushishi mumkin, lekin database xatoliklarini handle qilish kerak
+});
 
 const app = express();
 
@@ -122,9 +125,29 @@ app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => {
+// Server'ni ishga tushirish
+const server = app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Server is running on port ${PORT}`);
   console.log(`📝 Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`🌐 Frontend URL: ${process.env.FRONTEND_URL || 'http://localhost:8080'}`);
+});
+
+// Xatoliklarni handle qilish
+server.on('error', (error) => {
+  console.error('❌ Server error:', error);
+  if (error.code === 'EADDRINUSE') {
+    console.error(`❌ Port ${PORT} is already in use`);
+  }
+});
+
+// Process xatoliklarini handle qilish
+process.on('unhandledRejection', (error) => {
+  console.error('❌ Unhandled Rejection:', error);
+  // Server'ni yopmaslik, faqat log qilish
+});
+
+process.on('uncaughtException', (error) => {
+  console.error('❌ Uncaught Exception:', error);
+  // Server'ni yopmaslik, faqat log qilish
 });
 
