@@ -4,8 +4,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import Logo from '@/components/Logo';
 import { 
-  Truck, 
   GraduationCap, 
   ArrowRight, 
   Mail, 
@@ -89,9 +89,7 @@ export default function RegisterPage() {
         <div className="bg-card rounded-2xl shadow-card p-6 sm:p-8 border border-border">
           {/* Logo */}
           <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center">
-              <Truck className="w-6 h-6 text-primary-foreground" />
-            </div>
+            <Logo variant="icon" size="md" />
             <span className="text-xl font-bold text-foreground">LogiLearn</span>
           </div>
 

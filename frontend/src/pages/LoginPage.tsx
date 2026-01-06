@@ -4,8 +4,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import Logo from '@/components/Logo';
 import { 
-  Truck, 
   GraduationCap, 
   ArrowRight, 
   Mail, 
@@ -62,10 +62,8 @@ export default function LoginPage() {
         <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmZmZmYiIGZpbGwtb3BhY2l0eT0iMC4wNSI+PHBhdGggZD0iTTM2IDM0djItSDI0di0yaDEyek0zNiAyNHYySDI0di0yaDEyeiIvPjwvZz48L2c+PC9zdmc+')] opacity-50"></div>
         
         <div className="relative z-10 flex flex-col justify-center p-12 xl:p-16">
-          <div className="flex items-center gap-3 mb-8">
-            <div className="w-12 h-12 rounded-xl bg-accent/20 flex items-center justify-center">
-              <Truck className="w-7 h-7 text-accent" />
-            </div>
+          <div className="mb-8">
+            <Logo variant="icon" size="lg" className="mb-4" />
             <span className="text-2xl font-bold text-primary-foreground">LogiLearn</span>
           </div>
           
@@ -105,9 +103,7 @@ export default function LoginPage() {
         <div className="mx-auto w-full max-w-md">
           {/* Mobile logo */}
           <div className="flex lg:hidden items-center gap-3 mb-8">
-            <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center">
-              <Truck className="w-6 h-6 text-primary-foreground" />
-            </div>
+            <Logo variant="icon" size="md" />
             <span className="text-xl font-bold text-foreground">LogiLearn</span>
           </div>
 

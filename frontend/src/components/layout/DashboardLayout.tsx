@@ -1,8 +1,8 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
+import Logo from '@/components/Logo';
 import {
-  Truck,
   LayoutDashboard,
   BookOpen,
   MessageSquare,
@@ -58,12 +58,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     <div className="min-h-screen bg-background">
       {/* Mobile Header */}
       <header className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-card border-b border-border z-50 flex items-center justify-between px-4">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg gradient-primary flex items-center justify-center">
-            <Truck className="w-5 h-5 text-primary-foreground" />
-          </div>
-          <span className="font-bold text-foreground">LogiLearn</span>
-        </div>
+        <Logo variant="icon" size="sm" />
         
         <button
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -139,11 +134,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       {/* Desktop Sidebar */}
       <aside className="hidden lg:flex lg:w-64 xl:w-72 fixed top-0 left-0 bottom-0 flex-col bg-card border-r border-border">
         {/* Logo */}
-        <div className="h-16 flex items-center gap-3 px-6 border-b border-border">
-          <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center">
-            <Truck className="w-6 h-6 text-primary-foreground" />
-          </div>
-          <span className="text-xl font-bold text-foreground">LogiLearn</span>
+        <div className="h-16 flex items-center px-6 border-b border-border">
+          <Logo variant="icon" size="md" />
+          <span className="ml-3 text-xl font-bold text-foreground">LogiLearn</span>
         </div>
 
         {/* Navigation */}
