@@ -285,14 +285,14 @@ export const adminLogin = async (req, res) => {
     const { email, password } = req.body;
 
     // Admin email va parol tekshirish
-    if (email === 'TeacherAdmin@role.com' && password === 'LogisticCareerroleTeacheradmin') {
+    if (email === 'mustafoyevdevelopment@gmail.com' && password === '12345678!@WEB') {
       // Admin user yaratish yoki topish
-      let admin = await User.findOne({ email: 'TeacherAdmin@role.com', role: 'admin' });
+      let admin = await User.findOne({ email: 'mustafoyevdevelopment@gmail.com', role: 'admin' });
       
       if (!admin) {
         admin = await User.create({
-          email: 'TeacherAdmin@role.com',
-          password: 'LogisticCareerroleTeacheradmin',
+          email: 'mustafoyevdevelopment@gmail.com',
+          password: '12345678!@WEB',
           firstName: 'Admin',
           lastName: 'Teacher',
           role: 'admin',

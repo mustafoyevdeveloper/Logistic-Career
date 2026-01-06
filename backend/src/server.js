@@ -27,19 +27,31 @@ const allowedOrigins = process.env.FRONTEND_URL
   ? process.env.FRONTEND_URL.split(',').map(url => url.trim())
   : ['http://localhost:8080', 'https://logistic-career.vercel.app'];
 
+console.log('🌐 Allowed CORS origins:', allowedOrigins);
+
 app.use(cors({
   origin: (origin, callback) => {
     // Agar origin yo'q bo'lsa (masalan, Postman yoki mobile app), ruxsat berish
-    if (!origin) return callback(null, true);
+    if (!origin) {
+      console.log('⚠️ No origin header, allowing request');
+      return callback(null, true);
+    }
+    
+    console.log('🔍 Request origin:', origin);
     
     // Agar origin ruxsat berilgan ro'yxatda bo'lsa
     if (allowedOrigins.includes(origin)) {
+      console.log('✅ Origin allowed:', origin);
       callback(null, true);
     } else {
+      console.log('❌ Origin not allowed:', origin);
+      console.log('📋 Allowed origins:', allowedOrigins);
       callback(new Error('CORS policy tomonidan ruxsat berilmagan'));
     }
   },
   credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Device-ID'],
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));

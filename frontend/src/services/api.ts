@@ -1,6 +1,26 @@
 import { getDeviceId } from '@/utils/deviceId';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+// Backend URL'lar ro'yxati (fallback mexanizmi)
+// Birinchi URL ishlamasa, keyingisiga o'tadi
+const API_BASE_URLS = [
+  import.meta.env.VITE_API_BASE_URL, // Environment variable'dan (production)
+  'https://logistic-career.onrender.com/api', // Production backend (Render.com)
+  'http://localhost:5000/api', // Local development
+].filter(Boolean) as string[]; // Bo'sh qiymatlarni olib tashlash
+
+// Joriy ishlayotgan backend URL'ni saqlash
+let currentApiUrl = API_BASE_URLS[0] || 'http://localhost:5000/api';
+
+// Backend URL'ni localStorage'da saqlash (session davomida)
+const STORAGE_KEY = 'logistic_career_api_url';
+
+// Saqlangan URL'ni yuklash
+if (typeof window !== 'undefined') {
+  const savedUrl = localStorage.getItem(STORAGE_KEY);
+  if (savedUrl && API_BASE_URLS.includes(savedUrl)) {
+    currentApiUrl = savedUrl;
+  }
+}
 
 interface ApiResponse<T> {
   success: boolean;
@@ -25,12 +45,61 @@ class ApiService {
     return headers;
   }
 
+  /**
+   * Backend URL'ni sinab ko'rish va ishlayotganini topish
+   */
+  private async testBackendUrl(url: string): Promise<boolean> {
+    try {
+      // Health check endpoint'ni sinab ko'rish
+      const healthUrl = url.endsWith('/api') ? `${url}/health` : `${url}/api/health`;
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 3000); // 3 soniya timeout
+
+      const response = await fetch(healthUrl, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+      return response.ok;
+    } catch (error) {
+      return false;
+    }
+  }
+
+  /**
+   * Ishlayotgan backend URL'ni topish
+   */
+  private async findWorkingBackend(): Promise<string | null> {
+    // Avval saqlangan URL'ni sinab ko'rish
+    if (typeof window !== 'undefined') {
+      const savedUrl = localStorage.getItem(STORAGE_KEY);
+      if (savedUrl && await this.testBackendUrl(savedUrl)) {
+        return savedUrl;
+      }
+    }
+
+    // Barcha URL'larni sinab ko'rish
+    for (const url of API_BASE_URLS) {
+      if (await this.testBackendUrl(url)) {
+        // Ishlayotgan URL'ni saqlash
+        if (typeof window !== 'undefined') {
+          localStorage.setItem(STORAGE_KEY, url);
+        }
+        return url;
+      }
+    }
+
+    return null;
+  }
+
   async request<T>(
     endpoint: string,
     options: RequestInit = {}
   ): Promise<ApiResponse<T>> {
-    const url = `${API_BASE_URL}${endpoint}`;
-    
     const config: RequestInit = {
       ...options,
       headers: {
@@ -39,18 +108,93 @@ class ApiService {
       },
     };
 
+    // Avval joriy URL'ni sinab ko'rish
+    let url = `${currentApiUrl}${endpoint}`;
+    let lastError: Error | null = null;
+
     try {
       const response = await fetch(url, config);
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Xatolik yuz berdi');
+      
+      // Agar response ok bo'lsa, muvaffaqiyatli
+      if (response.ok) {
+        const data = await response.json();
+        return data;
       }
 
-      return data;
-    } catch (error) {
+      // Agar 500+ xatolik bo'lsa, backend ishlamayotgan bo'lishi mumkin
+      if (response.status >= 500) {
+        throw new Error(`Backend xatosi: ${response.status}`);
+      }
+
+      // Boshqa xatoliklar (400, 401, 403, 404) - bu backend ishlayapti, lekin so'rov noto'g'ri
+      const data = await response.json();
+      throw new Error(data.message || 'Xatolik yuz berdi');
+    } catch (error: any) {
+      lastError = error;
+
+      // Network xatolik yoki 500+ xatolik bo'lsa, boshqa backend'ni sinab ko'rish
+      if (
+        error.message?.includes('Failed to fetch') ||
+        error.message?.includes('NetworkError') ||
+        error.message?.includes('Backend xatosi') ||
+        error.message?.includes('CORS') ||
+        error.name === 'TypeError' ||
+        error.name === 'AbortError'
+      ) {
+        // Development mode'da log'lar ko'rsatish
+        if (import.meta.env.DEV) {
+          console.warn(`⚠️ Backend ishlamayapti: ${currentApiUrl}, boshqa backend'ni sinab ko'ryapman...`);
+        }
+
+        // Ishlayotgan backend'ni topish
+        const workingUrl = await this.findWorkingBackend();
+
+        if (workingUrl && workingUrl !== currentApiUrl) {
+          if (import.meta.env.DEV) {
+            console.log(`✅ Yangi backend topildi: ${workingUrl}`);
+          }
+          currentApiUrl = workingUrl;
+          url = `${currentApiUrl}${endpoint}`;
+
+          // Qayta sinab ko'rish
+          try {
+            const response = await fetch(url, config);
+            const data = await response.json();
+
+            if (!response.ok) {
+              throw new Error(data.message || 'Xatolik yuz berdi');
+            }
+
+            return data;
+          } catch (retryError) {
+            // Qayta sinab ko'rish ham ishlamadi
+            throw lastError;
+          }
+        } else if (!workingUrl) {
+          // Hech qanday backend ishlamayapti
+          if (import.meta.env.DEV) {
+            console.error('❌ Barcha backend URL\'lar ishlamayapti:', API_BASE_URLS);
+          }
+        }
+      }
+
+      // Boshqa xatoliklar (400, 401, 403, 404) - backend ishlayapti, lekin so'rov noto'g'ri
       throw error;
     }
+  }
+
+  /**
+   * Joriy backend URL'ni olish
+   */
+  getCurrentBackendUrl(): string {
+    return currentApiUrl;
+  }
+
+  /**
+   * Barcha backend URL'larini olish
+   */
+  getAvailableBackendUrls(): string[] {
+    return API_BASE_URLS;
   }
 
   // Auth endpoints
