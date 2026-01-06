@@ -47,24 +47,11 @@ console.log('🌍 Environment:', isProduction ? 'PRODUCTION' : 'DEVELOPMENT');
 
 app.use(cors({
   origin: (origin, callback) => {
-    if (!origin) return callback(null, true);
-
-    if (origin.includes('vercel.app') || origin.includes('vercel.com')) {
+    // Agar origin yo'q bo'lsa (masalan, Postman yoki mobile app), ruxsat berish
+    if (!origin) {
+      console.log('⚠️ No origin header, allowing request');
       return callback(null, true);
     }
-
-    callback(null, true);
-  },
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: [
-    'Content-Type',
-    'Authorization',
-    'x-device-id'
-  ],
-}));
-
-app.options('*', cors());
     
     // Production'da BARCHA Vercel URL'larni qo'llab-quvvatlash (preview va production)
     if (isProduction && (origin.includes('vercel.app') || origin.includes('vercel.com'))) {
