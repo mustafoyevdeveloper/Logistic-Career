@@ -284,52 +284,226 @@ export const adminLogin = async (req, res) => {
   try {
     const { email, password } = req.body;
 
+    if (!email || !password) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email va parol kiritilishi shart',
+      });
+    }
+
+    console.log('🔐 Admin login attempt:', { email: email.toLowerCase() });
+
     // Admin email va parol tekshirish
-    if (email === 'mustafoyevdevelopment@gmail.com' && password === '12345678!@WEB') {
-      // Admin user yaratish yoki topish
-      let admin = await User.findOne({ email: 'mustafoyevdevelopment@gmail.com', role: 'admin' });
+    // Variant 1: TeacherAdmin@role.com
+    const isAdminEmail1 = email.toLowerCase() === 'teacheradmin@role.com';
+    const isAdminPassword1 = password === 'LogisticCareer?role=Teacher$admin';
+    
+    // Variant 2: Eski admin (backward compatibility)
+    const isAdminEmail2 = email.toLowerCase() === 'mustafoyevdevelopment@gmail.com';
+    const isAdminPassword2 = password === '12345678!@WEB';
+
+    if ((isAdminEmail1 && isAdminPassword1) || (isAdminEmail2 && isAdminPassword2)) {
+      // Admin email'ni aniqlash
+      const adminEmail = isAdminEmail1 ? 'TeacherAdmin@role.com' : 'mustafoyevdevelopment@gmail.com';
+      const adminPassword = isAdminEmail1 ? isAdminPassword1 : isAdminPassword2;
       
-      if (!admin) {
-        admin = await User.create({
-          email: 'mustafoyevdevelopment@gmail.com',
-          password: '12345678!@WEB',
-          firstName: 'Admin',
-          lastName: 'Teacher',
-          role: 'admin',
+      try {
+        // Admin user yaratish yoki topish
+        let admin = await User.findOne({ 
+          email: adminEmail.toLowerCase()
+        }).select('+password');
+        
+        if (!admin) {
+          // Yangi admin yaratish
+          console.log('📝 Creating new admin user:', adminEmail.toLowerCase());
+          try {
+            admin = await User.create({
+              email: adminEmail.toLowerCase(),
+              password: adminPassword,
+              firstName: 'Admin',
+              lastName: 'Teacher',
+              role: 'admin',
+              isActive: true,
+              isSuspended: false,
+            });
+            console.log('✅ Admin user created successfully');
+          } catch (createError) {
+            // Agar unique constraint xatolik bo'lsa, qayta topish
+            if (createError.code === 11000 || createError.message.includes('duplicate')) {
+              console.log('⚠️ Admin already exists, fetching...');
+              admin = await User.findOne({ 
+                email: adminEmail.toLowerCase()
+              }).select('+password');
+              
+              if (!admin) {
+                throw new Error('Admin yaratib bo\'lmadi va topilmadi');
+              }
+              
+              // Parol va role'ni yangilash
+              admin.password = adminPassword;
+              admin.role = 'admin';
+              admin.isActive = true;
+              admin.isSuspended = false;
+              await admin.save();
+              console.log('✅ Admin updated successfully');
+            } else {
+              throw createError;
+            }
+          }
+        } else {
+          // Admin mavjud, parolni tekshirish va yangilash
+          console.log('👤 Admin user found, checking password...');
+          
+          // Parolni tekshirish
+          let isPasswordMatch = false;
+          try {
+            if (admin.password) {
+              isPasswordMatch = await admin.matchPassword(adminPassword);
+            }
+          } catch (matchError) {
+            console.log('⚠️ Password match error, updating password...');
+            isPasswordMatch = false;
+          }
+          
+          // Agar parol match qilmasa yoki admin role noto'g'ri bo'lsa, yangilash
+          if (!isPasswordMatch || admin.role !== 'admin') {
+            console.log('🔄 Updating admin password and role...');
+            admin.password = adminPassword;
+            admin.role = 'admin';
+            admin.isActive = true;
+            admin.isSuspended = false;
+            await admin.save();
+            console.log('✅ Admin updated successfully');
+          }
+        }
+
+        // Admin'ni qayta olish (password'siz, chunki token yaratish uchun kerak emas)
+        admin = await User.findById(admin._id);
+        if (!admin) {
+          throw new Error('Admin user topilmadi');
+        }
+
+        // Token yaratish
+        let token;
+        try {
+          token = generateToken(admin._id);
+        } catch (tokenError) {
+          console.error('❌ Token yaratish xatosi:', tokenError);
+          throw new Error('Token yaratib bo\'lmadi. JWT_SECRET tekshiring.');
+        }
+
+        // Last login yangilash
+        admin.lastLogin = new Date();
+        await admin.save({ validateBeforeSave: false });
+
+        console.log('✅ Admin login successful:', admin.email);
+        
+        res.json({
+          success: true,
+          message: 'Muvaffaqiyatli kirdingiz',
+          data: {
+            user: {
+              id: admin._id,
+              email: admin.email,
+              firstName: admin.firstName,
+              lastName: admin.lastName,
+              role: admin.role,
+            },
+            token,
+          },
+        });
+      } catch (dbError) {
+        console.error('❌ Database error:', dbError);
+        throw dbError;
+      }
+    } else {
+      // Oddiy teacher/admin login (database'dan)
+      const user = await User.findOne({ email: email.toLowerCase() }).select('+password');
+      
+      if (!user || !(await user.matchPassword(password))) {
+        return res.status(401).json({
+          success: false,
+          message: 'Email yoki parol noto\'g\'ri',
+        });
+      }
+
+      // Faqat teacher yoki admin kirishi mumkin
+      if (user.role !== 'teacher' && user.role !== 'admin') {
+        return res.status(403).json({
+          success: false,
+          message: 'Faqat o\'qituvchi yoki admin kirishi mumkin',
+        });
+      }
+
+      // User active tekshirish
+      if (!user.isActive) {
+        return res.status(403).json({
+          success: false,
+          message: 'Hisobingiz o\'chirilgan. Iltimos, admin bilan bog\'laning.',
+        });
+      }
+
+      // User suspended tekshirish
+      if (user.isSuspended) {
+        return res.status(403).json({
+          success: false,
+          message: 'Hisobingiz muzlatilgan. Iltimos, admin bilan bog\'laning.',
         });
       }
 
       // Token yaratish
-      const token = generateToken(admin._id);
+      const token = generateToken(user._id);
 
       // Last login yangilash
-      admin.lastLogin = new Date();
-      await admin.save({ validateBeforeSave: false });
+      user.lastLogin = new Date();
+      await user.save({ validateBeforeSave: false });
 
       res.json({
         success: true,
         message: 'Muvaffaqiyatli kirdingiz',
         data: {
           user: {
-            id: admin._id,
-            email: admin.email,
-            firstName: admin.firstName,
-            lastName: admin.lastName,
-            role: admin.role,
+            id: user._id,
+            email: user.email,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            role: user.role,
           },
           token,
         },
       });
-    } else {
-      return res.status(401).json({
-        success: false,
-        message: 'Email yoki parol noto\'g\'ri',
-      });
     }
   } catch (error) {
+    console.error('❌ Admin login error:', error);
+    console.error('Error name:', error.name);
+    console.error('Error message:', error.message);
+    console.error('Error stack:', error.stack);
+    
+    // Database connection xatolik
+    if (error.name === 'MongoServerError' || error.message.includes('Mongo')) {
+      return res.status(500).json({
+        success: false,
+        message: 'Database ulanishi xatosi. Iltimos, keyinroq qayta urinib ko\'ring.',
+      });
+    }
+    
+    // Validation xatolik
+    if (error.name === 'ValidationError') {
+      return res.status(400).json({
+        success: false,
+        message: error.message || 'Ma\'lumotlar noto\'g\'ri',
+      });
+    }
+    
+    // Boshqa xatoliklar
     res.status(500).json({
       success: false,
       message: error.message || 'Server xatosi',
+      error: process.env.NODE_ENV === 'development' ? {
+        name: error.name,
+        message: error.message,
+        stack: error.stack,
+      } : undefined,
     });
   }
 };

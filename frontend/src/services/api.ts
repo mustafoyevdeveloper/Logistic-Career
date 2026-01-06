@@ -2,11 +2,30 @@ import { getDeviceId } from '@/utils/deviceId';
 
 // Backend URL'lar ro'yxati (fallback mexanizmi)
 // Birinchi URL ishlamasa, keyingisiga o'tadi
-const API_BASE_URLS = [
-  import.meta.env.VITE_API_BASE_URL, // Environment variable'dan (production)
-  'https://logistic-career.onrender.com/api', // Production backend (Render.com)
-  'http://localhost:5000/api', // Local development
-].filter(Boolean) as string[]; // Bo'sh qiymatlarni olib tashlash
+const getApiBaseUrls = (): string[] => {
+  const urls: string[] = [];
+  
+  // Environment variable'dan URL (agar mavjud bo'lsa)
+  const envUrl = import.meta.env.VITE_API_BASE_URL;
+  if (envUrl) {
+    // Agar vergul bilan ajratilgan bo'lsa, ajratish
+    const envUrls = envUrl.split(',').map(url => url.trim()).filter(Boolean);
+    urls.push(...envUrls);
+  }
+  
+  // Production backend (Render.com)
+  urls.push('https://logistic-career.onrender.com/api');
+  
+  // Local development (faqat development mode'da)
+  if (import.meta.env.DEV || window.location.hostname === 'localhost') {
+    urls.push('http://localhost:5000/api');
+  }
+  
+  // Duplikatlarni olib tashlash
+  return [...new Set(urls)];
+};
+
+const API_BASE_URLS = getApiBaseUrls();
 
 // Joriy ishlayotgan backend URL'ni saqlash
 let currentApiUrl = API_BASE_URLS[0] || 'http://localhost:5000/api';
@@ -14,11 +33,18 @@ let currentApiUrl = API_BASE_URLS[0] || 'http://localhost:5000/api';
 // Backend URL'ni localStorage'da saqlash (session davomida)
 const STORAGE_KEY = 'logistic_career_api_url';
 
-// Saqlangan URL'ni yuklash
+// Saqlangan URL'ni yuklash va tozalash
 if (typeof window !== 'undefined') {
   const savedUrl = localStorage.getItem(STORAGE_KEY);
-  if (savedUrl && API_BASE_URLS.includes(savedUrl)) {
-    currentApiUrl = savedUrl;
+  if (savedUrl) {
+    // URL'ni tozalash (vergul, bo'sh joy va boshqa belgilarni olib tashlash)
+    const cleanedUrl = savedUrl.trim().split(',')[0].trim();
+    if (cleanedUrl && API_BASE_URLS.includes(cleanedUrl)) {
+      currentApiUrl = cleanedUrl;
+    } else {
+      // Noto'g'ri URL'ni localStorage'dan olib tashlash
+      localStorage.removeItem(STORAGE_KEY);
+    }
   }
 }
 
@@ -50,8 +76,17 @@ class ApiService {
    */
   private async testBackendUrl(url: string): Promise<boolean> {
     try {
+      // URL'ni tozalash
+      const cleanUrl = url.trim().split(',')[0].trim();
+      if (!cleanUrl) return false;
+
       // Health check endpoint'ni sinab ko'rish
-      const healthUrl = url.endsWith('/api') ? `${url}/health` : `${url}/api/health`;
+      const healthUrl = cleanUrl.endsWith('/api') 
+        ? `${cleanUrl}/health` 
+        : cleanUrl.includes('/api/') 
+          ? `${cleanUrl.replace(/\/api\/.*$/, '/api/health')}`
+          : `${cleanUrl}/api/health`;
+      
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 3000); // 3 soniya timeout
 
@@ -108,8 +143,13 @@ class ApiService {
       },
     };
 
-    // Avval joriy URL'ni sinab ko'rish
-    let url = `${currentApiUrl}${endpoint}`;
+    // Avval joriy URL'ni sinab ko'rish va tozalash
+    let cleanCurrentUrl = currentApiUrl.trim().split(',')[0].trim();
+    if (!cleanCurrentUrl) {
+      cleanCurrentUrl = API_BASE_URLS[0] || 'http://localhost:5000/api';
+      currentApiUrl = cleanCurrentUrl;
+    }
+    let url = `${cleanCurrentUrl}${endpoint}`;
     let lastError: Error | null = null;
 
     try {
@@ -153,7 +193,13 @@ class ApiService {
           if (import.meta.env.DEV) {
             console.log(`✅ Yangi backend topildi: ${workingUrl}`);
           }
-          currentApiUrl = workingUrl;
+          // URL'ni tozalash
+          const cleanUrl = workingUrl.trim().split(',')[0].trim();
+          currentApiUrl = cleanUrl;
+          // To'g'ri URL'ni localStorage'da saqlash
+          if (typeof window !== 'undefined') {
+            localStorage.setItem(STORAGE_KEY, cleanUrl);
+          }
           url = `${currentApiUrl}${endpoint}`;
 
           // Qayta sinab ko'rish
@@ -195,6 +241,17 @@ class ApiService {
    */
   getAvailableBackendUrls(): string[] {
     return API_BASE_URLS;
+  }
+
+  /**
+   * LocalStorage'dan backend URL'ni tozalash
+   */
+  clearBackendUrlCache(): void {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem(STORAGE_KEY);
+      // Birinchi URL'ga qaytish
+      currentApiUrl = API_BASE_URLS[0] || 'http://localhost:5000/api';
+    }
   }
 
   // Auth endpoints
