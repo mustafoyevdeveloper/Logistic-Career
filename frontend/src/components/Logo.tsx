@@ -29,7 +29,7 @@ export default function Logo({
     return (
       <img 
         src="/logo-icon.svg" 
-        alt="LogiLearn Logo" 
+        alt="Logistic Career Logo" 
         className={cn(sizeClasses[size], className)}
       />
     );
@@ -38,7 +38,7 @@ export default function Logo({
   if (variant === 'text') {
     return (
       <span className={cn('font-bold text-foreground', textSizes[size], className)}>
-        LogiLearn
+        Logistic Career
       </span>
     );
   }
@@ -48,7 +48,7 @@ export default function Logo({
     <div className={cn('flex items-center gap-3', className)}>
       <img 
         src={dark ? '/logo-dark.svg' : '/logo.svg'} 
-        alt="LogiLearn - Logistika O'quv Markazi" 
+        alt="Logistic Career - Logistika O'quv Markazi" 
         className="h-10"
       />
     </div>
