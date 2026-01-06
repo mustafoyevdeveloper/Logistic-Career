@@ -159,6 +159,7 @@ export default function LoginPage({ isAdminRoute = false }: LoginPageProps) {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="pl-10 h-12"
+                  autoComplete="email"
                 />
               </div>
             </div>
@@ -174,6 +175,7 @@ export default function LoginPage({ isAdminRoute = false }: LoginPageProps) {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="pl-10 pr-10 h-12"
+                  autoComplete="current-password"
                 />
                 <button
                   type="button"

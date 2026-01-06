@@ -22,8 +22,23 @@ connectDB();
 const app = express();
 
 // Middleware
+// CORS sozlamalari - bir nechta origin'lar uchun
+const allowedOrigins = process.env.FRONTEND_URL 
+  ? process.env.FRONTEND_URL.split(',').map(url => url.trim())
+  : ['http://localhost:8080', 'https://logistic-career.vercel.app'];
+
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:8080' || 'https://logistic-career.vercel.app',
+  origin: (origin, callback) => {
+    // Agar origin yo'q bo'lsa (masalan, Postman yoki mobile app), ruxsat berish
+    if (!origin) return callback(null, true);
+    
+    // Agar origin ruxsat berilgan ro'yxatda bo'lsa
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('CORS policy tomonidan ruxsat berilmagan'));
+    }
+  },
   credentials: true,
 }));
 app.use(express.json());
