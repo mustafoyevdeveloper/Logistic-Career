@@ -60,9 +60,36 @@ This project is built with:
 - shadcn-ui
 - Tailwind CSS
 
+## Environment Variables
+
+Backend API URL'ni sozlash uchun `.env` fayl yarating:
+
+```bash
+# .env.example faylini ko'chiring
+cp .env.example .env
+```
+
+`.env` faylini ochib, quyidagilarni to'ldiring:
+
+```env
+# Development uchun
+VITE_API_BASE_URL=http://localhost:5000/api
+
+# Production uchun (backend deploy qilingandan keyin)
+VITE_API_BASE_URL=https://your-backend-url.com/api
+```
+
+**Muhim:** `.env` fayl `.gitignore` da, shuning uchun GitHub'ga yuklanmaydi. Har bir developer o'z `.env` faylini yaratishi kerak.
+
 ## How can I deploy this project?
 
 Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
+
+**Vercel Deploy uchun:**
+
+1. Vercel Dashboard > Project Settings > Environment Variables
+2. `VITE_API_BASE_URL` qo'shing va backend URL'ni kiriting
+3. Redeploy qiling
 
 ## Can I connect a custom domain to my Lovable project?
 
