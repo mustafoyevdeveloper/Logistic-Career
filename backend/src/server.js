@@ -50,8 +50,14 @@ app.use(cors({
       return callback(null, true);
     }
     
-    // Production'da Vercel preview URL'larni qo'llab-quvvatlash
-    if (isProduction && origin.includes('vercel.app')) {
+    // Production'da BARCHA Vercel URL'larni qo'llab-quvvatlash (preview va production)
+    if (isProduction && (origin.includes('vercel.app') || origin.includes('vercel.com'))) {
+      console.log('✅ Vercel origin allowed (production):', origin);
+      return callback(null, true);
+    }
+    
+    // Development'da ham Vercel URL'larni qo'llab-quvvatlash
+    if (origin.includes('vercel.app') || origin.includes('vercel.com')) {
       console.log('✅ Vercel origin allowed:', origin);
       return callback(null, true);
     }
@@ -65,12 +71,14 @@ app.use(cors({
     } else {
       console.log('❌ Origin not allowed:', origin);
       console.log('📋 Allowed origins:', uniqueOrigins);
-      // Production'da xatolikni yengilroq qilish
+      // Production'da xatolikni yengilroq qilish - barcha so'rovlarni ruxsat berish
       if (isProduction) {
         console.log('⚠️ Production mode: Allowing origin anyway');
         callback(null, true);
       } else {
-        callback(new Error('CORS policy tomonidan ruxsat berilmagan'));
+        // Development'da ham yengilroq qilish
+        console.log('⚠️ Development mode: Allowing origin anyway');
+        callback(null, true);
       }
     }
   },
