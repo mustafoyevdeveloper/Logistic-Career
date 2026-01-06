@@ -1,6 +1,6 @@
 # Logo Fayllari
 
-Bu papkada Logstic Career platformasi uchun logo fayllari mavjud.
+Bu papkada LogiLearn platformasi uchun logo fayllari mavjud.
 
 ## Logo Variantlari
 

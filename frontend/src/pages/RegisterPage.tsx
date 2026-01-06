@@ -90,7 +90,7 @@ export default function RegisterPage() {
           {/* Logo */}
           <div className="flex items-center gap-3 mb-6">
             <Logo variant="icon" size="md" />
-            <span className="text-xl font-bold text-foreground">Logstic Career</span>
+            <span className="text-xl font-bold text-foreground">LogiLearn</span>
           </div>
 
           <h2 className="text-2xl font-bold text-foreground mb-2">
