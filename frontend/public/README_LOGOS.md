@@ -1,6 +1,6 @@
 # Logo Fayllari
 
-Bu papkada LogiLearn platformasi uchun logo fayllari mavjud.
+Bu papkada Logistic Carrier platformasi uchun logo fayllari mavjud.
 
 ## Logo Variantlari
 

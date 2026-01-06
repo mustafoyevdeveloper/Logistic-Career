@@ -1,5 +1,6 @@
 import User from '../models/User.js';
 import { generateToken } from '../utils/generateToken.js';
+import bcrypt from 'bcryptjs';
 
 /**
  * @desc    Ro'yxatdan o'tish (Faqat Teacher/Admin uchun)
@@ -317,15 +318,17 @@ export const adminLogin = async (req, res) => {
           // Yangi admin yaratish
           console.log('📝 Creating new admin user:', adminEmail.toLowerCase());
           try {
-            admin = await User.create({
+            // User.create() o'rniga new User() ishlatish, chunki pre-save hook avtomatik hash qiladi
+            admin = new User({
               email: adminEmail.toLowerCase(),
-              password: adminPassword,
+              password: adminPassword, // Pre-save hook avtomatik hash qiladi
               firstName: 'Admin',
               lastName: 'Teacher',
               role: 'admin',
               isActive: true,
               isSuspended: false,
             });
+            await admin.save(); // Pre-save hook parolni hash qiladi
             console.log('✅ Admin user created successfully');
           } catch (createError) {
             // Agar unique constraint xatolik bo'lsa, qayta topish
@@ -340,11 +343,12 @@ export const adminLogin = async (req, res) => {
               }
               
               // Parol va role'ni yangilash
+              // Parolni to'g'ridan-to'g'ri o'rnatish, pre-save hook avtomatik hash qiladi
               admin.password = adminPassword;
               admin.role = 'admin';
               admin.isActive = true;
               admin.isSuspended = false;
-              await admin.save();
+              await admin.save(); // Pre-save hook parolni hash qiladi
               console.log('✅ Admin updated successfully');
             } else {
               throw createError;
@@ -368,11 +372,12 @@ export const adminLogin = async (req, res) => {
           // Agar parol match qilmasa yoki admin role noto'g'ri bo'lsa, yangilash
           if (!isPasswordMatch || admin.role !== 'admin') {
             console.log('🔄 Updating admin password and role...');
+            // Parolni to'g'ridan-to'g'ri o'rnatish, pre-save hook avtomatik hash qiladi
             admin.password = adminPassword;
             admin.role = 'admin';
             admin.isActive = true;
             admin.isSuspended = false;
-            await admin.save();
+            await admin.save(); // Pre-save hook parolni hash qiladi
             console.log('✅ Admin updated successfully');
           }
         }
