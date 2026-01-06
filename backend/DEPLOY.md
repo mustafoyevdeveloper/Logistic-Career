@@ -10,15 +10,26 @@ Backend'ni quyidagi platformalardan birida deploy qiling:
 
 ### 1. Render.com (Tavsiya etiladi - Free tier mavjud)
 
+**Variant A: render.yaml fayli orqali (Tavsiya etiladi)**
+
+1. [Render.com](https://render.com) ga kiring va ro'yxatdan o'ting
+2. "New +" > "Blueprint" ni bosing
+3. GitHub repository'ni ulang
+4. Render.com avtomatik ravishda `render.yaml` faylini topadi va sozlamalarni yuklaydi
+5. Environment Variables qo'shing (MONGODB_URI, JWT_SECRET, OPENAI_API_KEY)
+6. "Apply" ni bosing
+
+**Variant B: Manual sozlash**
+
 1. [Render.com](https://render.com) ga kiring va ro'yxatdan o'ting
 2. "New +" > "Web Service" ni bosing
 3. GitHub repository'ni ulang
 4. Sozlamalar:
    - **Name:** `logistic-career-backend`
    - **Environment:** `Node`
-   - **Build Command:** `cd backend && npm install`
-   - **Start Command:** `cd backend && npm start`
-   - **Root Directory:** `backend`
+   - **Root Directory:** `backend` ⚠️ **MUHIM: Root Directory `backend` bo'lishi kerak**
+   - **Build Command:** `npm install` (yoki bo'sh qoldirish mumkin)
+   - **Start Command:** `npm start`
 
 5. Environment Variables qo'shing:
    ```
