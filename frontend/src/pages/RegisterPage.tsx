@@ -28,7 +28,7 @@ export default function RegisterPage() {
     group: '',
   });
   const [showPassword, setShowPassword] = useState(false);
-  const [selectedRole, setSelectedRole] = useState<'student' | 'teacher'>('student');
+  const [selectedRole, setSelectedRole] = useState<'teacher'>('teacher');
   const [isLoading, setIsLoading] = useState(false);
   const { register } = useAuth();
   const navigate = useNavigate();
@@ -99,48 +99,15 @@ export default function RegisterPage() {
             Ro'yxatdan o'tish
           </h2>
           <p className="text-muted-foreground mb-6">
-            Yangi hisob yarating va o'rganishni boshlang
+            Faqat o'qituvchilar ro'yxatdan o'tishi mumkin
           </p>
 
-          {/* Role Selection */}
-          <div className="grid grid-cols-2 gap-3 mb-6">
-            <button
-              type="button"
-              onClick={() => setSelectedRole('student')}
-              className={`p-4 rounded-xl border-2 transition-all duration-200 ${
-                selectedRole === 'student'
-                  ? 'border-primary bg-primary/5 shadow-md'
-                  : 'border-border hover:border-primary/50'
-              }`}
-            >
-              <GraduationCap className={`w-6 h-6 mx-auto mb-2 ${
-                selectedRole === 'student' ? 'text-primary' : 'text-muted-foreground'
-              }`} />
-              <span className={`text-sm font-medium ${
-                selectedRole === 'student' ? 'text-primary' : 'text-muted-foreground'
-              }`}>
-                O'quvchi
-              </span>
-            </button>
-            
-            <button
-              type="button"
-              onClick={() => setSelectedRole('teacher')}
-              className={`p-4 rounded-xl border-2 transition-all duration-200 ${
-                selectedRole === 'teacher'
-                  ? 'border-primary bg-primary/5 shadow-md'
-                  : 'border-border hover:border-primary/50'
-              }`}
-            >
-              <Users className={`w-6 h-6 mx-auto mb-2 ${
-                selectedRole === 'teacher' ? 'text-primary' : 'text-muted-foreground'
-              }`} />
-              <span className={`text-sm font-medium ${
-                selectedRole === 'teacher' ? 'text-primary' : 'text-muted-foreground'
-              }`}>
-                O'qituvchi
-              </span>
-            </button>
+          {/* Info Alert */}
+          <div className="bg-info/10 border border-info/20 rounded-xl p-4 mb-6">
+            <p className="text-sm text-foreground">
+              <strong>Eslatma:</strong> O'quvchilar o'zi ro'yxatdan o'tmaydi. 
+              O'quvchilar faqat o'qituvchi yoki admin tomonidan tizimga qo'shiladi.
+            </p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -189,19 +156,6 @@ export default function RegisterPage() {
               </div>
             </div>
 
-            {selectedRole === 'student' && (
-              <div className="space-y-2">
-                <Label htmlFor="group">Guruh (ixtiyoriy)</Label>
-                <Input
-                  id="group"
-                  name="group"
-                  placeholder="LOG-2024-A"
-                  value={formData.group}
-                  onChange={handleChange}
-                  className="h-11"
-                />
-              </div>
-            )}
 
             <div className="space-y-2">
               <Label htmlFor="password">Parol</Label>

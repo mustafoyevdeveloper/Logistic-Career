@@ -2,6 +2,21 @@
 
 Bu loyiha logistika o'quv markazi uchun AI-asosli ta'lim platformasining backend qismidir.
 
+## ⚠️ MUHIM XAVFSIZLIK QOIDALARI
+
+### O'quvchi ro'yxatdan o'tish
+- **O'quvchilar o'zi ro'yxatdan o'tmaydi**
+- Faqat **o'qituvchi** yoki **admin** o'quvchi yaratishi mumkin
+- Har bir o'quvchi **faqat 1 ta email** bilan tizimga kiradi
+- Har bir email **faqat 1 ta qurilmaga** bog'lanadi
+- Bir email bilan boshqa qurilmadan kirish **bloklanadi**
+
+### Device Tracking
+- Student login qilganda `deviceId` yuborilishi shart
+- Birinchi marta kirganda deviceId saqlanadi
+- Keyingi kirishlarda faqat shu deviceId bilan kirish mumkin
+- Boshqa qurilmadan kirishga harakat qilinsa, xatolik qaytariladi
+
 ## Texnologiyalar
 
 - **Node.js** + **Express.js** - Server framework
@@ -59,15 +74,22 @@ npm run dev
 npm start
 ```
 
+### 4. Database seed (darsliklarni yaratish)
+
+```bash
+npm run seed
+```
+
 ## API Endpoints
 
 ### Autentifikatsiya
 
-- `POST /api/auth/register` - Ro'yxatdan o'tish
-- `POST /api/auth/login` - Kirish
+- `POST /api/auth/register` - Ro'yxatdan o'tish (Faqat Teacher/Admin)
+- `POST /api/auth/login` - Kirish (Device ID bilan)
 - `GET /api/auth/me` - Joriy foydalanuvchi
 - `PUT /api/auth/profile` - Profil yangilash
 - `PUT /api/auth/password` - Parol o'zgartirish
+- `POST /api/auth/create-student` - O'quvchi yaratish (Teacher/Admin)
 
 ### Darsliklar
 
@@ -96,16 +118,19 @@ npm start
 
 ### Foydalanuvchilar
 
-- `GET /api/users/students` - Barcha o'quvchilar (Teacher)
-- `GET /api/users/students/:id` - Bitta o'quvchi (Teacher)
-- `GET /api/users/groups` - Guruhlar (Teacher)
+- `GET /api/users/students` - Barcha o'quvchilar (Teacher/Admin)
+- `GET /api/users/students/:id` - Bitta o'quvchi (Teacher/Admin)
+- `GET /api/users/groups` - Guruhlar (Teacher/Admin)
 
 ## Database Models
 
 ### User
 - email, password, firstName, lastName
-- role (student/teacher)
+- role (student/teacher/admin)
 - group, progress, currentLevel
+- **deviceId** - Qurilma identifikatori (student uchun)
+- **deviceInfo** - Qurilma ma'lumotlari
+- **createdBy** - Kim tomonidan yaratilgan (student uchun)
 
 ### Lesson
 - title, description, duration, level
@@ -138,6 +163,17 @@ Barcha protected route'lar uchun header'da token yuborish kerak:
 Authorization: Bearer <token>
 ```
 
+Student login qilganda `deviceId` ham yuborilishi kerak:
+
+```json
+{
+  "email": "student@example.uz",
+  "password": "password123",
+  "role": "student",
+  "deviceId": "unique-device-id"
+}
+```
+
 ## Xatoliklar
 
 API quyidagi formatda javob qaytaradi:
@@ -161,4 +197,3 @@ API quyidagi formatda javob qaytaradi:
 2. Cloudflare'da domain sozlang
 3. Environment variables'ni production qiymatlariga o'zgartiring
 4. Server'ni deploy qiling (Vercel, Railway, yoki boshqa platforma)
-

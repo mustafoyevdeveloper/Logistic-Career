@@ -41,8 +41,8 @@ export default function LoginPage() {
       await login(email, password, selectedRole);
       toast.success('Muvaffaqiyatli kirdingiz!');
       navigate(selectedRole === 'student' ? '/student' : '/teacher');
-    } catch (error) {
-      toast.error('Xatolik yuz berdi');
+    } catch (error: any) {
+      toast.error(error.message || 'Xatolik yuz berdi');
     } finally {
       setIsLoading(false);
     }

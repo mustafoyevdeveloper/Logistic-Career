@@ -29,7 +29,7 @@ const userSchema = new mongoose.Schema(
     },
     role: {
       type: String,
-      enum: ['student', 'teacher'],
+      enum: ['student', 'teacher', 'admin'],
       required: [true, 'Rol tanlanishi shart'],
     },
     group: {
@@ -58,6 +58,28 @@ const userSchema = new mongoose.Schema(
     },
     lastLogin: {
       type: Date,
+      default: null,
+    },
+    // Device tracking (faqat student uchun)
+    deviceId: {
+      type: String,
+      default: null,
+      index: true,
+    },
+    deviceInfo: {
+      userAgent: String,
+      platform: String,
+      browser: String,
+      ipAddress: String,
+    },
+    lastDeviceLogin: {
+      type: Date,
+      default: null,
+    },
+    // O'qituvchi/admin tomonidan yaratilganligi
+    createdBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
       default: null,
     },
   },

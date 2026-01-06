@@ -5,8 +5,9 @@ import {
   getMe,
   updateProfile,
   updatePassword,
+  createStudent,
 } from '../controllers/authController.js';
-import { protect } from '../middleware/auth.js';
+import { protect, authorize } from '../middleware/auth.js';
 import { validateRegister, validateLogin } from '../middleware/validation.js';
 
 const router = express.Router();
@@ -16,6 +17,7 @@ router.post('/login', validateLogin, login);
 router.get('/me', protect, getMe);
 router.put('/profile', protect, updateProfile);
 router.put('/password', protect, updatePassword);
+router.post('/create-student', protect, authorize('teacher', 'admin'), createStudent);
 
 export default router;
 

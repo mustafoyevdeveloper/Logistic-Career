@@ -1,10 +1,17 @@
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
 import connectDB from '../config/database.js';
 import LessonModule from '../models/LessonModule.js';
 import Lesson from '../models/Lesson.js';
 
-dotenv.config();
+// ES modules uchun __dirname
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+// .env faylini backend papkasidan yuklash
+dotenv.config({ path: join(__dirname, '../../.env') });
 
 const seedModules = async () => {
   try {

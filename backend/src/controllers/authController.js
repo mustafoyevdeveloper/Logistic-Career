@@ -2,13 +2,21 @@ import User from '../models/User.js';
 import { generateToken } from '../utils/generateToken.js';
 
 /**
- * @desc    Ro'yxatdan o'tish
+ * @desc    Ro'yxatdan o'tish (Faqat Teacher/Admin uchun)
  * @route   POST /api/auth/register
- * @access  Public
+ * @access  Public (lekin faqat teacher/admin ro'yxatdan o'tishi mumkin)
  */
 export const register = async (req, res) => {
   try {
-    const { email, password, firstName, lastName, role, group } = req.body;
+    const { email, password, firstName, lastName, role } = req.body;
+
+    // Faqat teacher yoki admin ro'yxatdan o'tishi mumkin
+    if (role !== 'teacher' && role !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'O\'quvchilar o\'zi ro\'yxatdan o\'ta olmaydi. Faqat o\'qituvchi yoki admin ro\'yxatdan o\'tishi mumkin.',
+      });
+    }
 
     // Email tekshirish
     const userExists = await User.findOne({ email });
@@ -26,9 +34,8 @@ export const register = async (req, res) => {
       firstName,
       lastName,
       role,
-      group: role === 'student' ? group : null,
-      progress: role === 'student' ? 0 : undefined,
-      currentLevel: role === 'student' ? 'Boshlang\'ich' : undefined,
+      progress: undefined,
+      currentLevel: undefined,
     });
 
     // Token yaratish
@@ -55,13 +62,13 @@ export const register = async (req, res) => {
 };
 
 /**
- * @desc    Kirish
+ * @desc    Kirish (Device tracking bilan)
  * @route   POST /api/auth/login
  * @access  Public
  */
 export const login = async (req, res) => {
   try {
-    const { email, password, role } = req.body;
+    const { email, password, role, deviceId } = req.body;
 
     // Email va password tekshirish
     if (!email || !password) {
@@ -81,12 +88,55 @@ export const login = async (req, res) => {
       });
     }
 
+    // User active tekshirish
+    if (!user.isActive) {
+      return res.status(403).json({
+        success: false,
+        message: 'Hisobingiz o\'chirilgan',
+      });
+    }
+
     // Role tekshirish
     if (role && user.role !== role) {
       return res.status(403).json({
         success: false,
         message: `Siz ${role} sifatida kirishga ruxsatingiz yo'q`,
       });
+    }
+
+    // Student uchun device tracking
+    if (user.role === 'student') {
+      if (!deviceId) {
+        return res.status(400).json({
+          success: false,
+          message: 'Device ID kiritilishi shart',
+        });
+      }
+
+      // Agar boshqa qurilmadan kirishga harakat qilayotgan bo'lsa
+      if (user.deviceId && user.deviceId !== deviceId) {
+        return res.status(403).json({
+          success: false,
+          message: 'Bu email boshqa qurilmaga bog\'langan. Faqat bir qurilmadan kirish mumkin.',
+        });
+      }
+
+      // Device ma'lumotlarini yangilash
+      const userAgent = req.headers['user-agent'] || '';
+      const ipAddress = req.ip || req.connection.remoteAddress || '';
+
+      user.deviceId = deviceId;
+      user.deviceInfo = {
+        userAgent,
+        platform: userAgent.includes('Windows') ? 'Windows' : 
+                  userAgent.includes('Mac') ? 'Mac' : 
+                  userAgent.includes('Linux') ? 'Linux' : 'Unknown',
+        browser: userAgent.includes('Chrome') ? 'Chrome' :
+                 userAgent.includes('Firefox') ? 'Firefox' :
+                 userAgent.includes('Safari') ? 'Safari' : 'Unknown',
+        ipAddress,
+      };
+      user.lastDeviceLogin = new Date();
     }
 
     // Token yaratish
@@ -207,6 +257,84 @@ export const updatePassword = async (req, res) => {
     res.json({
       success: true,
       message: 'Parol muvaffaqiyatli o\'zgartirildi',
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Server xatosi',
+    });
+  }
+};
+
+/**
+ * @desc    O'quvchi yaratish (Teacher/Admin uchun)
+ * @route   POST /api/auth/create-student
+ * @access  Private (Teacher/Admin)
+ */
+export const createStudent = async (req, res) => {
+  try {
+    // Faqat teacher yoki admin o'quvchi yaratishi mumkin
+    if (req.user.role !== 'teacher' && req.user.role !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Faqat o\'qituvchi yoki admin o\'quvchi yaratishi mumkin',
+      });
+    }
+
+    const { email, firstName, lastName, group, password } = req.body;
+
+    if (!email || !firstName || !lastName) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email, ism va familiya kiritilishi shart',
+      });
+    }
+
+    // Email tekshirish
+    const userExists = await User.findOne({ email });
+    if (userExists) {
+      return res.status(400).json({
+        success: false,
+        message: 'Bu email allaqachon ro\'yxatdan o\'tgan',
+      });
+    }
+
+    // Parol yaratish (agar berilmagan bo'lsa, random parol)
+    let studentPassword = password;
+    if (!studentPassword) {
+      // Random parol yaratish (8 ta belgi)
+      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+      studentPassword = Array.from({ length: 8 }, () => 
+        chars.charAt(Math.floor(Math.random() * chars.length))
+      ).join('');
+    }
+
+    // O'quvchi yaratish
+    const student = await User.create({
+      email,
+      password: studentPassword,
+      firstName,
+      lastName,
+      role: 'student',
+      group: group || null,
+      progress: 0,
+      currentLevel: 'Boshlang\'ich',
+      createdBy: req.user._id,
+    });
+
+    res.status(201).json({
+      success: true,
+      message: 'O\'quvchi muvaffaqiyatli yaratildi',
+      data: {
+        student: {
+          id: student._id,
+          email: student.email,
+          firstName: student.firstName,
+          lastName: student.lastName,
+          group: student.group,
+        },
+        password: studentPassword, // Parolni qaytarish (faqat bir marta)
+      },
     });
   } catch (error) {
     res.status(500).json({

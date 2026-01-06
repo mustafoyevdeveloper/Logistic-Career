@@ -10,10 +10,10 @@ import AssignmentSubmission from '../models/AssignmentSubmission.js';
  */
 export const getStudents = async (req, res) => {
   try {
-    if (req.user.role !== 'teacher') {
+    if (req.user.role !== 'teacher' && req.user.role !== 'admin') {
       return res.status(403).json({
         success: false,
-        message: 'Faqat o\'qituvchilar o\'quvchilarni ko\'ra oladi',
+        message: 'Faqat o\'qituvchilar yoki admin o\'quvchilarni ko\'ra oladi',
       });
     }
 
@@ -109,10 +109,10 @@ export const getStudents = async (req, res) => {
  */
 export const getStudent = async (req, res) => {
   try {
-    if (req.user.role !== 'teacher') {
+    if (req.user.role !== 'teacher' && req.user.role !== 'admin') {
       return res.status(403).json({
         success: false,
-        message: 'Faqat o\'qituvchilar o\'quvchi ma\'lumotlarini ko\'ra oladi',
+        message: 'Faqat o\'qituvchilar yoki admin o\'quvchi ma\'lumotlarini ko\'ra oladi',
       });
     }
 
@@ -167,10 +167,10 @@ export const getStudent = async (req, res) => {
  */
 export const getGroups = async (req, res) => {
   try {
-    if (req.user.role !== 'teacher') {
+    if (req.user.role !== 'teacher' && req.user.role !== 'admin') {
       return res.status(403).json({
         success: false,
-        message: 'Faqat o\'qituvchilar guruhlarni ko\'ra oladi',
+        message: 'Faqat o\'qituvchilar yoki admin guruhlarni ko\'ra oladi',
       });
     }
 

@@ -1,12 +1,17 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { User, UserRole } from '@/types';
+import { apiService } from '@/services/api';
+import { getDeviceId, clearDeviceId } from '@/utils/deviceId';
+import { toast } from 'sonner';
 
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
+  isLoading: boolean;
   login: (email: string, password: string, role: UserRole) => Promise<void>;
   register: (data: RegisterData) => Promise<void>;
   logout: () => void;
+  createStudent: (data: CreateStudentData) => Promise<{ student: any; password: string }>;
 }
 
 interface RegisterData {
@@ -14,73 +19,97 @@ interface RegisterData {
   password: string;
   firstName: string;
   lastName: string;
-  role: UserRole;
+  role: 'teacher' | 'admin';
+}
+
+interface CreateStudentData {
+  email: string;
+  firstName: string;
+  lastName: string;
   group?: string;
+  password?: string;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Demo users for testing
-const demoUsers: Record<string, User> = {
-  'student@demo.uz': {
-    id: '1',
-    email: 'student@demo.uz',
-    firstName: 'Sardor',
-    lastName: 'Aliyev',
-    role: 'student',
-    group: 'LOG-2024-A',
-    progress: 35,
-    currentLevel: 'Boshlang\'ich',
-  },
-  'teacher@demo.uz': {
-    id: '2',
-    email: 'teacher@demo.uz',
-    firstName: 'Akmal',
-    lastName: 'Karimov',
-    role: 'teacher',
-  },
-};
-
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Token'dan user ma'lumotlarini yuklash
+  useEffect(() => {
+    const initAuth = async () => {
+      const token = localStorage.getItem('auth_token');
+      if (token) {
+        try {
+          const response = await apiService.getMe();
+          if (response.success && response.data) {
+            setUser(response.data.user);
+          }
+        } catch (error) {
+          // Token yaroqsiz bo'lsa, tozalash
+          localStorage.removeItem('auth_token');
+        }
+      }
+      setIsLoading(false);
+    };
+
+    initAuth();
+  }, []);
 
   const login = async (email: string, password: string, role: UserRole) => {
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    
-    // For demo, accept any credentials with role
-    const demoUser = demoUsers[email] || {
-      id: Date.now().toString(),
-      email,
-      firstName: role === 'student' ? 'O\'quvchi' : 'O\'qituvchi',
-      lastName: '',
-      role,
-      progress: role === 'student' ? 0 : undefined,
-      currentLevel: role === 'student' ? 'Boshlang\'ich' : undefined,
-      group: role === 'student' ? 'LOG-2024-B' : undefined,
-    };
-    
-    setUser(demoUser);
+    try {
+      const response = await apiService.login(email, password, role);
+      
+      if (response.success && response.data) {
+        // Token saqlash
+        localStorage.setItem('auth_token', response.data.token);
+        
+        // User ma'lumotlarini saqlash
+        setUser(response.data.user);
+      } else {
+        throw new Error(response.message || 'Kirishda xatolik yuz berdi');
+      }
+    } catch (error: any) {
+      throw new Error(error.message || 'Kirishda xatolik yuz berdi');
+    }
   };
 
   const register = async (data: RegisterData) => {
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    
-    const newUser: User = {
-      id: Date.now().toString(),
-      email: data.email,
-      firstName: data.firstName,
-      lastName: data.lastName,
-      role: data.role,
-      group: data.group,
-      progress: data.role === 'student' ? 0 : undefined,
-      currentLevel: data.role === 'student' ? 'Boshlang\'ich' : undefined,
-    };
-    
-    setUser(newUser);
+    try {
+      const response = await apiService.register(data);
+      
+      if (response.success && response.data) {
+        // Token saqlash
+        localStorage.setItem('auth_token', response.data.token);
+        
+        // User ma'lumotlarini saqlash
+        setUser(response.data.user);
+      } else {
+        throw new Error(response.message || 'Ro\'yxatdan o\'tishda xatolik yuz berdi');
+      }
+    } catch (error: any) {
+      throw new Error(error.message || 'Ro\'yxatdan o\'tishda xatolik yuz berdi');
+    }
+  };
+
+  const createStudent = async (data: CreateStudentData) => {
+    try {
+      const response = await apiService.createStudent(data);
+      
+      if (response.success && response.data) {
+        return response.data;
+      } else {
+        throw new Error(response.message || 'O\'quvchi yaratishda xatolik yuz berdi');
+      }
+    } catch (error: any) {
+      throw new Error(error.message || 'O\'quvchi yaratishda xatolik yuz berdi');
+    }
   };
 
   const logout = () => {
+    localStorage.removeItem('auth_token');
+    clearDeviceId();
     setUser(null);
   };
 
@@ -89,9 +118,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       value={{
         user,
         isAuthenticated: !!user,
+        isLoading,
         login,
         register,
         logout,
+        createStudent,
       }}
     >
       {children}
