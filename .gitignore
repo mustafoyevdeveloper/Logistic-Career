@@ -39,6 +39,9 @@ build/
 *.temp
 command.cmd
 
+# Vercel
+.vercel
+
 # Backend specific
 backend/node_modules/
 backend/.env
