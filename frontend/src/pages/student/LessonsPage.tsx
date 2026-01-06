@@ -1,7 +1,8 @@
-import { useState } from 'react';
-import { lessonModules, getLevelColor, getLevelLabel } from '@/data/lessons';
+import { useState, useEffect } from 'react';
+import { getLevelColor, getLevelLabel } from '@/data/lessons';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
+import { apiService } from '@/services/api';
 import { 
   BookOpen, 
   Clock, 
@@ -12,10 +13,35 @@ import {
   ChevronUp
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 
 export default function LessonsPage() {
-  const [expandedModule, setExpandedModule] = useState<string | null>('module-1');
+  const [modules, setModules] = useState<any[]>([]);
+  const [expandedModule, setExpandedModule] = useState<string | null>(null);
   const [selectedLesson, setSelectedLesson] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    loadModules();
+  }, []);
+
+  const loadModules = async () => {
+    try {
+      setIsLoading(true);
+      const response = await apiService.request<{ modules: any[] }>('/lessons/modules');
+      if (response.success && response.data) {
+        setModules(response.data.modules || []);
+        // Birinchi modulni ochiq qilish
+        if (response.data.modules.length > 0) {
+          setExpandedModule(response.data.modules[0]._id);
+        }
+      }
+    } catch (error: any) {
+      toast.error(error.message || 'Darsliklarni yuklashda xatolik');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const toggleModule = (moduleId: string) => {
     setExpandedModule(expandedModule === moduleId ? null : moduleId);
@@ -32,15 +58,21 @@ export default function LessonsPage() {
       </div>
 
       {/* Modules */}
-      <div className="space-y-4">
-        {lessonModules.map((module, moduleIndex) => (
+      {isLoading ? (
+        <div className="text-center py-12">
+          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-muted-foreground">Yuklanmoqda...</p>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {modules.map((module, moduleIndex) => (
           <div 
             key={module.id}
             className="bg-card rounded-2xl border border-border shadow-card overflow-hidden"
           >
             {/* Module Header */}
             <button
-              onClick={() => toggleModule(module.id)}
+              onClick={() => toggleModule(module._id)}
               className="w-full p-5 sm:p-6 flex items-center gap-4 hover:bg-muted/50 transition-colors"
             >
               <div className={cn(
@@ -57,10 +89,10 @@ export default function LessonsPage() {
 
               <div className="hidden sm:flex items-center gap-4">
                 <div className="text-right">
-                  <p className="text-sm font-medium text-foreground">{module.lessons.length} dars</p>
-                  <Progress value={module.progress} className="w-24 h-2 mt-1" />
+                  <p className="text-sm font-medium text-foreground">{module.lessons?.length || 0} dars</p>
+                  <Progress value={module.progress || 0} className="w-24 h-2 mt-1" />
                 </div>
-                {expandedModule === module.id ? (
+                {expandedModule === module._id ? (
                   <ChevronUp className="w-5 h-5 text-muted-foreground" />
                 ) : (
                   <ChevronDown className="w-5 h-5 text-muted-foreground" />
@@ -69,9 +101,9 @@ export default function LessonsPage() {
             </button>
 
             {/* Lessons List */}
-            {expandedModule === module.id && (
+            {expandedModule === module._id && (
               <div className="border-t border-border">
-                {module.lessons.map((lesson, lessonIndex) => (
+                {module.lessons?.map((lesson: any, lessonIndex: number) => (
                   <div
                     key={lesson.id}
                     className={cn(
@@ -81,7 +113,7 @@ export default function LessonsPage() {
                         : "hover:bg-muted/50 cursor-pointer",
                       selectedLesson === lesson.id && "bg-primary/5 border-l-4 border-l-primary"
                     )}
-                    onClick={() => !lesson.isLocked && setSelectedLesson(lesson.id)}
+                    onClick={() => !lesson.isLocked && setSelectedLesson(lesson._id)}
                   >
                     <div className="flex items-start gap-4">
                       {/* Lesson Number/Status */}
@@ -152,7 +184,7 @@ export default function LessonsPage() {
                     </div>
 
                     {/* Topics */}
-                    {selectedLesson === lesson.id && !lesson.isLocked && (
+                    {selectedLesson === lesson._id && !lesson.isLocked && (
                       <div className="mt-4 pt-4 border-t border-border">
                         <p className="text-sm font-medium text-foreground mb-2">Mavzular:</p>
                         <div className="flex flex-wrap gap-2">
@@ -173,7 +205,8 @@ export default function LessonsPage() {
             )}
           </div>
         ))}
-      </div>
+        </div>
+      )}
     </div>
   );
 }

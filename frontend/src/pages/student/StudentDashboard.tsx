@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
@@ -12,38 +13,78 @@ import {
   Zap
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { lessonModules } from '@/data/lessons';
+import { apiService } from '@/services/api';
 
 export default function StudentDashboard() {
   const { user } = useAuth();
+  const [modules, setModules] = useState<any[]>([]);
+  const [stats, setStats] = useState({
+    completedLessons: 0,
+    totalLessons: 0,
+    aiChats: 0,
+    avgScore: 0,
+  });
+  const [isLoading, setIsLoading] = useState(true);
   
-  const totalLessons = lessonModules.reduce((acc, mod) => acc + mod.lessons.length, 0);
-  const completedLessons = 1; // Demo data
-  const progressPercent = Math.round((completedLessons / totalLessons) * 100);
+  useEffect(() => {
+    loadData();
+  }, []);
 
-  const stats = [
+  const loadData = async () => {
+    try {
+      setIsLoading(true);
+      const response = await apiService.request<{ modules: any[] }>('/lessons/modules');
+      if (response.success && response.data) {
+        setModules(response.data.modules || []);
+        
+        // Stats hisoblash
+        const totalLessons = response.data.modules.reduce((acc: number, mod: any) => 
+          acc + (mod.lessons?.length || 0), 0
+        );
+        const completedLessons = response.data.modules.reduce((acc: number, mod: any) => 
+          acc + (mod.lessons?.filter((l: any) => l.progress?.completed).length || 0), 0
+        );
+        
+        setStats(prev => ({
+          ...prev,
+          completedLessons,
+          totalLessons,
+        }));
+      }
+    } catch (error) {
+      console.error('Dashboard data load error:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const progressPercent = stats.totalLessons > 0 
+    ? Math.round((stats.completedLessons / stats.totalLessons) * 100) 
+    : 0;
+
+  const dashboardStats = [
     { 
       icon: BookOpen, 
       label: 'Tugatilgan darslar', 
-      value: `${completedLessons}/${totalLessons}`,
+      value: `${stats.completedLessons}/${stats.totalLessons}`,
       color: 'text-primary'
     },
     { 
       icon: MessageSquare, 
       label: 'AI suhbatlar', 
-      value: '12',
+      value: stats.aiChats.toString(),
       color: 'text-accent'
     },
     { 
       icon: Trophy, 
-      label: 'Ball', 
-      value: '850',
+      label: 'O\'rtacha ball', 
+      value: `${stats.avgScore}%`,
       color: 'text-warning'
     },
     { 
       icon: Clock, 
-      label: 'O\'qish vaqti', 
-      value: '8 soat',
+      label: 'Progress', 
+      value: `${progressPercent}%`,
       color: 'text-success'
     },
   ];
@@ -84,15 +125,17 @@ export default function StudentDashboard() {
           <span className="text-2xl font-bold text-primary">{progressPercent}%</span>
         </div>
         <Progress value={progressPercent} className="h-3 mb-4" />
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Target className="w-4 h-4" />
-          <span>Keyingi maqsad: "Xalqaro logistika tushunchasi" darsini tugatish</span>
-        </div>
+        {modules.length > 0 && modules[0]?.lessons?.[0] && (
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Target className="w-4 h-4" />
+            <span>Keyingi maqsad: "{modules[0].lessons[0].title}" darsini tugatish</span>
+          </div>
+        )}
       </div>
 
       {/* Stats Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {stats.map((stat, index) => (
+        {dashboardStats.map((stat, index) => (
           <div 
             key={index}
             className="bg-card rounded-xl p-4 sm:p-5 border border-border shadow-card hover:shadow-card-hover transition-shadow"
@@ -116,7 +159,7 @@ export default function StudentDashboard() {
         </div>
         
         <div className="space-y-4">
-          {lessonModules[0].lessons.slice(0, 3).map((lesson, index) => (
+          {modules.length > 0 && modules[0]?.lessons?.slice(0, 3).map((lesson: any, index: number) => (
             <div 
               key={lesson.id}
               className={`flex items-center gap-4 p-4 rounded-xl border transition-all duration-200 ${
@@ -180,7 +223,7 @@ export default function StudentDashboard() {
                   Topshiriqlar
                 </h3>
                 <p className="text-sm text-muted-foreground">
-                  2 ta yangi topshiriq mavjud
+                  Topshiriqlarni ko'rish
                 </p>
               </div>
               <ArrowRight className="w-5 h-5 text-muted-foreground ml-auto group-hover:text-primary group-hover:translate-x-1 transition-all" />

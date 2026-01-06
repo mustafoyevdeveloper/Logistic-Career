@@ -1,5 +1,7 @@
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
+import { apiService } from '@/services/api';
 import { 
   Users, 
   BookOpen, 
@@ -12,21 +14,55 @@ import {
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
-const demoStudents = [
-  { id: '1', name: 'Sardor Aliyev', group: 'LOG-2024-A', progress: 75, lastActive: '2 soat oldin', status: 'active' },
-  { id: '2', name: 'Malika Karimova', group: 'LOG-2024-A', progress: 60, lastActive: '1 kun oldin', status: 'active' },
-  { id: '3', name: 'Jahongir Toshev', group: 'LOG-2024-B', progress: 45, lastActive: '3 kun oldin', status: 'warning' },
-  { id: '4', name: 'Dilnoza Rahimova', group: 'LOG-2024-A', progress: 90, lastActive: '30 daqiqa oldin', status: 'active' },
-];
-
 export default function TeacherDashboard() {
   const { user } = useAuth();
+  const [students, setStudents] = useState<any[]>([]);
+  const [stats, setStats] = useState({
+    totalStudents: 0,
+    activeLessons: 0,
+    avgProgress: 0,
+    totalChats: 0,
+  });
+  const [isLoading, setIsLoading] = useState(true);
 
-  const stats = [
-    { icon: Users, label: 'Jami o\'quvchilar', value: '24', color: 'text-primary' },
-    { icon: BookOpen, label: 'Faol darslar', value: '12', color: 'text-accent' },
-    { icon: TrendingUp, label: 'O\'rtacha progress', value: '68%', color: 'text-success' },
-    { icon: MessageSquare, label: 'AI suhbatlar', value: '156', color: 'text-warning' },
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = async () => {
+    try {
+      setIsLoading(true);
+      const response = await apiService.getStudents();
+      if (response.success && response.data) {
+        const studentsData = response.data.students || [];
+        setStudents(studentsData.slice(0, 4)); // Faqat 4 tasini ko'rsatish
+        
+        // Stats hisoblash
+        const totalStudents = studentsData.length;
+        const avgProgress = studentsData.length > 0
+          ? Math.round(studentsData.reduce((acc: number, s: any) => acc + (s.progress || 0), 0) / studentsData.length)
+          : 0;
+        const totalChats = studentsData.reduce((acc: number, s: any) => acc + (s.stats?.aiChats || 0), 0);
+        
+        setStats({
+          totalStudents,
+          activeLessons: 12, // Bu backend'dan kelishi kerak
+          avgProgress,
+          totalChats,
+        });
+      }
+    } catch (error) {
+      console.error('Dashboard data load error:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const dashboardStats = [
+    { icon: Users, label: 'Jami o\'quvchilar', value: stats.totalStudents.toString(), color: 'text-primary' },
+    { icon: BookOpen, label: 'Faol darslar', value: stats.activeLessons.toString(), color: 'text-accent' },
+    { icon: TrendingUp, label: 'O\'rtacha progress', value: `${stats.avgProgress}%`, color: 'text-success' },
+    { icon: MessageSquare, label: 'AI suhbatlar', value: stats.totalChats.toString(), color: 'text-warning' },
   ];
 
   return (
@@ -55,7 +91,7 @@ export default function TeacherDashboard() {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {stats.map((stat, index) => (
+        {dashboardStats.map((stat, index) => (
           <div 
             key={index}
             className="bg-card rounded-xl p-4 sm:p-5 border border-border shadow-card hover:shadow-card-hover transition-shadow"
@@ -78,40 +114,59 @@ export default function TeacherDashboard() {
           </Link>
         </div>
         
-        <div className="space-y-4">
-          {demoStudents.map((student) => (
-            <div 
-              key={student.id}
-              className="flex items-center gap-4 p-4 rounded-xl border border-border hover:border-primary/50 transition-colors"
-            >
-              <div className="w-10 h-10 rounded-full gradient-primary flex items-center justify-center text-primary-foreground font-semibold">
-                {student.name.split(' ').map(n => n[0]).join('')}
-              </div>
-              
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1">
-                  <h3 className="font-medium text-foreground truncate">{student.name}</h3>
-                  {student.status === 'warning' && (
-                    <AlertCircle className="w-4 h-4 text-warning shrink-0" />
-                  )}
+        {isLoading ? (
+          <div className="text-center py-8">
+            <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+            <p className="text-sm text-muted-foreground">Yuklanmoqda...</p>
+          </div>
+        ) : students.length > 0 ? (
+          <div className="space-y-4">
+            {students.map((student) => (
+              <div 
+                key={student._id}
+                className="flex items-center gap-4 p-4 rounded-xl border border-border hover:border-primary/50 transition-colors"
+              >
+                <div className="w-10 h-10 rounded-full gradient-primary flex items-center justify-center text-primary-foreground font-semibold">
+                  {student.firstName.charAt(0)}{student.lastName.charAt(0)}
                 </div>
-                <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                  <span>{student.group}</span>
-                  <span>•</span>
-                  <span className="flex items-center gap-1">
-                    <Clock className="w-3 h-3" />
-                    {student.lastActive}
-                  </span>
+                
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <h3 className="font-medium text-foreground truncate">
+                      {student.firstName} {student.lastName}
+                    </h3>
+                    {student.isSuspended && (
+                      <AlertCircle className="w-4 h-4 text-warning shrink-0" />
+                    )}
+                    {!student.isActive && (
+                      <AlertCircle className="w-4 h-4 text-destructive shrink-0" />
+                    )}
+                  </div>
+                  <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                    {student.group && <span>{student.group}</span>}
+                    {student.group && <span>•</span>}
+                    {student.lastActive && (
+                      <span className="flex items-center gap-1">
+                        <Clock className="w-3 h-3" />
+                        {student.lastActive}
+                      </span>
+                    )}
+                  </div>
                 </div>
-              </div>
 
-              <div className="text-right">
-                <p className="text-lg font-semibold text-foreground">{student.progress}%</p>
-                <p className="text-xs text-muted-foreground">Progress</p>
+                <div className="text-right">
+                  <p className="text-lg font-semibold text-foreground">{student.progress || 0}%</p>
+                  <p className="text-xs text-muted-foreground">Progress</p>
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-8">
+            <Users className="w-12 h-12 text-muted-foreground mx-auto mb-2" />
+            <p className="text-sm text-muted-foreground">Hozircha o'quvchilar yo'q</p>
+          </div>
+        )}
       </div>
 
       {/* Quick Actions */}

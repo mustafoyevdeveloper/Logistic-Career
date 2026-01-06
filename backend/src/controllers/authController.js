@@ -92,7 +92,15 @@ export const login = async (req, res) => {
     if (!user.isActive) {
       return res.status(403).json({
         success: false,
-        message: 'Hisobingiz o\'chirilgan',
+        message: 'Hisobingiz o\'chirilgan. Iltimos, o\'qituvchi bilan bog\'laning.',
+      });
+    }
+
+    // User suspended tekshirish
+    if (user.isSuspended) {
+      return res.status(403).json({
+        success: false,
+        message: 'Hisobingiz muzlatilgan. Iltimos, o\'qituvchi bilan bog\'laning.',
       });
     }
 
@@ -113,7 +121,8 @@ export const login = async (req, res) => {
         });
       }
 
-      // Agar boshqa qurilmadan kirishga harakat qilayotgan bo'lsa
+      // Bir email faqat bir qurilmaga bog'lanishi kerak
+      // Lekin bir qurilmada ko'p accountlar bo'lishi mumkin
       if (user.deviceId && user.deviceId !== deviceId) {
         return res.status(403).json({
           success: false,
@@ -267,6 +276,65 @@ export const updatePassword = async (req, res) => {
 };
 
 /**
+ * @desc    Admin login (Maxsus admin kirish)
+ * @route   POST /api/auth/admin-login
+ * @access  Public
+ */
+export const adminLogin = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    // Admin email va parol tekshirish
+    if (email === 'TeacherAdmin@role.com' && password === 'LogisticCareerroleTeacheradmin') {
+      // Admin user yaratish yoki topish
+      let admin = await User.findOne({ email: 'TeacherAdmin@role.com', role: 'admin' });
+      
+      if (!admin) {
+        admin = await User.create({
+          email: 'TeacherAdmin@role.com',
+          password: 'LogisticCareerroleTeacheradmin',
+          firstName: 'Admin',
+          lastName: 'Teacher',
+          role: 'admin',
+        });
+      }
+
+      // Token yaratish
+      const token = generateToken(admin._id);
+
+      // Last login yangilash
+      admin.lastLogin = new Date();
+      await admin.save({ validateBeforeSave: false });
+
+      res.json({
+        success: true,
+        message: 'Muvaffaqiyatli kirdingiz',
+        data: {
+          user: {
+            id: admin._id,
+            email: admin.email,
+            firstName: admin.firstName,
+            lastName: admin.lastName,
+            role: admin.role,
+          },
+          token,
+        },
+      });
+    } else {
+      return res.status(401).json({
+        success: false,
+        message: 'Email yoki parol noto\'g\'ri',
+      });
+    }
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Server xatosi',
+    });
+  }
+};
+
+/**
  * @desc    O'quvchi yaratish (Teacher/Admin uchun)
  * @route   POST /api/auth/create-student
  * @access  Private (Teacher/Admin)
@@ -281,7 +349,7 @@ export const createStudent = async (req, res) => {
       });
     }
 
-    const { email, firstName, lastName, group, password } = req.body;
+    const { email, firstName, lastName, groupId, password } = req.body;
 
     if (!email || !firstName || !lastName) {
       return res.status(400).json({
@@ -316,11 +384,17 @@ export const createStudent = async (req, res) => {
       firstName,
       lastName,
       role: 'student',
-      group: group || null,
+      group: groupId || null,
       progress: 0,
       currentLevel: 'Boshlang\'ich',
       createdBy: req.user._id,
     });
+
+    // Group student count yangilash
+    if (groupId) {
+      const Group = (await import('../models/Group.js')).default;
+      await Group.updateStudentCount(groupId);
+    }
 
     res.status(201).json({
       success: true,

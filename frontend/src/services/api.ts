@@ -25,7 +25,7 @@ class ApiService {
     return headers;
   }
 
-  private async request<T>(
+  async request<T>(
     endpoint: string,
     options: RequestInit = {}
   ): Promise<ApiResponse<T>> {
@@ -62,6 +62,13 @@ class ApiService {
     });
   }
 
+  async adminLogin(email: string, password: string) {
+    return this.request<{ user: any; token: string }>('/auth/admin-login', {
+      method: 'POST',
+      body: JSON.stringify({ email, password }),
+    });
+  }
+
   async register(data: {
     email: string;
     password: string;
@@ -86,12 +93,70 @@ class ApiService {
     email: string;
     firstName: string;
     lastName: string;
-    group?: string;
+    groupId?: string;
     password?: string;
   }) {
     return this.request<{ student: any; password: string }>('/auth/create-student', {
       method: 'POST',
       body: JSON.stringify(data),
+    });
+  }
+
+  // Students management
+  async getStudents(params?: { group?: string; search?: string }) {
+    const query = new URLSearchParams();
+    if (params?.group) query.append('group', params.group);
+    if (params?.search) query.append('search', params.search);
+    
+    return this.request<{ students: any[] }>(`/users/students?${query.toString()}`);
+  }
+
+  async deleteStudent(studentId: string) {
+    return this.request(`/students/${studentId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async suspendStudent(studentId: string, isSuspended: boolean) {
+    return this.request<{ student: any }>(`/students/${studentId}/suspend`, {
+      method: 'PUT',
+      body: JSON.stringify({ isSuspended }),
+    });
+  }
+
+  async updateStudent(studentId: string, data: {
+    firstName?: string;
+    lastName?: string;
+    groupId?: string;
+  }) {
+    return this.request<{ student: any }>(`/students/${studentId}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  // Groups management
+  async getGroups() {
+    return this.request<{ groups: any[] }>('/groups');
+  }
+
+  async createGroup(data: { name: string; description?: string }) {
+    return this.request<{ group: any }>('/groups', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateGroup(groupId: string, data: { name?: string; description?: string }) {
+    return this.request<{ group: any }>(`/groups/${groupId}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteGroup(groupId: string) {
+    return this.request(`/groups/${groupId}`, {
+      method: 'DELETE',
     });
   }
 }

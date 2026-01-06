@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { UserPlus, Copy, Check } from 'lucide-react';
+import { apiService } from '@/services/api';
 
 interface CreateStudentDialogProps {
   onSuccess?: () => void;
@@ -26,11 +27,27 @@ export default function CreateStudentDialog({ onSuccess }: CreateStudentDialogPr
     email: '',
     firstName: '',
     lastName: '',
-    group: '',
+    groupId: '',
     password: '',
   });
+  const [groups, setGroups] = useState<any[]>([]);
   const [createdPassword, setCreatedPassword] = useState<string | null>(null);
   const [passwordCopied, setPasswordCopied] = useState(false);
+
+  useEffect(() => {
+    loadGroups();
+  }, []);
+
+  const loadGroups = async () => {
+    try {
+      const response = await apiService.getGroups();
+      if (response.success) {
+        setGroups(response.data?.groups || []);
+      }
+    } catch (error) {
+      // Silent fail
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,7 +63,7 @@ export default function CreateStudentDialog({ onSuccess }: CreateStudentDialogPr
         email: formData.email,
         firstName: formData.firstName,
         lastName: formData.lastName,
-        group: formData.group || undefined,
+        groupId: formData.groupId || undefined,
         password: formData.password || undefined,
       });
 
@@ -58,7 +75,7 @@ export default function CreateStudentDialog({ onSuccess }: CreateStudentDialogPr
         email: '',
         firstName: '',
         lastName: '',
-        group: '',
+        groupId: '',
         password: '',
       });
 
@@ -181,13 +198,18 @@ export default function CreateStudentDialog({ onSuccess }: CreateStudentDialogPr
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="group">Guruh (ixtiyoriy)</Label>
-              <Input
-                id="group"
-                placeholder="LOG-2024-A"
-                value={formData.group}
-                onChange={(e) => setFormData({ ...formData, group: e.target.value })}
-              />
+              <Label htmlFor="groupId">Guruh (ixtiyoriy)</Label>
+              <select
+                id="groupId"
+                className="w-full px-3 py-2 border border-border rounded-lg bg-background"
+                value={formData.groupId}
+                onChange={(e) => setFormData({ ...formData, groupId: e.target.value })}
+              >
+                <option value="">Guruh tanlang</option>
+                {groups.map(group => (
+                  <option key={group._id} value={group._id}>{group.name}</option>
+                ))}
+              </select>
             </div>
 
             <div className="space-y-2">

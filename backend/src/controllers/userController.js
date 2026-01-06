@@ -18,7 +18,7 @@ export const getStudents = async (req, res) => {
     }
 
     const { group, search } = req.query;
-    let query = { role: 'student', isActive: true };
+    let query = { role: 'student' }; // Barcha o'quvchilarni ko'rsatish (muzlatilgan va o'chirilganlarni ham)
 
     if (group) {
       query.group = group;

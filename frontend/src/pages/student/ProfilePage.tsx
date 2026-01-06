@@ -25,13 +25,13 @@ export default function StudentProfilePage() {
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      {/* <div className="flex items-center justify-between">
         <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Profil</h1>
         <Button variant="outline" size="sm">
           <Edit2 className="w-4 h-4 mr-2" />
           Tahrirlash
         </Button>
-      </div>
+      </div> */}
 
       {/* Profile Card */}
       <div className="bg-card rounded-2xl p-6 border border-border shadow-card">

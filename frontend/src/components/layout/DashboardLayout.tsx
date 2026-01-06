@@ -2,18 +2,20 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import Logo from '@/components/Logo';
+import StudentBlockedMessage from '@/components/StudentBlockedMessage';
 import {
   LayoutDashboard,
   BookOpen,
   MessageSquare,
   ClipboardList,
   User,
+  Users,
   LogOut,
   Menu,
   X,
   ChevronRight,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 
 interface NavItem {
@@ -33,6 +35,7 @@ const studentNavItems: NavItem[] = [
 const teacherNavItems: NavItem[] = [
   { icon: LayoutDashboard, label: 'Bosh sahifa', href: '/teacher' },
   { icon: BookOpen, label: 'O\'quvchilar', href: '/teacher/students' },
+  { icon: Users, label: 'Guruhlar', href: '/teacher/groups' },
   { icon: ClipboardList, label: 'Topshiriqlar', href: '/teacher/assignments' },
   { icon: User, label: 'Profil', href: '/teacher/profile' },
 ];
@@ -47,7 +50,29 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const navigate = useNavigate();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  const navItems = user?.role === 'teacher' ? teacherNavItems : studentNavItems;
+  // Student blocked tekshirish
+  useEffect(() => {
+    if (user?.role === 'student' && user?.isSuspended) {
+      // Muzlatilgan o'quvchi - logout qilish
+      setTimeout(() => {
+        logout();
+        navigate('/login');
+      }, 100);
+    }
+    
+    if (user?.role === 'student' && !user?.isActive) {
+      // O'chirilgan o'quvchi - logout qilish
+      logout();
+      navigate('/login');
+    }
+  }, [user, logout, navigate]);
+
+  // Agar student blocked bo'lsa, bloklama xabarini ko'rsatish
+  if (user?.role === 'student' && (user?.isSuspended || !user?.isActive)) {
+    return <StudentBlockedMessage />;
+  }
+
+  const navItems = user?.role === 'teacher' || user?.role === 'admin' ? teacherNavItems : studentNavItems;
 
   const handleLogout = () => {
     logout();

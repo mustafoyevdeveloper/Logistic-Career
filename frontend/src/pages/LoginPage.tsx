@@ -1,33 +1,45 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import Logo from '@/components/Logo';
 import { 
-  GraduationCap, 
   ArrowRight, 
   Mail, 
   Lock, 
   Eye, 
   EyeOff,
   BookOpen,
-  Users,
   Target,
-  CheckCircle2
+  CheckCircle2,
+  AlertCircle,
+  Users
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
-export default function LoginPage() {
+interface LoginPageProps {
+  isAdminRoute?: boolean;
+}
+
+export default function LoginPage({ isAdminRoute = false }: LoginPageProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [selectedRole, setSelectedRole] = useState<'student' | 'teacher'>('student');
   const [isLoading, setIsLoading] = useState(false);
-  const { login } = useAuth();
+  const { login, adminLogin } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+
+  // Admin route tekshirish
+  useEffect(() => {
+    if (searchParams.get('role') === 'admin' || isAdminRoute) {
+      // Admin login uchun default qiymatlar
+      setEmail('TeacherAdmin@role.com');
+    }
+  }, [searchParams, isAdminRoute]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,9 +50,17 @@ export default function LoginPage() {
     
     setIsLoading(true);
     try {
-      await login(email, password, selectedRole);
-      toast.success('Muvaffaqiyatli kirdingiz!');
-      navigate(selectedRole === 'student' ? '/student' : '/teacher');
+      // Admin login tekshirish
+      if (isAdminRoute || searchParams.get('role') === 'admin') {
+        await adminLogin(email, password);
+        toast.success('Muvaffaqiyatli kirdingiz!');
+        navigate('/teacher');
+      } else {
+        // Student login
+        await login(email, password, 'student');
+        toast.success('Muvaffaqiyatli kirdingiz!');
+        navigate('/student');
+      }
     } catch (error: any) {
       toast.error(error.message || 'Xatolik yuz berdi');
     } finally {
@@ -107,53 +127,25 @@ export default function LoginPage() {
             <span className="text-xl font-bold text-foreground">LogiLearn</span>
           </div>
 
-          <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">
-            Xush kelibsiz!
-          </h2>
-          <p className="text-muted-foreground mb-8">
-            Davom etish uchun tizimga kiring
-          </p>
-
-          {/* Role Selection */}
-          <div className="grid grid-cols-2 gap-3 mb-8">
-            <button
-              type="button"
-              onClick={() => setSelectedRole('student')}
-              className={`p-4 rounded-xl border-2 transition-all duration-200 ${
-                selectedRole === 'student'
-                  ? 'border-primary bg-primary/5 shadow-md'
-                  : 'border-border hover:border-primary/50'
-              }`}
-            >
-              <GraduationCap className={`w-6 h-6 mx-auto mb-2 ${
-                selectedRole === 'student' ? 'text-primary' : 'text-muted-foreground'
-              }`} />
-              <span className={`text-sm font-medium ${
-                selectedRole === 'student' ? 'text-primary' : 'text-muted-foreground'
-              }`}>
-                O'quvchi
-              </span>
-            </button>
-            
-            <button
-              type="button"
-              onClick={() => setSelectedRole('teacher')}
-              className={`p-4 rounded-xl border-2 transition-all duration-200 ${
-                selectedRole === 'teacher'
-                  ? 'border-primary bg-primary/5 shadow-md'
-                  : 'border-border hover:border-primary/50'
-              }`}
-            >
-              <Users className={`w-6 h-6 mx-auto mb-2 ${
-                selectedRole === 'teacher' ? 'text-primary' : 'text-muted-foreground'
-              }`} />
-              <span className={`text-sm font-medium ${
-                selectedRole === 'teacher' ? 'text-primary' : 'text-muted-foreground'
-              }`}>
-                O'qituvchi
-              </span>
-            </button>
-          </div>
+          {isAdminRoute || searchParams.get('role') === 'admin' ? (
+            <>
+              <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">
+                Admin/Teacher Kirish
+              </h2>
+              <p className="text-muted-foreground mb-8">
+                Admin paneliga kirish
+              </p>
+            </>
+          ) : (
+            <>
+              <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">
+                O'quvchi Kirish
+              </h2>
+              <p className="text-muted-foreground mb-8">
+                O'qituvchi tomonidan berilgan email va parol bilan kiring
+              </p>
+            </>
+          )}
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="space-y-2">
@@ -211,22 +203,19 @@ export default function LoginPage() {
             </Button>
           </form>
 
-          <p className="text-center text-muted-foreground mt-6">
-            Hisobingiz yo'qmi?{' '}
-            <Link to="/register" className="text-primary font-medium hover:underline">
-              Ro'yxatdan o'ting
-            </Link>
-          </p>
-
-          {/* Demo credentials */}
-          <div className="mt-8 p-4 bg-muted/50 rounded-xl border border-border">
-            <p className="text-xs text-muted-foreground text-center mb-2">Demo kirish uchun:</p>
-            <div className="text-xs text-center space-y-1">
-              <p><span className="text-muted-foreground">O'quvchi:</span> <code className="text-primary">student@demo.uz</code></p>
-              <p><span className="text-muted-foreground">O'qituvchi:</span> <code className="text-primary">teacher@demo.uz</code></p>
-              <p className="text-muted-foreground">(istalgan parol)</p>
+          {!isAdminRoute && searchParams.get('role') !== 'admin' && (
+            <div className="mt-6 p-4 bg-info/10 border border-info/20 rounded-xl">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="w-5 h-5 text-info shrink-0 mt-0.5" />
+                <div className="text-sm text-foreground">
+                  <p className="font-medium mb-1">Eslatma</p>
+                  <p className="text-muted-foreground">
+                    O'quvchilar o'zi ro'yxatdan o'tmaydi. Email va parolni o'qituvchidan oling.
+                  </p>
+                </div>
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </div>

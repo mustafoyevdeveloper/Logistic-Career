@@ -1,4 +1,4 @@
-export type UserRole = 'student' | 'teacher';
+export type UserRole = 'student' | 'teacher' | 'admin';
 
 export interface User {
   id: string;
@@ -10,6 +10,8 @@ export interface User {
   avatar?: string;
   progress?: number;
   currentLevel?: string;
+  isActive?: boolean;
+  isSuspended?: boolean;
 }
 
 export interface Lesson {

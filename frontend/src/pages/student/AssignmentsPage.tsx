@@ -1,4 +1,6 @@
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
+import { apiService } from '@/services/api';
 import { 
   ClipboardList, 
   Clock, 
@@ -8,9 +10,10 @@ import {
   Trophy
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 
 interface Assignment {
-  id: string;
+  _id: string;
   title: string;
   description: string;
   dueDate: string;
@@ -18,47 +21,8 @@ interface Assignment {
   score?: number;
   maxScore: number;
   type: 'quiz' | 'practical' | 'scenario';
+  submission?: any;
 }
-
-const assignments: Assignment[] = [
-  {
-    id: '1',
-    title: 'Logistika asoslari testi',
-    description: 'Logistika tushunchasi, transport turlari va supply chain bo\'yicha 10 ta savol',
-    dueDate: '2024-02-15',
-    status: 'graded',
-    score: 85,
-    maxScore: 100,
-    type: 'quiz',
-  },
-  {
-    id: '2',
-    title: 'Transport tanlash vazifasi',
-    description: 'Berilgan senariy uchun optimal transport turini tanlang va asoslang',
-    dueDate: '2024-02-20',
-    status: 'pending',
-    maxScore: 100,
-    type: 'scenario',
-  },
-  {
-    id: '3',
-    title: 'Marshrut rejalashtirish',
-    description: 'Chicago dan Los Angeles gacha optimal marshrut tuzing',
-    dueDate: '2024-02-25',
-    status: 'pending',
-    maxScore: 100,
-    type: 'practical',
-  },
-  {
-    id: '4',
-    title: 'Rate Confirmation tuzish',
-    description: 'Berilgan ma\'lumotlar asosida Rate Confirmation hujjatini to\'ldiring',
-    dueDate: '2024-02-28',
-    status: 'pending',
-    maxScore: 100,
-    type: 'practical',
-  },
-];
 
 const getStatusColor = (status: Assignment['status']) => {
   switch (status) {
@@ -94,6 +58,27 @@ const getTypeLabel = (type: Assignment['type']) => {
 };
 
 export default function AssignmentsPage() {
+  const [assignments, setAssignments] = useState<Assignment[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    loadAssignments();
+  }, []);
+
+  const loadAssignments = async () => {
+    try {
+      setIsLoading(true);
+      const response = await apiService.request<{ assignments: Assignment[] }>('/assignments');
+      if (response.success && response.data) {
+        setAssignments(response.data.assignments || []);
+      }
+    } catch (error: any) {
+      toast.error(error.message || 'Topshiriqlarni yuklashda xatolik');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const completedCount = assignments.filter(a => a.status === 'graded').length;
   const pendingCount = assignments.filter(a => a.status === 'pending').length;
   const avgScore = assignments
@@ -150,10 +135,16 @@ export default function AssignmentsPage() {
       </div>
 
       {/* Assignments List */}
-      <div className="space-y-4">
-        {assignments.map((assignment) => (
-          <div
-            key={assignment.id}
+      {isLoading ? (
+        <div className="text-center py-12">
+          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-muted-foreground">Yuklanmoqda...</p>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {assignments.map((assignment) => (
+            <div
+              key={assignment._id}
             className="bg-card rounded-xl p-5 border border-border shadow-card hover:shadow-card-hover transition-shadow"
           >
             <div className="flex flex-col sm:flex-row sm:items-center gap-4">
@@ -210,7 +201,8 @@ export default function AssignmentsPage() {
             </div>
           </div>
         ))}
-      </div>
+        </div>
+      )}
     </div>
   );
 }

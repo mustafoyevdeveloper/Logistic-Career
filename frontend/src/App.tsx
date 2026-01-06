@@ -7,7 +7,6 @@ import { AuthProvider, useAuth } from "./contexts/AuthContext";
 
 // Pages
 import LoginPage from "./pages/LoginPage";
-import RegisterPage from "./pages/RegisterPage";
 import NotFound from "./pages/NotFound";
 
 // Student Pages
@@ -20,6 +19,7 @@ import StudentProfilePage from "./pages/student/ProfilePage";
 // Teacher Pages
 import TeacherDashboard from "./pages/teacher/TeacherDashboard";
 import StudentsPage from "./pages/teacher/StudentsPage";
+import GroupsPage from "./pages/teacher/GroupsPage";
 import TeacherAssignmentsPage from "./pages/teacher/AssignmentsPage";
 import TeacherProfilePage from "./pages/teacher/ProfilePage";
 
@@ -29,14 +29,32 @@ import DashboardLayout from "./components/layout/DashboardLayout";
 const queryClient = new QueryClient();
 
 function ProtectedRoute({ children, allowedRole }: { children: React.ReactNode; allowedRole?: 'student' | 'teacher' }) {
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, user, isLoading } = useAuth();
+  
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
   
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
   
-  if (allowedRole && user?.role !== allowedRole) {
-    return <Navigate to={user?.role === 'teacher' ? '/teacher' : '/student'} replace />;
+  // Student blocked tekshirish
+  if (user?.role === 'student' && (user?.isSuspended || !user?.isActive)) {
+    return <Navigate to="/login" replace />;
+  }
+  
+  if (allowedRole && user?.role !== allowedRole && user?.role !== 'admin') {
+    return <Navigate to={user?.role === 'teacher' || user?.role === 'admin' ? '/teacher' : '/student'} replace />;
+  }
+  
+  // Admin ham teacher route'lariga kirishi mumkin
+  if (allowedRole === 'teacher' && user?.role === 'admin') {
+    return <DashboardLayout>{children}</DashboardLayout>;
   }
   
   return <DashboardLayout>{children}</DashboardLayout>;
@@ -49,11 +67,11 @@ function AppRoutes() {
     <Routes>
       {/* Public Routes */}
       <Route path="/login" element={
-        isAuthenticated ? <Navigate to={user?.role === 'teacher' ? '/teacher' : '/student'} replace /> : <LoginPage />
+        isAuthenticated ? <Navigate to={user?.role === 'teacher' || user?.role === 'admin' ? '/teacher' : '/student'} replace /> : <LoginPage />
       } />
-      <Route path="/register" element={
-        isAuthenticated ? <Navigate to={user?.role === 'teacher' ? '/teacher' : '/student'} replace /> : <RegisterPage />
-      } />
+      
+      {/* Admin/Teacher Login Route */}
+      <Route path="/teacher/admin/role" element={<LoginPage isAdminRoute />} />
       
       {/* Student Routes */}
       <Route path="/student" element={
@@ -78,6 +96,9 @@ function AppRoutes() {
       } />
       <Route path="/teacher/students" element={
         <ProtectedRoute allowedRole="teacher"><StudentsPage /></ProtectedRoute>
+      } />
+      <Route path="/teacher/groups" element={
+        <ProtectedRoute allowedRole="teacher"><GroupsPage /></ProtectedRoute>
       } />
       <Route path="/teacher/assignments" element={
         <ProtectedRoute allowedRole="teacher"><TeacherAssignmentsPage /></ProtectedRoute>

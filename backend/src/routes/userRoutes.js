@@ -9,7 +9,7 @@ import { protect, authorize } from '../middleware/auth.js';
 const router = express.Router();
 
 router.use(protect); // Barcha route'lar protected
-router.use(authorize('teacher')); // Faqat teacher
+router.use(authorize('teacher', 'admin')); // Teacher va admin
 
 router.get('/students', getStudents);
 router.get('/students/:id', getStudent);

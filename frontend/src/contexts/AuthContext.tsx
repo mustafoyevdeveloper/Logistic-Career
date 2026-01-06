@@ -9,6 +9,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (email: string, password: string, role: UserRole) => Promise<void>;
+  adminLogin: (email: string, password: string) => Promise<void>;
   register: (data: RegisterData) => Promise<void>;
   logout: () => void;
   createStudent: (data: CreateStudentData) => Promise<{ student: any; password: string }>;
@@ -75,6 +76,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const adminLogin = async (email: string, password: string) => {
+    try {
+      const response = await apiService.adminLogin(email, password);
+      
+      if (response.success && response.data) {
+        // Token saqlash
+        localStorage.setItem('auth_token', response.data.token);
+        
+        // User ma'lumotlarini saqlash
+        setUser(response.data.user);
+      } else {
+        throw new Error(response.message || 'Kirishda xatolik yuz berdi');
+      }
+    } catch (error: any) {
+      throw new Error(error.message || 'Kirishda xatolik yuz berdi');
+    }
+  };
+
   const register = async (data: RegisterData) => {
     try {
       const response = await apiService.register(data);
@@ -120,6 +139,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isAuthenticated: !!user,
         isLoading,
         login,
+        adminLogin,
         register,
         logout,
         createStudent,
