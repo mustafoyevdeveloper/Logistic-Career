@@ -37,7 +37,7 @@ export default function LoginPage({ isAdminRoute = false }: LoginPageProps) {
   useEffect(() => {
     if (searchParams.get('role') === 'admin' || isAdminRoute) {
       // Admin login uchun default qiymatlar
-      setEmail('mustafoyevdevelopment@gmail.com');
+      setEmail('');
     }
   }, [searchParams, isAdminRoute]);
 
