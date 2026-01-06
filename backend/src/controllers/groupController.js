@@ -20,9 +20,24 @@ export const getGroups = async (req, res) => {
       .sort({ createdAt: -1 })
       .lean();
 
+    // Har bir guruh uchun o'quvchilar sonini hisoblash
+    const groupsWithCount = await Promise.all(
+      groups.map(async (group) => {
+        const studentCount = await User.countDocuments({ 
+          group: group._id, 
+          role: 'student',
+          isActive: true 
+        });
+        return {
+          ...group,
+          studentCount,
+        };
+      })
+    );
+
     res.json({
       success: true,
-      data: { groups },
+      data: { groups: groupsWithCount },
     });
   } catch (error) {
     res.status(500).json({

@@ -105,13 +105,13 @@ export default function LessonsPage() {
               <div className="border-t border-border">
                 {module.lessons?.map((lesson: any, lessonIndex: number) => (
                   <div
-                    key={lesson.id}
+                    key={lesson._id || lessonIndex}
                     className={cn(
                       "p-4 sm:p-5 border-b border-border last:border-b-0 transition-all duration-200",
                       lesson.isLocked 
                         ? "opacity-60 cursor-not-allowed" 
                         : "hover:bg-muted/50 cursor-pointer",
-                      selectedLesson === lesson.id && "bg-primary/5 border-l-4 border-l-primary"
+                      selectedLesson === lesson._id && "bg-primary/5 border-l-4 border-l-primary"
                     )}
                     onClick={() => !lesson.isLocked && setSelectedLesson(lesson._id)}
                   >

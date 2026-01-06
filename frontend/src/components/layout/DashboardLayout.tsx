@@ -14,6 +14,7 @@ import {
   Menu,
   X,
   ChevronRight,
+  Settings,
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
@@ -37,6 +38,7 @@ const teacherNavItems: NavItem[] = [
   { icon: BookOpen, label: 'O\'quvchilar', href: '/teacher/students' },
   { icon: Users, label: 'Guruhlar', href: '/teacher/groups' },
   { icon: ClipboardList, label: 'Topshiriqlar', href: '/teacher/assignments' },
+  { icon: Settings, label: 'Sozlamalar', href: '/teacher/settings' },
   { icon: User, label: 'Profil', href: '/teacher/profile' },
 ];
 
@@ -161,7 +163,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         {/* Logo */}
         <div className="h-16 flex items-center px-6 border-b border-border">
           <Logo variant="icon" size="md" />
-          <span className="ml-3 text-xl font-bold text-foreground">Logistic Career</span>
+          <span className="ml-3 text-xl font-bold text-foreground">LogiLearn</span>
         </div>
 
         {/* Navigation */}

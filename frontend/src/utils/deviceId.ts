@@ -1,18 +1,25 @@
 /**
  * Device ID yaratish va saqlash
- * Har bir qurilma uchun unique ID
+ * Har bir browser session uchun unique ID
+ * Har bir email uchun alohida deviceId (bir qurilmada bir nechta accountdan kirish mumkin)
  */
-const DEVICE_ID_KEY = 'logistic_career_device_id';
+const DEVICE_ID_PREFIX = 'logistic_career_device_';
 
-export const getDeviceId = (): string => {
+export const getDeviceId = (email?: string): string => {
+  // Agar email berilgan bo'lsa, email-ga bog'liq deviceId
+  // Agar email berilmagan bo'lsa, umumiy deviceId
+  const key = email 
+    ? `${DEVICE_ID_PREFIX}${email.toLowerCase()}`
+    : `${DEVICE_ID_PREFIX}default`;
+
   // LocalStorage'dan olish
-  let deviceId = localStorage.getItem(DEVICE_ID_KEY);
+  let deviceId = localStorage.getItem(key);
 
   // Agar yo'q bo'lsa, yangi yaratish
   if (!deviceId) {
-    // Unique ID yaratish
+    // Unique ID yaratish (browser session + timestamp + random)
     deviceId = generateUniqueId();
-    localStorage.setItem(DEVICE_ID_KEY, deviceId);
+    localStorage.setItem(key, deviceId);
   }
 
   return deviceId;
@@ -33,7 +40,19 @@ const generateUniqueId = (): string => {
 /**
  * Device ID ni tozalash (logout yoki reset uchun)
  */
-export const clearDeviceId = (): void => {
-  localStorage.removeItem(DEVICE_ID_KEY);
+export const clearDeviceId = (email?: string): void => {
+  if (email) {
+    // Faqat shu email uchun deviceId ni tozalash
+    const key = `${DEVICE_ID_PREFIX}${email.toLowerCase()}`;
+    localStorage.removeItem(key);
+  } else {
+    // Barcha deviceId larni tozalash
+    const keys = Object.keys(localStorage);
+    keys.forEach(key => {
+      if (key.startsWith(DEVICE_ID_PREFIX)) {
+        localStorage.removeItem(key);
+      }
+    });
+  }
 };
 

@@ -12,7 +12,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { UserPlus, Copy, Check } from 'lucide-react';
+import { UserPlus, Copy, Check, Eye, EyeOff } from 'lucide-react';
 import { apiService } from '@/services/api';
 
 interface CreateStudentDialogProps {
@@ -33,6 +33,7 @@ export default function CreateStudentDialog({ onSuccess }: CreateStudentDialogPr
   const [groups, setGroups] = useState<any[]>([]);
   const [createdPassword, setCreatedPassword] = useState<string | null>(null);
   const [passwordCopied, setPasswordCopied] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
     loadGroups();
@@ -214,13 +215,27 @@ export default function CreateStudentDialog({ onSuccess }: CreateStudentDialogPr
 
             <div className="space-y-2">
               <Label htmlFor="password">Parol (ixtiyoriy - avtomatik yaratiladi)</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="Agar bo'sh qoldirsangiz, avtomatik yaratiladi"
-                value={formData.password}
-                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-              />
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Agar bo'sh qoldirsangiz, avtomatik yaratiladi"
+                  value={formData.password}
+                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                  className="pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  {showPassword ? (
+                    <EyeOff className="w-4 h-4" />
+                  ) : (
+                    <Eye className="w-4 h-4" />
+                  )}
+                </button>
+              </div>
             </div>
 
             <div className="flex gap-2">

@@ -127,8 +127,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = () => {
+    // Email bilan deviceId ni tozalash
+    if (user?.email) {
+      clearDeviceId(user.email);
+    }
     localStorage.removeItem('auth_token');
-    clearDeviceId();
     setUser(null);
   };
 

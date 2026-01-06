@@ -22,6 +22,7 @@ import StudentsPage from "./pages/teacher/StudentsPage";
 import GroupsPage from "./pages/teacher/GroupsPage";
 import TeacherAssignmentsPage from "./pages/teacher/AssignmentsPage";
 import TeacherProfilePage from "./pages/teacher/ProfilePage";
+import SettingsPage from "./pages/teacher/SettingsPage";
 
 // Layout
 import DashboardLayout from "./components/layout/DashboardLayout";
@@ -105,6 +106,9 @@ function AppRoutes() {
       } />
       <Route path="/teacher/profile" element={
         <ProtectedRoute allowedRole="teacher"><TeacherProfilePage /></ProtectedRoute>
+      } />
+      <Route path="/teacher/settings" element={
+        <ProtectedRoute allowedRole="teacher"><SettingsPage /></ProtectedRoute>
       } />
       
       {/* Redirect root to login */}

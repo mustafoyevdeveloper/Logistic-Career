@@ -165,6 +165,86 @@ export const getStudent = async (req, res) => {
  * @route   GET /api/users/groups
  * @access  Private (Teacher)
  */
+/**
+ * @desc    Sozlamalarni olish
+ * @route   GET /api/users/settings
+ * @access  Private (Teacher/Admin)
+ */
+export const getSettings = async (req, res) => {
+  try {
+    if (req.user.role !== 'teacher' && req.user.role !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Faqat o\'qituvchilar yoki admin sozlamalarni ko\'ra oladi',
+      });
+    }
+
+    // User'dan sozlamalarni olish
+    const user = await User.findById(req.user._id).select('settings');
+    
+    const defaultSettings = {
+      emailNotifications: true,
+      newAssignmentNotifications: true,
+      aiGrading: true,
+      showAiScores: true,
+    };
+
+    res.json({
+      success: true,
+      data: {
+        settings: user.settings || defaultSettings,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Server xatosi',
+    });
+  }
+};
+
+/**
+ * @desc    Sozlamalarni yangilash
+ * @route   PUT /api/users/settings
+ * @access  Private (Teacher/Admin)
+ */
+export const updateSettings = async (req, res) => {
+  try {
+    if (req.user.role !== 'teacher' && req.user.role !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Faqat o\'qituvchilar yoki admin sozlamalarni yangilashi mumkin',
+      });
+    }
+
+    const { emailNotifications, newAssignmentNotifications, aiGrading, showAiScores } = req.body;
+
+    const user = await User.findById(req.user._id);
+    
+    user.settings = {
+      emailNotifications: emailNotifications !== undefined ? emailNotifications : user.settings?.emailNotifications ?? true,
+      newAssignmentNotifications: newAssignmentNotifications !== undefined ? newAssignmentNotifications : user.settings?.newAssignmentNotifications ?? true,
+      aiGrading: aiGrading !== undefined ? aiGrading : user.settings?.aiGrading ?? true,
+      showAiScores: showAiScores !== undefined ? showAiScores : user.settings?.showAiScores ?? true,
+    };
+
+    await user.save();
+
+    res.json({
+      success: true,
+      message: 'Sozlamalar muvaffaqiyatli yangilandi',
+      data: {
+        settings: user.settings,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Server xatosi',
+    });
+  }
+};
+
 export const getGroups = async (req, res) => {
   try {
     if (req.user.role !== 'teacher' && req.user.role !== 'admin') {

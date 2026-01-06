@@ -95,6 +95,25 @@ const userSchema = new mongoose.Schema(
       ref: 'User',
       default: null,
     },
+    // Sozlamalar (faqat teacher/admin uchun)
+    settings: {
+      emailNotifications: {
+        type: Boolean,
+        default: true,
+      },
+      newAssignmentNotifications: {
+        type: Boolean,
+        default: true,
+      },
+      aiGrading: {
+        type: Boolean,
+        default: true,
+      },
+      showAiScores: {
+        type: Boolean,
+        default: true,
+      },
+    },
   },
   {
     timestamps: true,

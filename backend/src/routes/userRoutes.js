@@ -3,6 +3,8 @@ import {
   getStudents,
   getStudent,
   getGroups,
+  getSettings,
+  updateSettings,
 } from '../controllers/userController.js';
 import { protect, authorize } from '../middleware/auth.js';
 
@@ -14,6 +16,8 @@ router.use(authorize('teacher', 'admin')); // Teacher va admin
 router.get('/students', getStudents);
 router.get('/students/:id', getStudent);
 router.get('/groups', getGroups);
+router.get('/settings', getSettings);
+router.put('/settings', updateSettings);
 
 export default router;
 
