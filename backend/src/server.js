@@ -45,52 +45,45 @@ const uniqueOrigins = [...new Set(allowedOrigins)];
 console.log('🌐 Allowed CORS origins:', uniqueOrigins);
 console.log('🌍 Environment:', isProduction ? 'PRODUCTION' : 'DEVELOPMENT');
 
-app.use(cors({
-  origin: (origin, callback) => {
+// CORS sozlamalari - soddalashtirilgan va barqaror
+const corsOptions = {
+  origin: function (origin, callback) {
     // Agar origin yo'q bo'lsa (masalan, Postman yoki mobile app), ruxsat berish
     if (!origin) {
-      console.log('⚠️ No origin header, allowing request');
       return callback(null, true);
     }
     
-    // Production'da BARCHA Vercel URL'larni qo'llab-quvvatlash (preview va production)
-    if (isProduction && (origin.includes('vercel.app') || origin.includes('vercel.com'))) {
-      console.log('✅ Vercel origin allowed (production):', origin);
-      return callback(null, true);
-    }
-    
-    // Development'da ham Vercel URL'larni qo'llab-quvvatlash
+    // BARCHA Vercel URL'larni qo'llab-quvvatlash
     if (origin.includes('vercel.app') || origin.includes('vercel.com')) {
-      console.log('✅ Vercel origin allowed:', origin);
       return callback(null, true);
     }
     
-    console.log('🔍 Request origin:', origin);
-    
-    // Agar origin ruxsat berilgan ro'yxatda bo'lsa
+    // Ruxsat berilgan origin'lar ro'yxatida bo'lsa
     if (uniqueOrigins.includes(origin)) {
-      console.log('✅ Origin allowed:', origin);
-      callback(null, true);
-    } else {
-      console.log('❌ Origin not allowed:', origin);
-      console.log('📋 Allowed origins:', uniqueOrigins);
-      // Production'da xatolikni yengilroq qilish - barcha so'rovlarni ruxsat berish
-      if (isProduction) {
-        console.log('⚠️ Production mode: Allowing origin anyway');
-        callback(null, true);
-      } else {
-        // Development'da ham yengilroq qilish
-        console.log('⚠️ Development mode: Allowing origin anyway');
-        callback(null, true);
-      }
+      return callback(null, true);
     }
+    
+    // Production'da barcha so'rovlarni ruxsat berish (xavfsizlik uchun)
+    if (isProduction) {
+      return callback(null, true);
+    }
+    
+    // Development'da ham ruxsat berish
+    callback(null, true);
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Device-ID'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Device-ID', 'Accept'],
   exposedHeaders: ['Content-Type', 'Authorization'],
   maxAge: 86400, // 24 hours
-}));
+  preflightContinue: false,
+  optionsSuccessStatus: 204,
+};
+
+app.use(cors(corsOptions));
+
+// OPTIONS request'larini to'g'ri handle qilish
+app.options('*', cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
