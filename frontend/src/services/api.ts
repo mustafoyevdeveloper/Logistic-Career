@@ -167,8 +167,19 @@ class ApiService {
       }
 
       // Boshqa xatoliklar (400, 401, 403, 404) - bu backend ishlayapti, lekin so'rov noto'g'ri
-      const data = await response.json();
-      throw new Error(data.message || 'Xatolik yuz berdi');
+      let errorMessage = 'Xatolik yuz berdi';
+      try {
+        const data = await response.json();
+        errorMessage = data.message || data.debug?.message || errorMessage;
+        console.error('❌ Backend xatolik:', {
+          status: response.status,
+          message: data.message,
+          debug: data.debug,
+        });
+      } catch (parseError) {
+        errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+      }
+      throw new Error(errorMessage);
     } catch (error: any) {
       lastError = error;
 
@@ -264,9 +275,15 @@ class ApiService {
   }
 
   async adminLogin(email: string, password: string) {
+    // Debug logging
+    console.log('📤 Admin login request:', { email, password: password ? '***' : undefined });
+    
+    const requestBody = { email, password };
+    console.log('📤 Request body:', JSON.stringify(requestBody));
+    
     return this.request<{ user: any; token: string }>('/auth/admin-login', {
       method: 'POST',
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify(requestBody),
     });
   }
 

@@ -283,12 +283,45 @@ export const updatePassword = async (req, res) => {
  */
 export const adminLogin = async (req, res) => {
   try {
+    // Request body'ni log qilish (debug uchun)
+    console.log('📥 Admin login request body:', JSON.stringify(req.body));
+    console.log('📥 Admin login request headers:', {
+      'content-type': req.headers['content-type'],
+      'content-length': req.headers['content-length'],
+    });
+    
+    // Body bo'sh bo'lsa, xatolik
+    if (!req.body || Object.keys(req.body).length === 0) {
+      console.log('❌ Empty request body');
+      return res.status(400).json({
+        success: false,
+        message: 'Request body bo\'sh. Email va parol kiritilishi shart',
+        debug: {
+          bodyType: typeof req.body,
+          bodyValue: req.body,
+        },
+      });
+    }
+    
     const { email, password } = req.body;
 
+    // Email va password tekshirish
     if (!email || !password) {
+      console.log('❌ Missing email or password:', { 
+        email: email || 'undefined',
+        password: password ? '***' : 'undefined',
+        bodyKeys: Object.keys(req.body || {}),
+        bodyType: typeof req.body,
+      });
       return res.status(400).json({
         success: false,
         message: 'Email va parol kiritilishi shart',
+        debug: {
+          receivedEmail: !!email,
+          receivedPassword: !!password,
+          bodyKeys: Object.keys(req.body || {}),
+          bodyType: typeof req.body,
+        },
       });
     }
 
@@ -306,7 +339,13 @@ export const adminLogin = async (req, res) => {
     if ((isAdminEmail1 && isAdminPassword1) || (isAdminEmail2 && isAdminPassword2)) {
       // Admin email'ni aniqlash
       const adminEmail = isAdminEmail1 ? 'TeacherAdmin@role.com' : 'mustafoyevdevelopment@gmail.com';
-      const adminPassword = isAdminEmail1 ? isAdminPassword1 : isAdminPassword2;
+      // Admin parolni aniqlash (boolean emas, string bo'lishi kerak)
+      const adminPassword = isAdminEmail1 
+        ? 'mustafoyevdevelopment@gmail.com' 
+        : '12345678!@WEB';
+      
+      // Debug: parol to'g'ri ekanligini tekshirish
+      console.log('🔑 Admin password type:', typeof adminPassword, 'length:', adminPassword?.length);
       
       try {
         // Admin user yaratish yoki topish
@@ -318,17 +357,20 @@ export const adminLogin = async (req, res) => {
           // Yangi admin yaratish
           console.log('📝 Creating new admin user:', adminEmail.toLowerCase());
           try {
-            // User.create() o'rniga new User() ishlatish, chunki pre-save hook avtomatik hash qiladi
+            // Parolni hash qilish (pre-save hook validation'dan oldin ishlashi uchun)
+            const salt = await bcrypt.genSalt(10);
+            const hashedPassword = await bcrypt.hash(adminPassword, salt);
+            
             admin = new User({
               email: adminEmail.toLowerCase(),
-              password: adminPassword, // Pre-save hook avtomatik hash qiladi
+              password: hashedPassword, // Hash qilingan parol
               firstName: 'Admin',
               lastName: 'Teacher',
               role: 'admin',
               isActive: true,
               isSuspended: false,
             });
-            await admin.save(); // Pre-save hook parolni hash qiladi
+            await admin.save({ validateBeforeSave: true });
             console.log('✅ Admin user created successfully');
           } catch (createError) {
             // Agar unique constraint xatolik bo'lsa, qayta topish
@@ -343,12 +385,15 @@ export const adminLogin = async (req, res) => {
               }
               
               // Parol va role'ni yangilash
-              // Parolni to'g'ridan-to'g'ri o'rnatish, pre-save hook avtomatik hash qiladi
-              admin.password = adminPassword;
+              // Parolni hash qilish (pre-save hook validation'dan oldin ishlashi uchun)
+              const salt = await bcrypt.genSalt(10);
+              const hashedPassword = await bcrypt.hash(adminPassword, salt);
+              
+              admin.password = hashedPassword; // Hash qilingan parol
               admin.role = 'admin';
               admin.isActive = true;
               admin.isSuspended = false;
-              await admin.save(); // Pre-save hook parolni hash qiladi
+              await admin.save({ validateBeforeSave: true });
               console.log('✅ Admin updated successfully');
             } else {
               throw createError;
@@ -372,12 +417,15 @@ export const adminLogin = async (req, res) => {
           // Agar parol match qilmasa yoki admin role noto'g'ri bo'lsa, yangilash
           if (!isPasswordMatch || admin.role !== 'admin') {
             console.log('🔄 Updating admin password and role...');
-            // Parolni to'g'ridan-to'g'ri o'rnatish, pre-save hook avtomatik hash qiladi
-            admin.password = adminPassword;
+            // Parolni hash qilish (pre-save hook validation'dan oldin ishlashi uchun)
+            const salt = await bcrypt.genSalt(10);
+            const hashedPassword = await bcrypt.hash(adminPassword, salt);
+            
+            admin.password = hashedPassword; // Hash qilingan parol
             admin.role = 'admin';
             admin.isActive = true;
             admin.isSuspended = false;
-            await admin.save(); // Pre-save hook parolni hash qiladi
+            await admin.save({ validateBeforeSave: true });
             console.log('✅ Admin updated successfully');
           }
         }

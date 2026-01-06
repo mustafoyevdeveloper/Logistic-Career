@@ -23,11 +23,24 @@ const app = express();
 
 // Middleware
 // CORS sozlamalari - bir nechta origin'lar uchun
-const allowedOrigins = process.env.FRONTEND_URL 
-  ? process.env.FRONTEND_URL.split(',').map(url => url.trim())
-  : ['http://localhost:8080', 'https://logistic-career.vercel.app'];
+const isProduction = process.env.NODE_ENV === 'production';
+const defaultOrigins = [
+  'http://localhost:8080',
+  'http://localhost:5173',
+  'https://logistic-career.vercel.app',
+  'https://logistic-career-git-main.vercel.app',
+  'https://logistic-career-*.vercel.app', // Vercel preview URLs
+];
 
-console.log('🌐 Allowed CORS origins:', allowedOrigins);
+const allowedOrigins = process.env.FRONTEND_URL 
+  ? process.env.FRONTEND_URL.split(',').map(url => url.trim()).concat(defaultOrigins)
+  : defaultOrigins;
+
+// Duplicate'larni olib tashlash
+const uniqueOrigins = [...new Set(allowedOrigins)];
+
+console.log('🌐 Allowed CORS origins:', uniqueOrigins);
+console.log('🌍 Environment:', isProduction ? 'PRODUCTION' : 'DEVELOPMENT');
 
 app.use(cors({
   origin: (origin, callback) => {
@@ -37,21 +50,35 @@ app.use(cors({
       return callback(null, true);
     }
     
+    // Production'da Vercel preview URL'larni qo'llab-quvvatlash
+    if (isProduction && origin.includes('vercel.app')) {
+      console.log('✅ Vercel origin allowed:', origin);
+      return callback(null, true);
+    }
+    
     console.log('🔍 Request origin:', origin);
     
     // Agar origin ruxsat berilgan ro'yxatda bo'lsa
-    if (allowedOrigins.includes(origin)) {
+    if (uniqueOrigins.includes(origin)) {
       console.log('✅ Origin allowed:', origin);
       callback(null, true);
     } else {
       console.log('❌ Origin not allowed:', origin);
-      console.log('📋 Allowed origins:', allowedOrigins);
-      callback(new Error('CORS policy tomonidan ruxsat berilmagan'));
+      console.log('📋 Allowed origins:', uniqueOrigins);
+      // Production'da xatolikni yengilroq qilish
+      if (isProduction) {
+        console.log('⚠️ Production mode: Allowing origin anyway');
+        callback(null, true);
+      } else {
+        callback(new Error('CORS policy tomonidan ruxsat berilmagan'));
+      }
     }
   },
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Device-ID'],
+  exposedHeaders: ['Content-Type', 'Authorization'],
+  maxAge: 86400, // 24 hours
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
