@@ -68,6 +68,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         
         // User ma'lumotlarini saqlash
         setUser(response.data.user);
+        
+        // State yangilanishini kutish
+        return response.data.user;
       } else {
         throw new Error(response.message || 'Kirishda xatolik yuz berdi');
       }
@@ -86,6 +89,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         
         // User ma'lumotlarini saqlash
         setUser(response.data.user);
+        
+        // State yangilanishini kutish
+        return response.data.user;
       } else {
         throw new Error(response.message || 'Kirishda xatolik yuz berdi');
       }

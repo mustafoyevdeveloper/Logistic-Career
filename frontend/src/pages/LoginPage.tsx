@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,7 +17,6 @@ import {
   AlertCircle,
   Users
 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
 interface LoginPageProps {
@@ -44,11 +43,16 @@ export default function LoginPage({ isAdminRoute = false }: LoginPageProps) {
   // User state o'zgarganda avtomatik redirect
   useEffect(() => {
     if (isAuthenticated && user) {
-      if (user.role === 'teacher' || user.role === 'admin') {
-        navigate('/teacher', { replace: true });
-      } else if (user.role === 'student') {
-        navigate('/student', { replace: true });
-      }
+      // Kichik kechikish - state to'liq yangilanishi uchun
+      const timer = setTimeout(() => {
+        if (user.role === 'teacher' || user.role === 'admin') {
+          navigate('/teacher', { replace: true });
+        } else if (user.role === 'student') {
+          navigate('/student', { replace: true });
+        }
+      }, 100);
+      
+      return () => clearTimeout(timer);
     }
   }, [isAuthenticated, user, navigate]);
 
@@ -61,16 +65,28 @@ export default function LoginPage({ isAdminRoute = false }: LoginPageProps) {
     
     setIsLoading(true);
     try {
+      let loggedInUser;
+      
       // Admin login tekshirish
       if (isAdminRoute || searchParams.get('role') === 'admin') {
-        await adminLogin(email, password);
+        loggedInUser = await adminLogin(email, password);
         toast.success('Muvaffaqiyatli kirdingiz!');
-        // useEffect orqali avtomatik redirect bo'ladi
       } else {
         // Student login
-        await login(email, password, 'student');
+        loggedInUser = await login(email, password, 'student');
         toast.success('Muvaffaqiyatli kirdingiz!');
-        // useEffect orqali avtomatik redirect bo'ladi
+      }
+      
+      // Login muvaffaqiyatli bo'lganda, user state yangilanishini kutib, redirect qilish
+      if (loggedInUser) {
+        setTimeout(() => {
+          if (loggedInUser.role === 'teacher' || loggedInUser.role === 'admin') {
+            navigate('/teacher', { replace: true });
+          } else if (loggedInUser.role === 'student') {
+            navigate('/student', { replace: true });
+          }
+          setIsLoading(false);
+        }, 200);
       }
     } catch (error: any) {
       toast.error(error.message || 'Xatolik yuz berdi');
@@ -212,6 +228,9 @@ export default function LoginPage({ isAdminRoute = false }: LoginPageProps) {
                   <ArrowRight className="w-5 h-5" />
                 </>
               )}
+            </Button>
+            <Button className="inline-flex items-center justify-center transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&amp;_svg]:pointer-events-none [&amp;_svg]:size-4 [&amp;_svg]:shrink-0 gradient-primary text-primary-foreground shadow-lg hover:shadow-glow active:scale-[0.98] font-semibold h-12 rounded-lg px-[178px] text-base w-100">
+              <a href="/">Bosh sahifa</a>
             </Button>
           </form>
 

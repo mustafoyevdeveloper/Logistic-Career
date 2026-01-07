@@ -80,7 +80,7 @@ export default function TeacherDashboard() {
           
           <div className="flex flex-wrap gap-2 sm:gap-3">
             <Link to="/teacher/students">
-              <Button variant="hero" size="sm" className="bg-accent hover:bg-accent/90 text-accent-foreground text-sm sm:text-base">
+              <Button variant="hero" size="sm" className="bg-accent hover:bg-accent/90 text-white/85 text-sm sm:text-base">
                 O'quvchilarni ko'rish
                 <ArrowRight className="w-3 h-3 sm:w-4 sm:h-4" />
               </Button>

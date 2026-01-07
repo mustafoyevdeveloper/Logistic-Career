@@ -7,6 +7,7 @@ import { AuthProvider, useAuth } from "./contexts/AuthContext";
 
 // Pages
 import LoginPage from "./pages/LoginPage";
+import LandingPage from "./pages/LandingPage";
 import NotFound from "./pages/NotFound";
 
 // Student Pages
@@ -111,8 +112,8 @@ function AppRoutes() {
         <ProtectedRoute allowedRole="teacher"><SettingsPage /></ProtectedRoute>
       } />
       
-      {/* Redirect root to login */}
-      <Route path="/" element={<Navigate to="/login" replace />} />
+      {/* Landing Page */}
+      <Route path="/" element={<LandingPage />} />
       
       {/* 404 */}
       <Route path="*" element={<NotFound />} />

@@ -94,6 +94,7 @@ export default function StudentsPage() {
     email: '',
     password: '',
   });
+  const [passwordUpdated, setPasswordUpdated] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
   // Ma'lumotlarni yuklash
@@ -154,10 +155,12 @@ export default function StudentsPage() {
     }
   };
 
-  const handleEdit = (student: Student) => {
+  const handleEdit = (student: Student, e?: React.MouseEvent) => {
     // Event propagation'ni to'xtatish (search input'ga focus qilinmasligi uchun)
-    event?.stopPropagation?.();
-    event?.preventDefault?.();
+    if (e) {
+      e.stopPropagation();
+      e.preventDefault();
+    }
     
     setStudentToEdit(student);
     setEditForm({
@@ -167,6 +170,7 @@ export default function StudentsPage() {
       email: student.email,
       password: '', // Parol har doim bo'sh bo'ladi (yangi parol kiritish uchun)
     });
+    setPasswordUpdated(false); // Reset password updated flag
     setEditDialogOpen(true);
   };
 
@@ -180,13 +184,18 @@ export default function StudentsPage() {
       if (editForm.lastName) updateData.lastName = editForm.lastName;
       if (editForm.groupId !== undefined) updateData.groupId = editForm.groupId;
       if (editForm.email) updateData.email = editForm.email;
-      if (editForm.password) updateData.password = editForm.password;
+      if (editForm.password) {
+        updateData.password = editForm.password;
+        setPasswordUpdated(true); // Parol yangilanganini belgilash
+      }
 
       await apiService.updateStudent(studentToEdit._id, updateData);
       toast.success('O\'quvchi muvaffaqiyatli yangilandi');
       setEditDialogOpen(false);
       setStudentToEdit(null);
       setEditForm({ firstName: '', lastName: '', groupId: '', email: '', password: '' });
+      setPasswordUpdated(false);
+      setSearchQuery(''); // Qidiruvni tozalash
       loadData();
     } catch (error: any) {
       toast.error(error.message || 'O\'quvchini yangilashda xatolik');
@@ -477,8 +486,11 @@ export default function StudentsPage() {
                 <Input
                   type={showPassword ? 'text' : 'password'}
                   value={editForm.password}
-                  onChange={(e) => setEditForm({ ...editForm, password: e.target.value })}
-                  placeholder="Parol o'zgartirish uchun kiriting"
+                  onChange={(e) => {
+                    setEditForm({ ...editForm, password: e.target.value });
+                    setPasswordUpdated(false); // Parol o'zgarganda flag'ni reset qilish
+                  }}
+                  placeholder={passwordUpdated ? "Parol yangilandi. Yangi parol kiriting" : "Parol o'zgartirish uchun kiriting"}
                   className="pr-10"
                 />
                 <button
@@ -494,7 +506,11 @@ export default function StudentsPage() {
                 </button>
               </div>
               <p className="text-xs text-muted-foreground">
-                Parol o'zgartirish uchun yangi parol kiriting. Bo'sh qoldirilsa, parol o'zgarmaydi.
+                {passwordUpdated ? (
+                  <span className="text-success">Parol muvaffaqiyatli yangilandi. Keyingi marta yangi parolni kiriting.</span>
+                ) : (
+                  "Parol o'zgartirish uchun yangi parol kiriting. Bo'sh qoldirilsa, parol o'zgarmaydi."
+                )}
               </p>
             </div>
             <div className="space-y-2">
