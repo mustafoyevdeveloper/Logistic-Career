@@ -21,6 +21,8 @@ import StudentProfilePage from "./pages/student/ProfilePage";
 
 // Teacher Pages
 import TeacherDashboard from "./pages/teacher/TeacherDashboard";
+import TeacherLessonsPage from "./pages/teacher/LessonsPage";
+import TeacherLessonDetailPage from "./pages/teacher/LessonDetailPage";
 import StudentsPage from "./pages/teacher/StudentsPage";
 import GroupsPage from "./pages/teacher/GroupsPage";
 import TeacherAssignmentsPage from "./pages/teacher/AssignmentsPage";
@@ -159,6 +161,12 @@ function AppRoutes() {
       {/* Teacher Routes */}
       <Route path="/teacher" element={
         <ProtectedRoute allowedRole="teacher"><TeacherDashboard /></ProtectedRoute>
+      } />
+      <Route path="/teacher/lessons" element={
+        <ProtectedRoute allowedRole="teacher"><TeacherLessonsPage /></ProtectedRoute>
+      } />
+      <Route path="/teacher/lessons/:day" element={
+        <ProtectedRoute allowedRole="teacher"><TeacherLessonDetailPage /></ProtectedRoute>
       } />
       <Route path="/teacher/students" element={
         <ProtectedRoute allowedRole="teacher"><StudentsPage /></ProtectedRoute>
