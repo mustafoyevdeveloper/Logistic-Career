@@ -32,7 +32,9 @@ const queryClient = new QueryClient();
 
 function ProtectedRoute({ children, allowedRole }: { children: React.ReactNode; allowedRole?: 'student' | 'teacher' }) {
   const { isAuthenticated, user, isLoading } = useAuth();
+  const location = useLocation();
   
+  // Loading holati
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -41,21 +43,31 @@ function ProtectedRoute({ children, allowedRole }: { children: React.ReactNode; 
     );
   }
   
+  // Authenticated emas bo'lsa, login sahifasiga redirect
   if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
+    // Faqat login sahifasida bo'lmasa redirect qilish (infinite loop'ni oldini olish uchun)
+    if (location.pathname !== '/login') {
+      return <Navigate to="/login" replace />;
+    }
+    return null; // Login sahifasida bo'lsa, hech narsa qaytarmaslik
   }
   
   // Student blocked tekshirish
   if (user?.role === 'student' && (user?.isSuspended || !user?.isActive)) {
-    return <Navigate to="/login" replace />;
+    if (location.pathname !== '/login') {
+      return <Navigate to="/login" replace />;
+    }
+    return null;
   }
   
+  // Role tekshiruvi
   if (allowedRole && user?.role !== allowedRole && user?.role !== 'admin') {
-    // Agar user role allowedRole bilan mos kelmasa va admin ham bo'lmasa, redirect qilish
-    // Bu yerda user?.role faqat 'student' yoki 'teacher' bo'lishi mumkin (admin emas)
-    const userRole = user?.role;
-    const redirectTo = userRole === 'teacher' ? '/teacher' : '/student';
-    return <Navigate to={redirectTo} replace />;
+    const redirectTo = user?.role === 'teacher' ? '/teacher' : '/student';
+    // Faqat hozirgi path redirectTo dan farq qilsa redirect qilish
+    if (location.pathname !== redirectTo) {
+      return <Navigate to={redirectTo} replace />;
+    }
+    return null;
   }
   
   // Admin ham teacher route'lariga kirishi mumkin
@@ -66,16 +78,24 @@ function ProtectedRoute({ children, allowedRole }: { children: React.ReactNode; 
   return <DashboardLayout>{children}</DashboardLayout>;
 }
 
-function LoginRoute() {
+function LoginRouteWrapper() {
   const { isAuthenticated, user, isLoading } = useAuth();
   const location = useLocation();
   
+  // Loading holati
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+  
   // Agar authenticated bo'lsa va login sahifasida bo'lsak, redirect qilish
-  if (!isLoading && isAuthenticated && user && location.pathname === '/login') {
-    return <Navigate 
-      to={user.role === 'teacher' || user.role === 'admin' ? '/teacher' : '/student'} 
-      replace 
-    />;
+  // location.pathname tekshiruvi infinite loop'ni oldini oladi
+  if (isAuthenticated && user && location.pathname === '/login') {
+    const redirectTo = user.role === 'teacher' || user.role === 'admin' ? '/teacher' : '/student';
+    return <Navigate to={redirectTo} replace />;
   }
   
   return <LoginPage />;
@@ -87,7 +107,7 @@ function AppRoutes() {
   return (
     <Routes>
       {/* Public Routes */}
-      <Route path="/login" element={<LoginRoute />} />
+      <Route path="/login" element={<LoginRouteWrapper />} />
       
       {/* Admin/Teacher Login Route */}
       <Route path="/teacher/admin/role" element={<LoginPage isAdminRoute />} />
