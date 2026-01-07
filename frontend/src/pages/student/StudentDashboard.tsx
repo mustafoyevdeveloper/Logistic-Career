@@ -10,7 +10,8 @@ import {
   ArrowRight,
   TrendingUp,
   Target,
-  Zap
+  Zap,
+  Group
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { apiService } from '@/services/api';
@@ -212,19 +213,16 @@ export default function StudentDashboard() {
           </div>
         </Link>
 
-        <Link to="/student/ai-chat" className="group">
+        <Link to="/student/lessons" className="group">
           <div className="bg-card rounded-2xl p-6 border border-border shadow-card hover:shadow-card-hover hover:border-primary/50 transition-all duration-200">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-xl bg-warning/10 flex items-center justify-center">
-                <MessageSquare className="w-6 h-6 text-warning" />
+                <Group className="w-6 h-6 text-warning" />
               </div>
               <div>
-                <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors">
-                  AI bilan suhbatlashing
+              <h3 className="font-semibold text-sm sm:text-base text-foreground group-hover:text-primary transition-colors">
+                  Darsliklarni ko'rish
                 </h3>
-                <p className="text-sm text-muted-foreground">
-                  Savolingiz bo'lsa AI orqali to'liq javob olishingiz mumkin
-                </p>
               </div>
               <ArrowRight className="w-5 h-5 text-muted-foreground ml-auto group-hover:text-primary group-hover:translate-x-1 transition-all" />
             </div>

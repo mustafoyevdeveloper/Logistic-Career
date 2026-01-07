@@ -191,15 +191,15 @@ export default function TeacherDashboard() {
           </div>
         </Link>
 
-        <Link to="/teacher/groups" className="group">
+        <Link to="/teacher/lesson" className="group">
           <div className="bg-card rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-border shadow-card hover:shadow-card-hover hover:border-primary/50 transition-all duration-200">
             <div className="flex items-center gap-3 sm:gap-4">
               <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl bg-warning/10 flex items-center justify-center shrink-0">
-                <Users className="w-5 h-5 sm:w-6 sm:h-6 text-warning" />
+                <Group className="w-5 h-5 sm:w-6 sm:h-6 text-warning" />
               </div>
               <div className="flex-1 min-w-0">
                 <h3 className="font-semibold text-sm sm:text-base text-foreground group-hover:text-primary transition-colors">
-                  Guruhlarni boshqarish
+                  Darsliklarni ko'rish
                 </h3>
               </div>
               <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground shrink-0 ml-2 group-hover:text-primary group-hover:translate-x-1 transition-all" />
