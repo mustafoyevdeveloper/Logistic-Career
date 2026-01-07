@@ -14,6 +14,7 @@ import NotFound from "./pages/NotFound";
 // Student Pages
 import StudentDashboard from "./pages/student/StudentDashboard";
 import LessonsPage from "./pages/student/LessonsPage";
+import LessonDetailPage from "./pages/student/LessonDetailPage";
 import AIChatPage from "./pages/student/AIChatPage";
 import AssignmentsPage from "./pages/student/AssignmentsPage";
 import StudentProfilePage from "./pages/student/ProfilePage";
@@ -141,6 +142,9 @@ function AppRoutes() {
       } />
       <Route path="/student/lessons" element={
         <ProtectedRoute allowedRole="student"><LessonsPage /></ProtectedRoute>
+      } />
+      <Route path="/student/lessons/:day" element={
+        <ProtectedRoute allowedRole="student"><LessonDetailPage /></ProtectedRoute>
       } />
       <Route path="/student/ai-chat" element={
         <ProtectedRoute allowedRole="student"><AIChatPage /></ProtectedRoute>
