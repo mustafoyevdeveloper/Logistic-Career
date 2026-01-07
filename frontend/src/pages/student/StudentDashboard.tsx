@@ -110,7 +110,7 @@ export default function StudentDashboard() {
               </Button>
             </Link>
             <Link to="/student/ai-chat">
-              <Button variant="outline" className="border-primary-foreground/30 text-white/80 hover:text-white/80 transition duration-400 bg-primary-foreground/10 hover:bg-primary-foreground/15" >
+              <Button variant="outline" className="border-primary-foreground/30 text-black transition duration-400 bg-white/95 hover:bg-white" >
                 AI bilan mashq
               </Button>
             </Link>

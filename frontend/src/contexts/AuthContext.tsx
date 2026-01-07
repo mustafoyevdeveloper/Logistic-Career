@@ -69,6 +69,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // User ma'lumotlarini saqlash
         setUser(response.data.user);
         
+        // isLoading'ni false qilish (login muvaffaqiyatli bo'lganda)
+        setIsLoading(false);
+        
         // State yangilanishini kutish
         return response.data.user;
       } else {
@@ -89,6 +92,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         
         // User ma'lumotlarini saqlash
         setUser(response.data.user);
+        
+        // isLoading'ni false qilish (login muvaffaqiyatli bo'lganda)
+        setIsLoading(false);
         
         // State yangilanishini kutish
         return response.data.user;

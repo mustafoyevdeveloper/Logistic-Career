@@ -65,17 +65,10 @@ export default function LoginPage({ isAdminRoute = false }: LoginPageProps) {
       }
       
       // Login muvaffaqiyatli bo'lganda, user state yangilanishini kutib, redirect qilish
+      // App.tsx'dagi route redirect avtomatik ishlaydi, shuning uchun bu yerda navigate chaqirmaymiz
       if (loggedInUser) {
         setIsLoading(false);
-        // Navigate'ni keyingi render cycle'da qilish
-        // App.tsx'dagi route redirect ham ishlaydi, lekin bu yerda ham qo'shimcha redirect qilamiz
-        requestAnimationFrame(() => {
-          if (loggedInUser.role === 'teacher' || loggedInUser.role === 'admin') {
-            navigate('/teacher', { replace: true });
-          } else if (loggedInUser.role === 'student') {
-            navigate('/student', { replace: true });
-          }
-        });
+        // State yangilanishini kutish - App.tsx'dagi route redirect ishlaydi
       }
     } catch (error: any) {
       toast.error(error.message || 'Xatolik yuz berdi');

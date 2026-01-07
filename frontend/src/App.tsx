@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 
 // Pages
@@ -51,7 +51,11 @@ function ProtectedRoute({ children, allowedRole }: { children: React.ReactNode; 
   }
   
   if (allowedRole && user?.role !== allowedRole && user?.role !== 'admin') {
-    return <Navigate to={user?.role === 'teacher' || user?.role === 'admin' ? '/teacher' : '/student'} replace />;
+    // Agar user role allowedRole bilan mos kelmasa va admin ham bo'lmasa, redirect qilish
+    // Bu yerda user?.role faqat 'student' yoki 'teacher' bo'lishi mumkin (admin emas)
+    const userRole = user?.role;
+    const redirectTo = userRole === 'teacher' ? '/teacher' : '/student';
+    return <Navigate to={redirectTo} replace />;
   }
   
   // Admin ham teacher route'lariga kirishi mumkin
@@ -62,19 +66,28 @@ function ProtectedRoute({ children, allowedRole }: { children: React.ReactNode; 
   return <DashboardLayout>{children}</DashboardLayout>;
 }
 
+function LoginRoute() {
+  const { isAuthenticated, user, isLoading } = useAuth();
+  const location = useLocation();
+  
+  // Agar authenticated bo'lsa va login sahifasida bo'lsak, redirect qilish
+  if (!isLoading && isAuthenticated && user && location.pathname === '/login') {
+    return <Navigate 
+      to={user.role === 'teacher' || user.role === 'admin' ? '/teacher' : '/student'} 
+      replace 
+    />;
+  }
+  
+  return <LoginPage />;
+}
+
 function AppRoutes() {
   const { isAuthenticated, user, isLoading } = useAuth();
   
   return (
     <Routes>
       {/* Public Routes */}
-      <Route path="/login" element={
-        !isLoading && isAuthenticated && user ? (
-          <Navigate to={user.role === 'teacher' || user.role === 'admin' ? '/teacher' : '/student'} replace />
-        ) : (
-          <LoginPage />
-        )
-      } />
+      <Route path="/login" element={<LoginRoute />} />
       
       {/* Admin/Teacher Login Route */}
       <Route path="/teacher/admin/role" element={<LoginPage isAdminRoute />} />
