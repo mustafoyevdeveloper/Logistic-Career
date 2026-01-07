@@ -132,16 +132,16 @@ export default function LoginPage() {
 
           {searchParams.get('role') === 'admin' ? (
             <>
-              <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">
+              <h2 className="text-2xl sm:text-3xl font-bold text-blue-800 mb-2">
                 Admin/O'qituvchi Kirish
               </h2>
               <p className="text-muted-foreground mb-8">
-                Admin/O'qituvchi paneliga kirish
+                Admin/O'qituvchi paneliga kirish. O'quvchilar bu panelga kira olishmaydi.
               </p>
             </>
           ) : (
             <>
-              <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">
+              <h2 className="text-2xl sm:text-3xl font-bold text-blue-800 mb-2">
                 Student Kirish
               </h2>
               <p className="text-muted-foreground mb-8">
@@ -240,7 +240,6 @@ export default function LoginPage() {
               Bosh sahifa
             </Button></a>
 
-          {(searchParams.get('role') === 'student' || !searchParams.get('role')) && (
             <div className="mt-6 p-4 bg-info/10 border border-info/20 rounded-xl">
               <div className="flex items-start gap-3">
                 <AlertCircle className="w-5 h-5 text-info shrink-0 mt-0.5" />
@@ -252,7 +251,7 @@ export default function LoginPage() {
                 </div>
               </div>
             </div>
-          )}
+          
         </div>
       </div>
     </div>
