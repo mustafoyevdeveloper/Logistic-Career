@@ -150,7 +150,7 @@ export default function LoginPage({ isAdminRoute = false }: LoginPageProps) {
                 O'quvchi Kirish
               </h2>
               <p className="text-muted-foreground mb-8">
-                O'qituvchi tomonidan berilgan email va parol bilan kiring
+                O'quvchilar faqatgina o'qituvchi tomonidan berilgan email va parol bilan tizimga kirishlari mumkin
               </p>
             </>
           )}
@@ -222,9 +222,6 @@ export default function LoginPage({ isAdminRoute = false }: LoginPageProps) {
                 <AlertCircle className="w-5 h-5 text-info shrink-0 mt-0.5" />
                 <div className="text-sm text-foreground">
                   <p className="font-medium mb-1">Eslatma</p>
-                  <p className="text-muted-foreground">
-                    O'quvchilar o'zi ro'yxatdan o'tmaydi. Email va parolni o'qituvchidan oling.
-                  </p>
                   <p className="text-red-500 mt-1">
                     Agar tizimga muvafaqiyatli kirgan bo'lsangiz va sahifa bo'sh ko'rinsa sahifani yangilang yoki saytga qayta kiring.
                   </p>
