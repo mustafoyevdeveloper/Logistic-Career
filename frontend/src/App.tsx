@@ -80,14 +80,15 @@ function ProtectedRoute({ children, allowedRole }: { children: React.ReactNode; 
 }
 
 function LoginRouteWrapper() {
-  const { isAuthenticated, user, isLoading } = useAuth();
+  const { isAuthenticated, user, isLoading, isAuthReady } = useAuth();
   const location = useLocation();
   
   // Role parametrini location.search dan o'qish (infinite loop'ni oldini olish uchun)
   const searchParams = new URLSearchParams(location.search);
   const role = searchParams.get('role');
   
-  // Loading holati
+  // Loading holati - isLoading === true bo'lganda redirect qilinmasin
+  // isAuthReady faqat isLoading === false bo'lganda tekshiriladi
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -96,9 +97,30 @@ function LoginRouteWrapper() {
     );
   }
   
-  // Agar authenticated bo'lsa va login sahifasida bo'lsak, redirect qilish
-  // location.pathname tekshiruvi infinite loop'ni oldini oladi
-  if (isAuthenticated && user && location.pathname.startsWith('/login')) {
+  // To'liq tekshiruv: isLoading === false && isAuthenticated && user + role + status
+  // Faqat hammasi tayyor bo'lgandan keyin redirect qilish
+  // Frontend hech qachon taxmin qilmasin "user tayyor bo'lsa kerak"
+  if (!isLoading && isAuthenticated && user && user.role && location.pathname.startsWith('/login')) {
+    // Student uchun qo'shimcha tekshiruvlar - user.isActive undefined bo'lmasligi kerak
+    if (user.role === 'student') {
+      // User to'liq yuklanganga tekshirish (isActive undefined bo'lmasligi kerak)
+      if (user.isActive === undefined) {
+        // User hali to'liq yuklanmagan, kutish
+        return (
+          <div className="min-h-screen flex items-center justify-center">
+            <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+          </div>
+        );
+      }
+      
+      // Student status tekshiruvi
+      if (user.isSuspended || !user.isActive) {
+        // Student blocked bo'lsa, login sahifasida qolish
+        return <LoginPage />;
+      }
+    }
+    
+    // Hammasi tayyor bo'lganda redirect qilish
     const redirectTo = user.role === 'teacher' || user.role === 'admin' ? '/teacher' : '/student';
     return <Navigate to={redirectTo} replace />;
   }

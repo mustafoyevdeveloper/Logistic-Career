@@ -63,10 +63,8 @@ export default function LoginPage() {
       
       // Login muvaffaqiyatli bo'lganda, user state yangilanishini kutib, redirect qilish
       // App.tsx'dagi route redirect avtomatik ishlaydi, shuning uchun bu yerda navigate chaqirmaymiz
-      if (loggedInUser) {
-        setIsLoading(false);
-        // State yangilanishini kutish - App.tsx'dagi route redirect ishlaydi
-      }
+      // setIsLoading(false) AuthContext.tsx da qilinadi, shuning uchun bu yerda chaqirmaymiz
+      // State yangilanishini kutish - App.tsx'dagi route redirect ishlaydi
     } catch (error: any) {
       toast.error(error.message || 'Xatolik yuz berdi');
       setIsLoading(false);
@@ -135,10 +133,10 @@ export default function LoginPage() {
           {searchParams.get('role') === 'admin' ? (
             <>
               <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">
-                Admin/Teacher Kirish
+                Admin/O'qituvchi Kirish
               </h2>
               <p className="text-muted-foreground mb-8">
-                Admin paneliga kirish
+                Admin/O'qituvchi paneliga kirish
               </p>
             </>
           ) : (

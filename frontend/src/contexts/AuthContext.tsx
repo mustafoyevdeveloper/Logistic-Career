@@ -8,6 +8,7 @@ interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  isAuthReady: boolean;
   login: (email: string, password: string, role: UserRole) => Promise<void>;
   adminLogin: (email: string, password: string) => Promise<void>;
   register: (data: RegisterData) => Promise<void>;
@@ -36,6 +37,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isAuthReady, setIsAuthReady] = useState(false);
 
   // Token'dan user ma'lumotlarini yuklash
   useEffect(() => {
@@ -46,13 +48,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           const response = await apiService.getMe();
           if (response.success && response.data) {
             setUser(response.data.user);
+            // User to'liq yuklangandan keyin isAuthReady = true
+            setIsAuthReady(true);
+          } else {
+            // Token yaroqsiz bo'lsa, tozalash
+            localStorage.removeItem('auth_token');
+            setIsAuthReady(true);
           }
         } catch (error) {
           // Token yaroqsiz bo'lsa, tozalash
           localStorage.removeItem('auth_token');
+          setIsAuthReady(true);
         }
+      } else {
+        // Token yo'q bo'lsa ham, auth ready
+        setIsAuthReady(true);
       }
+      // isLoading false bo'lganda, isAuthReady ham true bo'lishi kerak
       setIsLoading(false);
+      // Agar isAuthReady hali false bo'lsa, uni true qilish
+      setIsAuthReady(true);
     };
 
     initAuth();
@@ -68,6 +83,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         
         // User ma'lumotlarini saqlash
         setUser(response.data.user);
+        
+        // User to'liq yuklangandan keyin isAuthReady = true
+        setIsAuthReady(true);
         
         // isLoading'ni false qilish (login muvaffaqiyatli bo'lganda)
         setIsLoading(false);
@@ -92,6 +110,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         
         // User ma'lumotlarini saqlash
         setUser(response.data.user);
+        
+        // User to'liq yuklangandan keyin isAuthReady = true
+        setIsAuthReady(true);
         
         // isLoading'ni false qilish (login muvaffaqiyatli bo'lganda)
         setIsLoading(false);
@@ -154,6 +175,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       localStorage.removeItem('auth_token');
       setUser(null);
+      // Auth ready holatini tozalash
+      setIsAuthReady(false);
+      // isLoading'ni false qilish (logout tugagandan keyin)
+      setIsLoading(false);
     }
   };
 
@@ -163,6 +188,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         user,
         isAuthenticated: !!user,
         isLoading,
+        isAuthReady,
         login,
         adminLogin,
         register,

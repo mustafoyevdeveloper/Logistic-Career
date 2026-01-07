@@ -77,7 +77,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const navItems = user?.role === 'teacher' || user?.role === 'admin' ? teacherNavItems : studentNavItems;
 
   const handleLogout = async () => {
+    // Logout jarayoni to'liq tugaguncha kutish
     await logout();
+    // Faqat logout tugagandan keyin redirect qilish
     navigate('/login?role=student');
   };
 
