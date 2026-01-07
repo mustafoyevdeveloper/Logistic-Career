@@ -229,11 +229,10 @@ export default function LoginPage({ isAdminRoute = false }: LoginPageProps) {
                 </>
               )}
             </Button>
-
           </form>
-          <Button className="inline-flex w-full mt-4 text-base items-center justify-center transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&amp;_svg]:pointer-events-none [&amp;_svg]:size-4 [&amp;_svg]:shrink-0 gradient-primary text-primary-foreground shadow-lg hover:shadow-glow active:scale-[0.98] font-semibold h-12 rounded-lg">
+            <Button className="inline-flex items-center justify-center transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&amp;_svg]:pointer-events-none [&amp;_svg]:size-4 [&amp;_svg]:shrink-0 gradient-primary text-primary-foreground shadow-lg hover:shadow-glow active:scale-[0.98] font-semibold h-12 rounded-lg px-[178px] text-base w-100">
               <a href="/">Bosh sahifa</a>
-          </Button>
+            </Button>
 
           {!isAdminRoute && searchParams.get('role') !== 'admin' && (
             <div className="mt-6 p-4 bg-info/10 border border-info/20 rounded-xl">
