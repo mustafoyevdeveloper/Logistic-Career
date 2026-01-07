@@ -101,8 +101,8 @@ export const updateStudent = async (req, res) => {
       });
     }
 
-    const { firstName, lastName, groupId, email } = req.body;
-    const student = await User.findById(req.params.id);
+    const { firstName, lastName, groupId, email, password } = req.body;
+    const student = await User.findById(req.params.id).select('+password');
 
     if (!student || student.role !== 'student') {
       return res.status(404).json({
@@ -111,8 +111,29 @@ export const updateStudent = async (req, res) => {
       });
     }
 
+    // Ism va familiya yangilash
     if (firstName) student.firstName = firstName;
     if (lastName) student.lastName = lastName;
+    
+    // Email yangilash (agar o'zgartirilgan bo'lsa)
+    if (email && email !== student.email) {
+      // Yangi email tekshirish (boshqa user'da bo'lmasligi kerak)
+      const emailExists = await User.findOne({ email: email.toLowerCase(), _id: { $ne: student._id } });
+      if (emailExists) {
+        return res.status(400).json({
+          success: false,
+          message: 'Bu email allaqachon boshqa foydalanuvchi tomonidan ishlatilmoqda',
+        });
+      }
+      student.email = email.toLowerCase();
+    }
+    
+    // Parol yangilash (agar berilgan bo'lsa)
+    if (password) {
+      student.password = password; // Pre-save hook avtomatik hash qiladi
+    }
+    
+    // Guruh yangilash
     if (groupId !== undefined) {
       const oldGroup = student.group;
       student.group = groupId;
@@ -132,6 +153,47 @@ export const updateStudent = async (req, res) => {
       success: true,
       message: 'O\'quvchi muvaffaqiyatli yangilandi',
       data: { student },
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Server xatosi',
+    });
+  }
+};
+
+/**
+ * @desc    O'quvchi qurilmasini tozalash (logout qilish)
+ * @route   POST /api/students/:id/clear-device
+ * @access  Private (Teacher/Admin)
+ */
+export const clearStudentDevice = async (req, res) => {
+  try {
+    if (req.user.role !== 'teacher' && req.user.role !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Faqat o\'qituvchi yoki admin o\'quvchi qurilmasini tozalashi mumkin',
+      });
+    }
+
+    const student = await User.findById(req.params.id);
+
+    if (!student || student.role !== 'student') {
+      return res.status(404).json({
+        success: false,
+        message: 'O\'quvchi topilmadi',
+      });
+    }
+
+    // Device ma'lumotlarini tozalash
+    student.deviceId = null;
+    student.deviceInfo = undefined;
+    student.lastDeviceLogin = null;
+    await student.save({ validateBeforeSave: false });
+
+    res.json({
+      success: true,
+      message: 'O\'quvchi qurilmasi muvaffaqiyatli tozalandi. O\'quvchi logout qilindi.',
     });
   } catch (error) {
     res.status(500).json({

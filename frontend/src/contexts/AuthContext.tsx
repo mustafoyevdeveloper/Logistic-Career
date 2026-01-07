@@ -126,13 +126,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const logout = () => {
-    // Email bilan deviceId ni tozalash
-    if (user?.email) {
-      clearDeviceId(user.email);
+  const logout = async () => {
+    try {
+      // Backend'ga logout so'rov yuborish (device ma'lumotlarini tozalash uchun)
+      if (user?.role === 'student') {
+        await apiService.logout();
+      }
+    } catch (error) {
+      // Xatolik bo'lsa ham logout qilishni davom ettiramiz
+      console.error('Logout error:', error);
+    } finally {
+      // Email bilan deviceId ni tozalash
+      if (user?.email) {
+        clearDeviceId(user.email);
+      }
+      localStorage.removeItem('auth_token');
+      setUser(null);
     }
-    localStorage.removeItem('auth_token');
-    setUser(null);
   };
 
   return (

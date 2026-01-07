@@ -306,6 +306,12 @@ class ApiService {
     });
   }
 
+  async logout() {
+    return this.request('/auth/logout', {
+      method: 'POST',
+    });
+  }
+
   // Student creation (Teacher/Admin)
   async createStudent(data: {
     email: string;
@@ -346,10 +352,18 @@ class ApiService {
     firstName?: string;
     lastName?: string;
     groupId?: string;
+    email?: string;
+    password?: string;
   }) {
     return this.request<{ student: any }>(`/students/${studentId}`, {
       method: 'PUT',
       body: JSON.stringify(data),
+    });
+  }
+
+  async clearStudentDevice(studentId: string) {
+    return this.request(`/students/${studentId}/clear-device`, {
+      method: 'POST',
     });
   }
 

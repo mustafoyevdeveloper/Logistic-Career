@@ -9,13 +9,15 @@ import {
   Clock, 
   MessageSquare,
   Eye,
+  EyeOff,
   TrendingUp,
   TrendingDown,
   Trash2,
   Ban,
   CheckCircle2,
   Edit2,
-  Plus
+  Plus,
+  LogOut
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { apiService } from '@/services/api';
@@ -46,6 +48,14 @@ interface Student {
   lastName: string;
   group?: string;
   progress: number;
+  deviceId?: string;
+  deviceInfo?: {
+    platform?: string;
+    browser?: string;
+    userAgent?: string;
+    ipAddress?: string;
+  };
+  lastDeviceLogin?: string;
   stats?: {
     completedLessons: number;
     totalLessons: number;
@@ -80,7 +90,10 @@ export default function StudentsPage() {
     firstName: '',
     lastName: '',
     groupId: '',
+    email: '',
+    password: '',
   });
+  const [showPassword, setShowPassword] = useState(false);
 
   // Ma'lumotlarni yuklash
   useEffect(() => {
@@ -146,6 +159,8 @@ export default function StudentsPage() {
       firstName: student.firstName,
       lastName: student.lastName,
       groupId: student.group || '',
+      email: student.email,
+      password: '', // Parol har doim bo'sh bo'ladi (yangi parol kiritish uchun)
     });
     setEditDialogOpen(true);
   };
@@ -154,13 +169,34 @@ export default function StudentsPage() {
     if (!studentToEdit) return;
 
     try {
-      await apiService.updateStudent(studentToEdit._id, editForm);
+      // Faqat to'ldirilgan maydonlarni yuborish
+      const updateData: any = {};
+      if (editForm.firstName) updateData.firstName = editForm.firstName;
+      if (editForm.lastName) updateData.lastName = editForm.lastName;
+      if (editForm.groupId !== undefined) updateData.groupId = editForm.groupId;
+      if (editForm.email) updateData.email = editForm.email;
+      if (editForm.password) updateData.password = editForm.password;
+
+      await apiService.updateStudent(studentToEdit._id, updateData);
       toast.success('O\'quvchi muvaffaqiyatli yangilandi');
       setEditDialogOpen(false);
       setStudentToEdit(null);
+      setEditForm({ firstName: '', lastName: '', groupId: '', email: '', password: '' });
       loadData();
     } catch (error: any) {
       toast.error(error.message || 'O\'quvchini yangilashda xatolik');
+    }
+  };
+
+  const handleClearDevice = async () => {
+    if (!studentToEdit) return;
+
+    try {
+      await apiService.clearStudentDevice(studentToEdit._id);
+      toast.success('O\'quvchi qurilmasi tozalandi. O\'quvchi logout qilindi.');
+      loadData(); // Ma'lumotlarni yangilash
+    } catch (error: any) {
+      toast.error(error.message || 'Qurilmani tozalashda xatolik');
     }
   };
 
@@ -267,6 +303,28 @@ export default function StudentsPage() {
                       </span>
                     )}
                   </div>
+                  {/* Device Info */}
+                  {student.deviceInfo && student.lastDeviceLogin && (
+                    <div className="mt-2 pt-2 border-t border-border/50">
+                      <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                        <span className="flex items-center gap-1">
+                          <span className="w-1.5 h-1.5 rounded-full bg-success"></span>
+                          {student.deviceInfo.platform || 'Unknown'} • {student.deviceInfo.browser || 'Unknown'}
+                        </span>
+                        {student.lastDeviceLogin && (
+                          <span className="flex items-center gap-1">
+                            <Clock className="w-3 h-3" />
+                            {new Date(student.lastDeviceLogin).toLocaleDateString('uz-UZ', {
+                              day: '2-digit',
+                              month: '2-digit',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Progress */}
@@ -387,6 +445,7 @@ export default function StudentsPage() {
                 <Input
                   value={editForm.firstName}
                   onChange={(e) => setEditForm({ ...editForm, firstName: e.target.value })}
+                  placeholder="Ism"
                 />
               </div>
               <div className="space-y-2">
@@ -394,8 +453,44 @@ export default function StudentsPage() {
                 <Input
                   value={editForm.lastName}
                   onChange={(e) => setEditForm({ ...editForm, lastName: e.target.value })}
+                  placeholder="Familiya"
                 />
               </div>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Email</label>
+              <Input
+                type="email"
+                value={editForm.email}
+                onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                placeholder="email@example.com"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Yangi parol (ixtiyoriy)</label>
+              <div className="relative">
+                <Input
+                  type={showPassword ? 'text' : 'password'}
+                  value={editForm.password}
+                  onChange={(e) => setEditForm({ ...editForm, password: e.target.value })}
+                  placeholder="Parol o'zgartirish uchun kiriting"
+                  className="pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  {showPassword ? (
+                    <Eye className="w-4 h-4" />
+                  ) : (
+                    <EyeOff className="w-4 h-4" />
+                  )}
+                </button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Parol o'zgartirish uchun yangi parol kiriting. Bo'sh qoldirilsa, parol o'zgarmaydi.
+              </p>
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium">Guruh</label>
@@ -410,7 +505,34 @@ export default function StudentsPage() {
                 ))}
               </select>
             </div>
-            <div className="flex gap-2">
+            
+            {/* Device Clear Button */}
+            {studentToEdit?.deviceId && (
+              <div className="pt-2 border-t border-border">
+                <div className="flex items-center justify-between mb-2">
+                  <div>
+                    <p className="text-sm font-medium text-foreground">Qurilma ma'lumotlari</p>
+                    <p className="text-xs text-muted-foreground">
+                      O'quvchi hozirda {studentToEdit.deviceInfo?.platform || 'Unknown'} • {studentToEdit.deviceInfo?.browser || 'Unknown'} dan kirgan
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleClearDevice}
+                  className="w-full text-warning hover:text-warning hover:bg-warning/10"
+                >
+                  <LogOut className="w-4 h-4 mr-2" />
+                  Qurilmani tozalash va logout qilish
+                </Button>
+                <p className="text-xs text-muted-foreground mt-1">
+                  O'quvchi avtomatik logout qilinadi va qurilma ma'lumotlari tozalanadi
+                </p>
+              </div>
+            )}
+
+            <div className="flex gap-2 pt-2">
               <Button variant="outline" onClick={() => setEditDialogOpen(false)} className="flex-1">
                 Bekor qilish
               </Button>

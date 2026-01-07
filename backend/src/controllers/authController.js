@@ -122,28 +122,49 @@ export const login = async (req, res) => {
         });
       }
 
-      // Bir email faqat bir qurilmaga bog'lanishi kerak
-      // Lekin bir qurilmada ko'p accountlar bo'lishi mumkin
-      if (user.deviceId && user.deviceId !== deviceId) {
-        return res.status(403).json({
-          success: false,
-          message: 'Bu email boshqa qurilmaga bog\'langan. Faqat bir qurilmadan kirish mumkin.',
-        });
+      // DeviceId format: phoneFingerprint_emailHash_sessionId
+      // Bir xil telefondan boshqa brauzerdan kirishni qo'llab-quvvatlash
+      const deviceIdParts = deviceId.split('_');
+      const phoneFingerprint = deviceIdParts[0] || deviceId; // Telefon fingerprint
+      
+      // Bir email faqat bir qurilmaga (telefonga) bog'lanishi kerak
+      // Lekin bir qurilmada (telefonda) ko'p accountlar bo'lishi mumkin
+      // Bir xil telefondan boshqa brauzerdan kirish mumkin (avvalgi brauzer logout bo'ladi)
+      
+      // Agar user'da deviceId bo'lsa, telefon fingerprint'ni tekshirish
+      if (user.deviceId) {
+        const existingDeviceIdParts = user.deviceId.split('_');
+        const existingPhoneFingerprint = existingDeviceIdParts[0] || user.deviceId;
+        
+        // Agar telefon boshqa bo'lsa, ruxsat bermaslik
+        if (existingPhoneFingerprint !== phoneFingerprint) {
+          return res.status(403).json({
+            success: false,
+            message: 'Bu email boshqa qurilmaga bog\'langan. Faqat bir qurilmadan kirish mumkin.',
+          });
+        }
+        
+        // Agar bir xil telefondan boshqa brauzerdan kirsa, avvalgi brauzer logout bo'ladi
+        // (DeviceId yangilanadi, bu yangi brauzer session'ini ko'rsatadi)
+        console.log('🔄 Bir xil telefondan yangi brauzer: avvalgi brauzer logout bo\'ladi');
       }
 
       // Device ma'lumotlarini yangilash
       const userAgent = req.headers['user-agent'] || '';
       const ipAddress = req.ip || req.connection.remoteAddress || '';
 
-      user.deviceId = deviceId;
+      user.deviceId = deviceId; // Yangi deviceId (yangi brauzer session bilan)
       user.deviceInfo = {
         userAgent,
         platform: userAgent.includes('Windows') ? 'Windows' : 
                   userAgent.includes('Mac') ? 'Mac' : 
-                  userAgent.includes('Linux') ? 'Linux' : 'Unknown',
+                  userAgent.includes('Linux') ? 'Linux' :
+                  userAgent.includes('Android') ? 'Android' :
+                  userAgent.includes('iPhone') || userAgent.includes('iPad') ? 'iOS' : 'Unknown',
         browser: userAgent.includes('Chrome') ? 'Chrome' :
                  userAgent.includes('Firefox') ? 'Firefox' :
-                 userAgent.includes('Safari') ? 'Safari' : 'Unknown',
+                 userAgent.includes('Safari') ? 'Safari' :
+                 userAgent.includes('Edge') ? 'Edge' : 'Unknown',
         ipAddress,
       };
       user.lastDeviceLogin = new Date();
@@ -267,6 +288,42 @@ export const updatePassword = async (req, res) => {
     res.json({
       success: true,
       message: 'Parol muvaffaqiyatli o\'zgartirildi',
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Server xatosi',
+    });
+  }
+};
+
+/**
+ * @desc    Logout (Device ma'lumotlarini tozalash)
+ * @route   POST /api/auth/logout
+ * @access  Private
+ */
+export const logout = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'Foydalanuvchi topilmadi',
+      });
+    }
+
+    // Student uchun device ma'lumotlarini tozalash
+    if (user.role === 'student') {
+      user.deviceId = null;
+      user.deviceInfo = undefined;
+      user.lastDeviceLogin = null;
+      await user.save({ validateBeforeSave: false });
+    }
+
+    res.json({
+      success: true,
+      message: 'Muvaffaqiyatli chiqdingiz',
     });
   } catch (error) {
     res.status(500).json({

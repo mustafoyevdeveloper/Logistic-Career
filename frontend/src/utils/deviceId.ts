@@ -1,40 +1,67 @@
 /**
  * Device ID yaratish va saqlash
- * Har bir browser session uchun unique ID
- * Har bir email uchun alohida deviceId (bir qurilmada bir nechta accountdan kirish mumkin)
+ * Bir xil telefondan boshqa brauzerdan kirish uchun:
+ * - Telefon uchun bir xil deviceId (telefon fingerprint)
+ * - Brauzer uchun alohida sessionId
  */
 const DEVICE_ID_PREFIX = 'logistic_career_device_';
+const SESSION_ID_PREFIX = 'logistic_career_session_';
 
-export const getDeviceId = (email?: string): string => {
-  // Agar email berilgan bo'lsa, email-ga bog'liq deviceId
-  // Agar email berilmagan bo'lsa, umumiy deviceId
-  const key = email 
-    ? `${DEVICE_ID_PREFIX}${email.toLowerCase()}`
-    : `${DEVICE_ID_PREFIX}default`;
-
-  // LocalStorage'dan olish
-  let deviceId = localStorage.getItem(key);
-
-  // Agar yo'q bo'lsa, yangi yaratish
-  if (!deviceId) {
-    // Unique ID yaratish (browser session + timestamp + random)
-    deviceId = generateUniqueId();
-    localStorage.setItem(key, deviceId);
+/**
+ * Telefon fingerprint yaratish (bir xil telefon uchun bir xil)
+ */
+const getPhoneFingerprint = (): string => {
+  const fingerprintKey = 'logistic_career_phone_fingerprint';
+  let fingerprint = localStorage.getItem(fingerprintKey);
+  
+  if (!fingerprint) {
+    // Telefon uchun unique ID yaratish (screen size, platform, va boshqalar)
+    const screenInfo = `${screen.width}x${screen.height}`;
+    const platform = navigator.platform || 'unknown';
+    const timestamp = Date.now().toString(36);
+    const random = Math.random().toString(36).substring(2, 10);
+    
+    fingerprint = `phone_${screenInfo}_${platform}_${timestamp}_${random}`;
+    localStorage.setItem(fingerprintKey, fingerprint);
   }
-
-  return deviceId;
+  
+  return fingerprint;
 };
 
 /**
- * Unique ID yaratish
+ * Session ID yaratish (har bir brauzer uchun alohida)
  */
-const generateUniqueId = (): string => {
-  // Browser fingerprint + timestamp + random
-  const timestamp = Date.now().toString(36);
-  const random = Math.random().toString(36).substring(2, 15);
-  const userAgent = navigator.userAgent.replace(/\s+/g, '').substring(0, 10);
+const getSessionId = (email: string): string => {
+  const key = `${SESSION_ID_PREFIX}${email.toLowerCase()}`;
+  let sessionId = sessionStorage.getItem(key);
   
-  return `${timestamp}-${random}-${userAgent}`;
+  if (!sessionId) {
+    // Brauzer session uchun unique ID
+    const timestamp = Date.now().toString(36);
+    const random = Math.random().toString(36).substring(2, 15);
+    sessionId = `session_${timestamp}_${random}`;
+    sessionStorage.setItem(key, sessionId);
+  }
+  
+  return sessionId;
+};
+
+export const getDeviceId = (email?: string): string => {
+  if (!email) {
+    // Email bo'lmasa, faqat telefon fingerprint
+    return getPhoneFingerprint();
+  }
+
+  // Telefon fingerprint + email + session ID
+  const phoneFingerprint = getPhoneFingerprint();
+  const sessionId = getSessionId(email);
+  
+  // DeviceId: phoneFingerprint + email hash + sessionId
+  // Bu bir xil telefondan boshqa brauzerdan kirishni imkoniyatini beradi
+  const emailHash = email.toLowerCase().split('@')[0].substring(0, 8);
+  const deviceId = `${phoneFingerprint}_${emailHash}_${sessionId}`;
+  
+  return deviceId;
 };
 
 /**
@@ -42,17 +69,17 @@ const generateUniqueId = (): string => {
  */
 export const clearDeviceId = (email?: string): void => {
   if (email) {
-    // Faqat shu email uchun deviceId ni tozalash
-    const key = `${DEVICE_ID_PREFIX}${email.toLowerCase()}`;
-    localStorage.removeItem(key);
+    // Faqat shu email uchun sessionId ni tozalash
+    const sessionKey = `${SESSION_ID_PREFIX}${email.toLowerCase()}`;
+    sessionStorage.removeItem(sessionKey);
   } else {
-    // Barcha deviceId larni tozalash
-    const keys = Object.keys(localStorage);
+    // Barcha sessionId larni tozalash
+    const keys = Object.keys(sessionStorage);
     keys.forEach(key => {
-      if (key.startsWith(DEVICE_ID_PREFIX)) {
-        localStorage.removeItem(key);
+      if (key.startsWith(SESSION_ID_PREFIX)) {
+        sessionStorage.removeItem(key);
       }
     });
   }
+  // Telefon fingerprint tozalanmaydi (bir xil telefon bo'lib qoladi)
 };
-
