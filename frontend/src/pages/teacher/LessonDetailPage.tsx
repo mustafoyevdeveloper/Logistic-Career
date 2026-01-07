@@ -467,16 +467,10 @@ export default function TeacherLessonDetailPage() {
           }}
           variant="outline"
           disabled={dayNumber === 1}
+          className='text-white hover:text-white transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&amp;_svg]:pointer-events-none [&amp;_svg]:size-4 [&amp;_svg]:shrink-0 gradient-primary text-primary-foreground shadow-lg hover:shadow-glow active:scale-[0.98]'
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
           Oldingi dars
-        </Button>
-
-        <Button
-          onClick={() => navigate('/teacher/lessons')}
-          variant="outline"
-        >
-          Darsliklarga qaytish
         </Button>
 
         <Button
