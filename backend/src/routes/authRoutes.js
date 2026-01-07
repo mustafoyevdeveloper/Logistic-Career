@@ -15,7 +15,7 @@ import { validateRegister, validateLogin } from '../middleware/validation.js';
 const router = express.Router();
 
 router.post('/register', validateRegister, register);
-router.post('?role=student', validateLogin, login);
+router.post('/login', validateLogin, login);
 router.post('/admin-login', adminLogin);
 router.get('/me', protect, getMe);
 router.put('/profile', protect, updateProfile);

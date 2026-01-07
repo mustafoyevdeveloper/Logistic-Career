@@ -97,24 +97,16 @@ function LoginRouteWrapper() {
     );
   }
   
-  // To'liq tekshiruv: isLoading === false && isAuthenticated && user + role + status
+  // To'liq tekshiruv: isLoading === false && isAuthenticated && user + role
   // Faqat hammasi tayyor bo'lgandan keyin redirect qilish
-  // Frontend hech qachon taxmin qilmasin "user tayyor bo'lsa kerak"
+  // Backend'da isActive va isSuspended tekshirilgan, shuning uchun frontend'da undefined tekshiruvini olib tashlaymiz
   if (!isLoading && isAuthenticated && user && user.role && location.pathname.startsWith('/login')) {
-    // Student uchun qo'shimcha tekshiruvlar - user.isActive undefined bo'lmasligi kerak
+    // Student uchun qo'shimcha tekshiruvlar
+    // Backend'da isActive va isSuspended tekshirilgan, agar ular noto'g'ri bo'lsa login qilish mumkin emas
+    // Shuning uchun frontend'da faqat mavjud bo'lsa tekshiramiz
     if (user.role === 'student') {
-      // User to'liq yuklanganga tekshirish (isActive undefined bo'lmasligi kerak)
-      if (user.isActive === undefined) {
-        // User hali to'liq yuklanmagan, kutish
-        return (
-          <div className="min-h-screen flex items-center justify-center">
-            <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-          </div>
-        );
-      }
-      
-      // Student status tekshiruvi
-      if (user.isSuspended || !user.isActive) {
+      // Student status tekshiruvi (faqat mavjud bo'lsa)
+      if (user.isSuspended === true || user.isActive === false) {
         // Student blocked bo'lsa, login sahifasida qolish
         return <LoginPage />;
       }

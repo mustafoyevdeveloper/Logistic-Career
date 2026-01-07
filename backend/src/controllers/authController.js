@@ -191,6 +191,8 @@ export const login = async (req, res) => {
           progress: user.progress,
           currentLevel: user.currentLevel,
           avatar: user.avatar,
+          isActive: user.isActive,
+          isSuspended: user.isSuspended,
         },
         token,
       },
