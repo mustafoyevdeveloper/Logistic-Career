@@ -272,3 +272,119 @@ export const getGroups = async (req, res) => {
   }
 };
 
+/**
+ * @desc    O'quvchi statistikalarini olish (Student)
+ * @route   GET /api/users/me/stats
+ * @access  Private (Student)
+ */
+export const getMyStats = async (req, res) => {
+  try {
+    if (req.user.role !== 'student') {
+      return res.status(403).json({
+        success: false,
+        message: 'Faqat o\'quvchilar o\'z statistikalarini ko\'ra oladi',
+      });
+    }
+
+    const studentId = req.user._id;
+
+    // Darslar statistikasi
+    const completedLessons = await StudentProgress.countDocuments({
+      studentId,
+      completed: true,
+    });
+
+    const totalLessons = await StudentProgress.countDocuments({
+      studentId,
+    });
+
+    // O'qish vaqti (daqiqalarda)
+    const timeSpentResult = await StudentProgress.aggregate([
+      {
+        $match: { studentId },
+      },
+      {
+        $group: {
+          _id: null,
+          totalTime: { $sum: '$timeSpent' },
+        },
+      },
+    ]);
+
+    const timeSpentMinutes = timeSpentResult.length > 0 ? timeSpentResult[0].totalTime : 0;
+    const timeSpentHours = Math.round((timeSpentMinutes / 60) * 10) / 10; // 1 xona aniqlik
+
+    // Ball statistikasi
+    const scoreResult = await AssignmentSubmission.aggregate([
+      {
+        $match: {
+          studentId,
+          status: 'graded',
+          score: { $ne: null },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          totalScore: { $sum: '$score' },
+          maxScore: { $sum: '$maxScore' },
+          count: { $sum: 1 },
+        },
+      },
+    ]);
+
+    const totalScore = scoreResult.length > 0 ? scoreResult[0].totalScore : 0;
+    const maxScore = scoreResult.length > 0 ? scoreResult[0].maxScore : 0;
+    const avgScore = scoreResult.length > 0 && scoreResult[0].count > 0
+      ? Math.round(scoreResult[0].totalScore / scoreResult[0].count)
+      : 0;
+
+    // Progress foizi
+    const progressPercent = totalLessons > 0
+      ? Math.round((completedLessons / totalLessons) * 100)
+      : 0;
+
+    // Yutuqlar (achievements) - oddiy logika
+    const achievements = {
+      firstLesson: completedLessons > 0,
+      testMaster: scoreResult.length > 0 && scoreResult[0].count >= 3,
+      aiChatter: false, // ChatMessage count qilish kerak
+      consistentLearner: false, // 7 kun ketma-ket o'qish
+    };
+
+    // AI chatlar soni
+    const aiChatsCount = await ChatMessage.countDocuments({
+      studentId,
+      role: 'user',
+    });
+
+    achievements.aiChatter = aiChatsCount >= 10;
+
+    // Yutuqlar soni
+    const achievementsCount = Object.values(achievements).filter(Boolean).length;
+
+    res.json({
+      success: true,
+      data: {
+        stats: {
+          completedLessons,
+          totalLessons,
+          timeSpent: timeSpentHours,
+          totalScore,
+          maxScore,
+          avgScore,
+          progressPercent,
+          achievementsCount: achievementsCount,
+          totalAchievements: 4,
+        },
+        achievements,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Server xatosi',
+    });
+  }
+};
+

@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { apiService } from '@/services/api';
 import { 
   ClipboardList, 
   Clock, 
@@ -19,78 +20,86 @@ interface Submission {
   studentAvatar: string;
   assignmentTitle: string;
   submittedAt: string;
-  status: 'pending' | 'reviewed';
-  aiScore?: number;
-  teacherScore?: number;
-  feedback?: string;
+  status: 'pending' | 'reviewed' | 'graded';
+  aiScore?: number | null;
+  teacherScore?: number | null;
+  feedback?: string | null;
   answer: string;
+  assignmentId?: string;
+  studentId?: string;
 }
 
-const submissions: Submission[] = [
-  {
-    id: '1',
-    studentName: 'Sardor Aliyev',
-    studentAvatar: 'SA',
-    assignmentTitle: 'Transport tanlash vazifasi',
-    submittedAt: '2024-02-14 15:30',
-    status: 'pending',
-    aiScore: 78,
-    answer: 'Texasdan California ga 40FT yuk uchun avtomobil transportini tanlayman, chunki bu eng tezkor va moslashuvchan variant...',
-  },
-  {
-    id: '2',
-    studentName: 'Malika Karimova',
-    studentAvatar: 'MK',
-    assignmentTitle: 'Logistika asoslari testi',
-    submittedAt: '2024-02-14 14:20',
-    status: 'reviewed',
-    aiScore: 85,
-    teacherScore: 88,
-    feedback: 'Juda yaxshi! Tushunchalarni to\'g\'ri tushungan.',
-    answer: 'Test javoblari...',
-  },
-  {
-    id: '3',
-    studentName: 'Jahongir Toshev',
-    studentAvatar: 'JT',
-    assignmentTitle: 'Marshrut rejalashtirish',
-    submittedAt: '2024-02-14 12:45',
-    status: 'pending',
-    aiScore: 65,
-    answer: 'Chicago dan Los Angeles gacha marshrut: I-80 orqali...',
-  },
-  {
-    id: '4',
-    studentName: 'Dilnoza Rahimova',
-    studentAvatar: 'DR',
-    assignmentTitle: 'Rate Confirmation tuzish',
-    submittedAt: '2024-02-14 10:15',
-    status: 'reviewed',
-    aiScore: 92,
-    teacherScore: 95,
-    feedback: 'Mukammal! Barcha ma\'lumotlar to\'g\'ri kiritilgan.',
-    answer: 'Rate confirmation hujjati...',
-  },
-];
-
 export default function TeacherAssignmentsPage() {
+  const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null);
   const [feedback, setFeedback] = useState('');
   const [score, setScore] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
 
-  const handleSubmitReview = () => {
-    if (!score || !feedback) {
+  useEffect(() => {
+    loadSubmissions();
+  }, []);
+
+  const loadSubmissions = async () => {
+    try {
+      setIsLoading(true);
+      const response = await apiService.request<{ submissions: Submission[] }>('/assignments/all-submissions');
+      if (response.success && response.data) {
+        setSubmissions(response.data.submissions || []);
+      }
+    } catch (error: any) {
+      toast.error(error.message || 'Yuborilmalarni yuklashda xatolik');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSubmitReview = async () => {
+    if (!selectedSubmission || !score || !feedback) {
       toast.error('Iltimos, ball va izohni kiriting');
       return;
     }
-    toast.success('Baholash saqlandi!');
-    setSelectedSubmission(null);
-    setFeedback('');
-    setScore('');
+
+    if (!selectedSubmission.assignmentId) {
+      toast.error('Topshiriq ID topilmadi');
+      return;
+    }
+
+    try {
+      const response = await apiService.request(`/assignments/${selectedSubmission.assignmentId}/grade`, {
+        method: 'PUT',
+        body: JSON.stringify({
+          submissionId: selectedSubmission.id,
+          score: parseInt(score),
+          feedback: feedback,
+        }),
+      });
+
+      if (response.success) {
+        toast.success('Baholash saqlandi!');
+        setSelectedSubmission(null);
+        setFeedback('');
+        setScore('');
+        loadSubmissions(); // Yangilash
+      }
+    } catch (error: any) {
+      toast.error(error.message || 'Baholashda xatolik');
+    }
   };
 
   const pendingCount = submissions.filter(s => s.status === 'pending').length;
-  const reviewedCount = submissions.filter(s => s.status === 'reviewed').length;
+  const reviewedCount = submissions.filter(s => s.status === 'reviewed' || s.status === 'graded').length;
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6 animate-fade-in">
+        <div className="text-center py-12">
+          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-muted-foreground">Yuklanmoqda...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -130,8 +139,13 @@ export default function TeacherAssignmentsPage() {
       </div>
 
       {/* Submissions List */}
-      <div className="space-y-4">
-        {submissions.map((submission) => (
+      {submissions.length === 0 ? (
+        <div className="text-center py-12">
+          <p className="text-muted-foreground">Hozircha yuborilmalar yo'q</p>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {submissions.map((submission) => (
           <div
             key={submission.id}
             className={cn(
@@ -269,7 +283,8 @@ export default function TeacherAssignmentsPage() {
             )}
           </div>
         ))}
-      </div>
+        </div>
+      )}
     </div>
   );
 }

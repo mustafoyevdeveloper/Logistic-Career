@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { apiService } from '@/services/api';
 import { 
   Send, 
   Bot, 
@@ -8,10 +9,12 @@ import {
   Sparkles,
   Lightbulb,
   HelpCircle,
-  BookOpen
+  BookOpen,
+  Trash2
 } from 'lucide-react';
 import { ChatMessage } from '@/types';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 
 const suggestedQuestions = [
   { icon: Lightbulb, text: "Logistika nima va qanday ishlaydi?" },
@@ -19,11 +22,52 @@ const suggestedQuestions = [
   { icon: BookOpen, text: "Load board qanday ishlaydi?" },
 ];
 
-const initialMessages: ChatMessage[] = [
-  {
-    id: '1',
-    role: 'assistant',
-    content: `Assalomu alaykum! Men sizning AI o'quv yordamchingizman. 🚛
+export default function AIChatPage() {
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [input, setInput] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(true);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    loadChatHistory();
+  }, []);
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  const loadChatHistory = async () => {
+    try {
+      setIsLoadingHistory(true);
+      const response = await apiService.request<{ messages: any[] }>('/chat/history');
+      if (response.success && response.data && response.data.messages) {
+        const formattedMessages: ChatMessage[] = response.data.messages.map((msg: any) => ({
+          id: msg._id || msg.id || Date.now().toString(),
+          role: msg.role,
+          content: msg.content,
+          timestamp: new Date(msg.createdAt || msg.timestamp || new Date()),
+        }));
+        setMessages(formattedMessages);
+        
+        // Session ID ni olish (agar mavjud bo'lsa)
+        if (formattedMessages.length > 0) {
+          const firstMessage = response.data.messages[0];
+          if (firstMessage && firstMessage.sessionId) {
+            setSessionId(firstMessage.sessionId);
+          }
+        }
+      } else {
+        // Agar xabarlar bo'lmasa, welcome message qo'shish
+        setMessages([{
+          id: 'welcome',
+          role: 'assistant',
+          content: `Assalomu alaykum! Men sizning AI o'quv yordamchingizman. 🚛
 
 Sizga xalqaro logistika, dispetcherlik va transport sohasida yordam berishga tayyorman.
 
@@ -35,26 +79,67 @@ Sizga xalqaro logistika, dispetcherlik va transport sohasida yordam berishga tay
 - Amaliy vaziyatlar va senariylar
 
 Savolingiz bo'lsa, bemalol yozing!`,
-    timestamp: new Date(),
-  },
-];
+          timestamp: new Date(),
+        }]);
+      }
+    } catch (error: any) {
+      console.error('Chat history load error:', error);
+      // Agar xatolik bo'lsa, welcome message qo'shish
+      setMessages([{
+        id: 'welcome',
+        role: 'assistant',
+        content: `Assalomu alaykum! Men sizning AI o'quv yordamchingizman. 🚛
 
-export default function AIChatPage() {
-  const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
-  const [input, setInput] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+Sizga xalqaro logistika, dispetcherlik va transport sohasida yordam berishga tayyorman.
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+**Quyidagi savollarga javob bera olaman:**
+- Logistika asoslari va tushunchalari
+- Broker, shipper, carrier vazifalari
+- Load board bilan ishlash
+- Rate confirmation tuzish
+- Amaliy vaziyatlar va senariylar
+
+Savolingiz bo'lsa, bemalol yozing!`,
+        timestamp: new Date(),
+      }]);
+    } finally {
+      setIsLoadingHistory(false);
+    }
   };
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
 
   const handleSend = async () => {
     if (!input.trim() || isLoading) return;
+
+    let currentSessionId = sessionId;
+
+    // Agar session yo'q bo'lsa, yaratish
+    if (!currentSessionId) {
+      try {
+        const sessionResponse = await apiService.request<{ sessionId: string; message: any }>('/chat/session', {
+          method: 'POST',
+          body: JSON.stringify({}),
+        });
+        if (sessionResponse.success && sessionResponse.data) {
+          currentSessionId = sessionResponse.data.sessionId;
+          setSessionId(currentSessionId);
+          if (sessionResponse.data.message) {
+            const welcomeMessage: ChatMessage = {
+              id: sessionResponse.data.message._id || sessionResponse.data.message.id,
+              role: 'assistant',
+              content: sessionResponse.data.message.content,
+              timestamp: new Date(sessionResponse.data.message.createdAt || new Date()),
+            };
+            setMessages([welcomeMessage]);
+          }
+        } else {
+          toast.error('Sessiya yaratishda xatolik');
+          return;
+        }
+      } catch (error: any) {
+        toast.error(error.message || 'Sessiya yaratishda xatolik');
+        return;
+      }
+    }
 
     const userMessage: ChatMessage = {
       id: Date.now().toString(),
@@ -64,92 +149,70 @@ export default function AIChatPage() {
     };
 
     setMessages((prev) => [...prev, userMessage]);
+    const currentInput = input.trim();
     setInput('');
     setIsLoading(true);
 
-    // Simulate AI response
-    setTimeout(() => {
-      const aiResponses: Record<string, string> = {
-        'logistika': `**Logistika** — bu tovarlarni A nuqtadan B nuqtaga optimal yo'l bilan yetkazib berish jarayonidir.
+    try {
+      const response = await apiService.request<{ userMessage: any; aiResponse: any }>('/chat/message', {
+        method: 'POST',
+        body: JSON.stringify({
+          sessionId: currentSessionId,
+          content: currentInput,
+        }),
+      });
 
-**Asosiy tushunchalar:**
-1. **Supply Chain** — ta'minot zanjiri
-2. **Freight** — yuk
-3. **Carrier** — yuk tashuvchi
-4. **Shipper** — yuk jo'natuvchi
-5. **Consignee** — yuk qabul qiluvchi
+      if (response.success && response.data) {
+        // User message'ni yangilash (backend'dan kelgan ID bilan)
+        if (response.data.userMessage) {
+          setMessages((prev) => {
+            const updated = prev.map(msg => 
+              msg.id === userMessage.id 
+                ? {
+                    ...msg,
+                    id: response.data.userMessage._id || response.data.userMessage.id || msg.id,
+                  }
+                : msg
+            );
+            return updated;
+          });
+        }
 
-Xalqaro logistikada asosan 4 ta transport turi ishlatiladi:
-- 🚛 **Avtomobil transporti (Trucking)**
-- 🚂 **Temir yo'l (Rail)**
-- 🚢 **Dengiz transporti (Ocean)**
-- ✈️ **Havo transporti (Air)**
-
-Batafsil ma'lumot olmoqchimisiz?`,
-        'broker': `**Freight Broker** va **Carrier** farqlari:
-
-**Freight Broker:**
-- Yuk jo'natuvchi va tashuvchi o'rtasida vositachi
-- O'z transportiga ega emas
-- Foyda — broker komissiyasi (margin)
-- Yuklarni topib, carrierlarga beradi
-
-**Carrier:**
-- Haqiqiy transport egasi
-- Yuklarni bevosita tashiydi
-- MC va DOT raqamlariga ega
-- Insurance va authority kerak
-
-**Misol:**
-Shipper → Broker → Carrier → Consignee
-
-Brokerlik ishini qiziqtirmoqdami?`,
-        'load': `**Load Board** — bu yuklarni topish va joylashtirish uchun online platforma.
-
-**Eng mashhur load boardlar:**
-1. **DAT** — eng katta va ishonchli
-2. **Truckstop** — raqobatchi
-3. **123Loadboard** — arzon variant
-4. **Amazon Relay** — Amazon yuklari
-
-**Load board orqali:**
-- Yuklar ro'yxatini ko'rish
-- Rate (narx) ko'rish
-- Carrier topish
-- Yuk joylashtirish
-
-**Maslahat:** Yangi boshlovchilar uchun DAT Power yoki Truckstop Pro tavsiya qilinadi.
-
-Qaysi load board haqida ko'proq bilmoqchisiz?`,
-      };
-
-      let response = `Yaxshi savol! Bu haqida batafsil tushuntiraman...
-
-Sizning savolingiz logistika sohasining muhim qismini o'z ichiga oladi. 
-
-**Qo'shimcha savollar bo'lsa, bemalol yozing!**
-
-💡 **Maslahat:** Amaliy mashqlar uchun "Topshiriqlar" bo'limiga o'ting.`;
-
-      const lowerInput = input.toLowerCase();
-      if (lowerInput.includes('logistika') || lowerInput.includes('nima')) {
-        response = aiResponses['logistika'];
-      } else if (lowerInput.includes('broker') || lowerInput.includes('carrier') || lowerInput.includes('farq')) {
-        response = aiResponses['broker'];
-      } else if (lowerInput.includes('load') || lowerInput.includes('board') || lowerInput.includes('dat')) {
-        response = aiResponses['load'];
+        // AI message'ni qo'shish
+        if (response.data.aiResponse) {
+          const aiMessage: ChatMessage = {
+            id: response.data.aiResponse._id || response.data.aiResponse.id || Date.now().toString(),
+            role: 'assistant',
+            content: response.data.aiResponse.content,
+            timestamp: new Date(response.data.aiResponse.createdAt || new Date()),
+          };
+          setMessages((prev) => [...prev, aiMessage]);
+        }
+      } else {
+        throw new Error(response.message || 'Xabar yuborishda xatolik');
       }
-
-      const aiMessage: ChatMessage = {
-        id: (Date.now() + 1).toString(),
-        role: 'assistant',
-        content: response,
-        timestamp: new Date(),
-      };
-
-      setMessages((prev) => [...prev, aiMessage]);
+    } catch (error: any) {
+      toast.error(error.message || 'Xabar yuborishda xatolik');
+      // Xatolik bo'lsa, user message'ni olib tashlash
+      setMessages((prev) => prev.filter(msg => msg.id !== userMessage.id));
+    } finally {
       setIsLoading(false);
-    }, 1500);
+    }
+  };
+
+  const handleDeleteMessage = async (messageId: string) => {
+    try {
+      const response = await apiService.request(`/chat/message/${messageId}`, {
+        method: 'DELETE',
+      });
+
+      if (response.success) {
+        setMessages((prev) => prev.filter(msg => msg.id !== messageId));
+        toast.success('Xabar o\'chirildi');
+      }
+    } catch (error: any) {
+      toast.error(error.message || 'Xabarni o\'chirishda xatolik');
+    }
   };
 
   const handleSuggestionClick = (text: string) => {
@@ -170,59 +233,76 @@ Sizning savolingiz logistika sohasining muhim qismini o'z ichiga oladi.
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto py-4 space-y-4">
-        {messages.map((message) => (
-          <div
-            key={message.id}
-            className={cn(
-              "flex gap-3",
-              message.role === 'user' ? "justify-end" : "justify-start"
-            )}
-          >
-            {message.role === 'assistant' && (
-              <div className="w-8 h-8 rounded-lg gradient-primary flex items-center justify-center shrink-0">
-                <Bot className="w-4 h-4 text-primary-foreground" />
-              </div>
-            )}
-            
+      {isLoadingHistory ? (
+        <div className="flex-1 flex items-center justify-center">
+          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+        </div>
+      ) : (
+        <div className="flex-1 overflow-y-auto py-4 space-y-4">
+          {messages.map((message) => (
             <div
+              key={message.id}
               className={cn(
-                "max-w-[85%] sm:max-w-[70%] rounded-2xl px-4 py-3",
-                message.role === 'user'
-                  ? "bg-primary text-primary-foreground rounded-br-md"
-                  : "bg-muted text-foreground rounded-bl-md"
+                "flex gap-3 group",
+                message.role === 'user' ? "justify-end" : "justify-start"
               )}
             >
-              <div className="prose prose-sm max-w-none">
-                {message.content.split('\n').map((line, i) => (
-                  <p key={i} className="mb-1 last:mb-0 whitespace-pre-wrap">
-                    {line.startsWith('**') ? (
-                      <strong>{line.replace(/\*\*/g, '')}</strong>
-                    ) : line.startsWith('- ') ? (
-                      <span className="flex items-start gap-2">
-                        <span className="text-primary">•</span>
-                        {line.slice(2)}
-                      </span>
-                    ) : line.match(/^\d\./) ? (
-                      <span className="flex items-start gap-2">
-                        <span className="text-primary font-medium">{line.slice(0, 2)}</span>
-                        {line.slice(2)}
-                      </span>
-                    ) : (
-                      line
-                    )}
-                  </p>
-                ))}
+              {message.role === 'assistant' && (
+                <div className="w-8 h-8 rounded-lg gradient-primary flex items-center justify-center shrink-0">
+                  <Bot className="w-4 h-4 text-primary-foreground" />
+                </div>
+              )}
+              
+              <div className="flex items-start gap-2">
+                <div
+                  className={cn(
+                    "max-w-[85%] sm:max-w-[70%] rounded-2xl px-4 py-3 relative",
+                    message.role === 'user'
+                      ? "bg-primary text-primary-foreground rounded-br-md"
+                      : "bg-muted text-foreground rounded-bl-md"
+                  )}
+                >
+                  <div className="prose prose-sm max-w-none">
+                    {message.content.split('\n').map((line, i) => (
+                      <p key={i} className="mb-1 last:mb-0 whitespace-pre-wrap">
+                        {line.startsWith('**') ? (
+                          <strong>{line.replace(/\*\*/g, '')}</strong>
+                        ) : line.startsWith('- ') ? (
+                          <span className="flex items-start gap-2">
+                            <span className="text-primary">•</span>
+                            {line.slice(2)}
+                          </span>
+                        ) : line.match(/^\d\./) ? (
+                          <span className="flex items-start gap-2">
+                            <span className="text-primary font-medium">{line.slice(0, 2)}</span>
+                            {line.slice(2)}
+                          </span>
+                        ) : (
+                          line
+                        )}
+                      </p>
+                    ))}
+                  </div>
+                </div>
+                {message.id !== 'welcome' && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                    onClick={() => handleDeleteMessage(message.id)}
+                  >
+                    <Trash2 className="w-3 h-3 text-destructive" />
+                  </Button>
+                )}
               </div>
-            </div>
 
-            {message.role === 'user' && (
-              <div className="w-8 h-8 rounded-lg bg-secondary flex items-center justify-center shrink-0">
-                <User className="w-4 h-4 text-secondary-foreground" />
-              </div>
-            )}
-          </div>
-        ))}
+              {message.role === 'user' && (
+                <div className="w-8 h-8 rounded-lg bg-secondary flex items-center justify-center shrink-0">
+                  <User className="w-4 h-4 text-secondary-foreground" />
+                </div>
+              )}
+            </div>
+          ))}
 
         {isLoading && (
           <div className="flex gap-3">
@@ -239,11 +319,12 @@ Sizning savolingiz logistika sohasining muhim qismini o'z ichiga oladi.
           </div>
         )}
 
-        <div ref={messagesEndRef} />
-      </div>
+          <div ref={messagesEndRef} />
+        </div>
+      )}
 
       {/* Suggested Questions */}
-      {messages.length <= 1 && (
+      {messages.length <= 1 && !isLoadingHistory && (
         <div className="py-4 border-t border-border">
           <p className="text-sm text-muted-foreground mb-3">Tez savollar:</p>
           <div className="flex flex-wrap gap-2">

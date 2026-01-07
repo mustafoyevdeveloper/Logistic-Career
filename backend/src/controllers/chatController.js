@@ -283,3 +283,49 @@ export const addFeedback = async (req, res) => {
   }
 };
 
+/**
+ * @desc    Chat xabarini o'chirish (Student)
+ * @route   DELETE /api/chat/message/:id
+ * @access  Private (Student)
+ */
+export const deleteMessage = async (req, res) => {
+  try {
+    if (req.user.role !== 'student') {
+      return res.status(403).json({
+        success: false,
+        message: 'Faqat o\'quvchilar o\'z xabarlarini o\'chirishi mumkin',
+      });
+    }
+
+    const message = await ChatMessage.findById(req.params.id);
+
+    if (!message) {
+      return res.status(404).json({
+        success: false,
+        message: 'Xabar topilmadi',
+      });
+    }
+
+    // O'quvchi faqat o'z sessiyasidagi xabarlarni o'chirishi mumkin
+    // (user va AI xabarlarini ham o'chirish mumkin)
+    if (message.studentId.toString() !== req.user._id.toString()) {
+      return res.status(403).json({
+        success: false,
+        message: 'Siz faqat o\'z sessiyangizdagi xabarlarni o\'chirishingiz mumkin',
+      });
+    }
+
+    await ChatMessage.findByIdAndDelete(req.params.id);
+
+    res.json({
+      success: true,
+      message: 'Xabar muvaffaqiyatli o\'chirildi',
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Server xatosi',
+    });
+  }
+};
+

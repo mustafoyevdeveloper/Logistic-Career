@@ -9,6 +9,7 @@ import {
   logout,
   createStudent,
 } from '../controllers/authController.js';
+import { getMyStats } from '../controllers/userController.js';
 import { protect, authorize } from '../middleware/auth.js';
 import { validateRegister, validateLogin } from '../middleware/validation.js';
 
@@ -18,6 +19,7 @@ router.post('/register', validateRegister, register);
 router.post('/login', validateLogin, login);
 router.post('/admin-login', adminLogin);
 router.get('/me', protect, getMe);
+router.get('/me/stats', protect, authorize('student'), getMyStats);
 router.put('/profile', protect, updateProfile);
 router.put('/password', protect, updatePassword);
 router.post('/logout', protect, logout);

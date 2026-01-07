@@ -1,6 +1,8 @@
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
+import { apiService } from '@/services/api';
 import { 
   User, 
   Mail, 
@@ -11,28 +13,87 @@ import {
   Edit2,
   Award
 } from 'lucide-react';
+import { toast } from 'sonner';
 
 export default function StudentProfilePage() {
   const { user } = useAuth();
+  const [stats, setStats] = useState({
+    completedLessons: 0,
+    totalLessons: 0,
+    timeSpent: 0,
+    totalScore: 0,
+    maxScore: 0,
+    avgScore: 0,
+    progressPercent: 0,
+    achievementsCount: 0,
+    totalAchievements: 4,
+  });
+  const [achievements, setAchievements] = useState({
+    firstLesson: false,
+    testMaster: false,
+    aiChatter: false,
+    consistentLearner: false,
+  });
+  const [isLoading, setIsLoading] = useState(true);
 
-  const achievements = [
-    { icon: BookOpen, title: 'Birinchi dars', description: 'Birinchi darsni tugatdingiz', unlocked: true },
-    { icon: Trophy, title: 'Test ustasi', description: '3 ta testdan o\'ting', unlocked: false },
-    { icon: Award, title: 'AI suhbatchi', description: '10 ta AI suhbat olib boring', unlocked: true },
-    { icon: Clock, title: 'Izchil o\'quvchi', description: '7 kun ketma-ket o\'qing', unlocked: false },
+  useEffect(() => {
+    loadStats();
+  }, []);
+
+  const loadStats = async () => {
+    try {
+      setIsLoading(true);
+      const response = await apiService.request<{
+        stats: {
+          completedLessons: number;
+          totalLessons: number;
+          timeSpent: number;
+          totalScore: number;
+          maxScore: number;
+          avgScore: number;
+          progressPercent: number;
+          achievementsCount: number;
+          totalAchievements: number;
+        };
+        achievements: {
+          firstLesson: boolean;
+          testMaster: boolean;
+          aiChatter: boolean;
+          consistentLearner: boolean;
+        };
+      }>('/auth/me/stats');
+      
+      if (response.success && response.data) {
+        setStats(response.data.stats);
+        setAchievements(response.data.achievements);
+      }
+    } catch (error: any) {
+      toast.error(error.message || 'Statistikani yuklashda xatolik');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const achievementsList = [
+    { icon: BookOpen, title: 'Birinchi dars', description: 'Birinchi darsni tugatdingiz', unlocked: achievements.firstLesson },
+    { icon: Trophy, title: 'Test ustasi', description: '3 ta testdan o\'ting', unlocked: achievements.testMaster },
+    { icon: Award, title: 'AI suhbatchi', description: '10 ta AI suhbat olib boring', unlocked: achievements.aiChatter },
+    { icon: Clock, title: 'Izchil o\'quvchi', description: '7 kun ketma-ket o\'qing', unlocked: achievements.consistentLearner },
   ];
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6 animate-fade-in">
+        <div className="text-center py-12">
+          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-muted-foreground">Yuklanmoqda...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 animate-fade-in">
-      {/* Header */}
-      {/* <div className="flex items-center justify-between">
-        <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Profil</h1>
-        <Button variant="outline" size="sm">
-          <Edit2 className="w-4 h-4 mr-2" />
-          Tahrirlash
-        </Button>
-      </div> */}
-
       {/* Profile Card */}
       <div className="bg-card rounded-2xl p-6 border border-border shadow-card">
         <div className="flex flex-col sm:flex-row items-center gap-6">
@@ -46,17 +107,19 @@ export default function StudentProfilePage() {
             <h2 className="text-2xl font-bold text-foreground mb-1">
               {user?.firstName} {user?.lastName}
             </h2>
-            <p className="text-muted-foreground mb-4">O'quvchi • {user?.group || 'LOG-2024'}</p>
+            <p className="text-muted-foreground mb-4">O'quvchi • {user?.group || 'Guruh topilmadi'}</p>
             
             <div className="flex flex-wrap justify-center sm:justify-start gap-4 text-sm">
               <span className="flex items-center gap-2 text-muted-foreground">
                 <Mail className="w-4 h-4" />
                 {user?.email}
               </span>
-              <span className="flex items-center gap-2 text-muted-foreground">
-                <Users className="w-4 h-4" />
-                {user?.group || 'LOG-2024-A'}
-              </span>
+              {user?.group && (
+                <span className="flex items-center gap-2 text-muted-foreground">
+                  <Users className="w-4 h-4" />
+                  {user.group}
+                </span>
+              )}
             </div>
           </div>
 
@@ -80,12 +143,12 @@ export default function StudentProfilePage() {
                   stroke="currentColor"
                   strokeWidth="8"
                   fill="none"
-                  strokeDasharray={`${(user?.progress || 35) * 2.51} 251`}
+                  strokeDasharray={`${stats.progressPercent * 2.51} 251`}
                   className="text-primary"
                 />
               </svg>
               <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-2xl font-bold text-foreground">{user?.progress || 35}%</span>
+                <span className="text-2xl font-bold text-foreground">{stats.progressPercent}%</span>
               </div>
             </div>
             <p className="text-sm text-muted-foreground mt-2">Umumiy progress</p>
@@ -97,22 +160,22 @@ export default function StudentProfilePage() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-card rounded-xl p-4 border border-border shadow-card">
           <BookOpen className="w-5 h-5 text-primary mb-2" />
-          <p className="text-2xl font-bold text-foreground">4/12</p>
+          <p className="text-2xl font-bold text-foreground">{stats.completedLessons}/{stats.totalLessons}</p>
           <p className="text-sm text-muted-foreground">Darslar</p>
         </div>
         <div className="bg-card rounded-xl p-4 border border-border shadow-card">
           <Trophy className="w-5 h-5 text-warning mb-2" />
-          <p className="text-2xl font-bold text-foreground">850</p>
+          <p className="text-2xl font-bold text-foreground">{stats.totalScore}</p>
           <p className="text-sm text-muted-foreground">Ball</p>
         </div>
         <div className="bg-card rounded-xl p-4 border border-border shadow-card">
           <Clock className="w-5 h-5 text-success mb-2" />
-          <p className="text-2xl font-bold text-foreground">8 soat</p>
+          <p className="text-2xl font-bold text-foreground">{stats.timeSpent} soat</p>
           <p className="text-sm text-muted-foreground">O'qish vaqti</p>
         </div>
         <div className="bg-card rounded-xl p-4 border border-border shadow-card">
           <Award className="w-5 h-5 text-accent mb-2" />
-          <p className="text-2xl font-bold text-foreground">2/4</p>
+          <p className="text-2xl font-bold text-foreground">{stats.achievementsCount}/{stats.totalAchievements}</p>
           <p className="text-sm text-muted-foreground">Yutuqlar</p>
         </div>
       </div>
@@ -123,11 +186,23 @@ export default function StudentProfilePage() {
         <div className="space-y-4">
           <div className="flex items-center justify-between text-sm">
             <span className="text-muted-foreground">Boshlang'ich</span>
-            <span className="text-primary font-medium">O'rta darajaga 65% qoldi</span>
+            <span className="text-primary font-medium">
+              {stats.progressPercent < 50 
+                ? `O'rta darajaga ${50 - stats.progressPercent}% qoldi`
+                : stats.progressPercent < 80
+                ? `Yuqori darajaga ${80 - stats.progressPercent}% qoldi`
+                : 'Yuqori daraja'}
+            </span>
           </div>
-          <Progress value={35} className="h-3" />
+          <Progress value={stats.progressPercent} className="h-3" />
           <p className="text-sm text-muted-foreground">
-            Keyingi daraja: <span className="text-foreground font-medium">O'rta daraja (Intermediate)</span>
+            Keyingi daraja: <span className="text-foreground font-medium">
+              {stats.progressPercent < 50 
+                ? "O'rta daraja (Intermediate)"
+                : stats.progressPercent < 80
+                ? "Yuqori daraja (Advanced)"
+                : 'Professional'}
+            </span>
           </p>
         </div>
       </div>
@@ -136,7 +211,7 @@ export default function StudentProfilePage() {
       <div className="bg-card rounded-2xl p-6 border border-border shadow-card">
         <h3 className="font-semibold text-foreground mb-4">Yutuqlar</h3>
         <div className="grid sm:grid-cols-2 gap-4">
-          {achievements.map((achievement, index) => (
+          {achievementsList.map((achievement, index) => (
             <div 
               key={index}
               className={`flex items-center gap-4 p-4 rounded-xl border ${

@@ -318,3 +318,58 @@ export const getAssignmentSubmissions = async (req, res) => {
   }
 };
 
+/**
+ * @desc    Barcha yuborilmalarni olish (Teacher)
+ * @route   GET /api/assignments/submissions/all
+ * @access  Private (Teacher)
+ */
+export const getAllSubmissions = async (req, res) => {
+  try {
+    if (req.user.role !== 'teacher' && req.user.role !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Faqat o\'qituvchilar yoki admin barcha yuborilmalarni ko\'ra oladi',
+      });
+    }
+
+    const submissions = await AssignmentSubmission.find({})
+      .populate('studentId', 'firstName lastName email group')
+      .populate('assignmentId', 'title description type dueDate maxScore')
+      .sort({ submittedAt: -1, createdAt: -1 })
+      .lean();
+
+    // Format submissions for frontend
+    const formattedSubmissions = submissions
+      .filter((submission) => submission.studentId && submission.assignmentId) // Faqat to'liq populate qilinganlar
+      .map((submission) => ({
+        id: submission._id.toString(),
+        studentName: `${submission.studentId?.firstName || ''} ${submission.studentId?.lastName || ''}`.trim(),
+        studentAvatar: submission.studentId 
+          ? `${submission.studentId.firstName?.charAt(0) || ''}${submission.studentId.lastName?.charAt(0) || ''}`
+          : '??',
+        assignmentTitle: submission.assignmentId?.title || 'Topshiriq topilmadi',
+        submittedAt: submission.submittedAt 
+          ? new Date(submission.submittedAt).toLocaleString('uz-UZ') 
+          : new Date(submission.createdAt).toLocaleString('uz-UZ'),
+        status: submission.status || 'pending',
+        aiScore: submission.aiScore || null,
+        teacherScore: submission.teacherScore || null,
+        feedback: submission.feedback || null,
+        answer: submission.answer || '',
+        assignmentId: submission.assignmentId?._id?.toString() || submission.assignmentId?.toString() || null,
+        studentId: submission.studentId?._id?.toString() || submission.studentId?.toString() || null,
+      }));
+
+    res.json({
+      success: true,
+      data: { submissions: formattedSubmissions },
+    });
+  } catch (error) {
+    console.error('getAllSubmissions error:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Server xatosi',
+    });
+  }
+};
+

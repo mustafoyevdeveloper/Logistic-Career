@@ -5,6 +5,7 @@ import {
   getChatHistory,
   getStudentChats,
   addFeedback,
+  deleteMessage,
 } from '../controllers/chatController.js';
 import { protect, authorize } from '../middleware/auth.js';
 
@@ -16,6 +17,7 @@ router.use(protect); // Barcha route'lar protected
 router.post('/session', authorize('student'), createSession);
 router.post('/message', authorize('student'), sendMessage);
 router.get('/history', getChatHistory);
+router.delete('/message/:id', authorize('student'), deleteMessage);
 
 // Teacher routes
 router.get('/students/:studentId', authorize('teacher'), getStudentChats);
