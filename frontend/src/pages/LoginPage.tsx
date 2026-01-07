@@ -28,21 +28,12 @@ export default function LoginPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
-  // Query parametrni tekshirish va redirect qilish
+  // Admin login uchun default qiymatlar
   useEffect(() => {
-    const role = searchParams.get('role');
-    
-    // Agar role parametri bo'lmasa, avtomatik ?role=student qo'shish
-    if (!role) {
-      navigate('/login?role=student', { replace: true });
-      return;
-    }
-    
-    // Admin login uchun default qiymatlar
-    if (role === 'admin') {
+    if (searchParams.get('role') === 'admin') {
       setEmail('');
     }
-  }, [searchParams, navigate]);
+  }, [searchParams]);
 
   // useEffect'ni olib tashladik - App.tsx'dagi route redirect va handleSubmit'dagi redirect yetarli
   // Bu infinite loop'ni oldini oladi

@@ -58,14 +58,14 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       // Muzlatilgan o'quvchi - logout qilish
       setTimeout(() => {
         logout();
-        navigate('/login');
+        navigate('?role=student');
       }, 100);
     }
     
     if (user?.role === 'student' && !user?.isActive) {
       // O'chirilgan o'quvchi - logout qilish
       logout();
-      navigate('/login');
+      navigate('/login?role=student');
     }
   }, [user, logout, navigate]);
 
@@ -78,7 +78,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
   const handleLogout = async () => {
     await logout();
-    navigate('/login');
+    navigate('/login?role=student');
   };
 
   return (

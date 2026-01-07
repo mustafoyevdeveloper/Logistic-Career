@@ -24,7 +24,7 @@ export default function LandingPage() {
               <Logo variant="icon" size="md" />
               <span className="text-xl font-bold text-foreground">Logistic Carrier</span>
             </div>
-            <Link to="/login">
+            <Link to="/login?role=student">
               <Button variant="gradient" size="sm">
                 Kirish
                 <ArrowRight className="w-4 h-4 ml-2" />
@@ -48,7 +48,7 @@ export default function LandingPage() {
             <p className="text-lg sm:text-xl text-primary-foreground/80 mb-8 max-w-2xl mx-auto">
               0 darajadan dispetcherlik darajasigacha AI yordamida bosqichma-bosqich o'qing
             </p>
-            <Link to="/login">
+            <Link to="/login?role=student">
               <Button variant="hero" size="lg" className="bg-accent hover:bg-accent/90 text-accent-foreground">
                 Darslarni boshlash
                 <ArrowRight className="w-5 h-5 ml-2" />
@@ -197,7 +197,7 @@ export default function LandingPage() {
                       O'qituvchi tomonidan berilgan email va parol bilan kiring
                     </p>
                   </div>
-                  <Link to="/login">
+                  <Link to="/login?role=student">
                     <Button variant="gradient" size="lg">
                       Kirish
                       <ArrowRight className="w-5 h-5 ml-2" />

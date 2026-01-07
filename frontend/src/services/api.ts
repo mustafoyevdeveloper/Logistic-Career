@@ -268,7 +268,7 @@ class ApiService {
   // Auth endpoints
   async login(email: string, password: string, role: string) {
     const deviceId = getDeviceId(email); // Email bilan deviceId olish
-    return this.request<{ user: any; token: string }>('/auth/login', {
+    return this.request<{ user: any; token: string }>('/auth/login?role=student', {
       method: 'POST',
       body: JSON.stringify({ email, password, role, deviceId }),
     });

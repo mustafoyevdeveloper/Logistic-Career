@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import { useRef, useEffect } from "react";
 
 // Pages
 import LoginPage from "./pages/LoginPage";
@@ -46,16 +47,16 @@ function ProtectedRoute({ children, allowedRole }: { children: React.ReactNode; 
   // Authenticated emas bo'lsa, login sahifasiga redirect
   if (!isAuthenticated) {
     // Faqat login sahifasida bo'lmasa redirect qilish (infinite loop'ni oldini olish uchun)
-    if (location.pathname !== '/login') {
-      return <Navigate to="/login" replace />;
+    if (location.pathname !== '/login?role=student') {
+      return <Navigate to="/login?role=student" replace />;
     }
     return null; // Login sahifasida bo'lsa, hech narsa qaytarmaslik
   }
   
   // Student blocked tekshirish
   if (user?.role === 'student' && (user?.isSuspended || !user?.isActive)) {
-    if (location.pathname !== '/login') {
-      return <Navigate to="/login" replace />;
+    if (location.pathname !== '/login?role=student') {
+      return <Navigate to="/login?role=student" replace />;
     }
     return null;
   }
@@ -82,6 +83,10 @@ function LoginRouteWrapper() {
   const { isAuthenticated, user, isLoading } = useAuth();
   const location = useLocation();
   
+  // Role parametrini location.search dan o'qish (infinite loop'ni oldini olish uchun)
+  const searchParams = new URLSearchParams(location.search);
+  const role = searchParams.get('role');
+  
   // Loading holati
   if (isLoading) {
     return (
@@ -93,9 +98,16 @@ function LoginRouteWrapper() {
   
   // Agar authenticated bo'lsa va login sahifasida bo'lsak, redirect qilish
   // location.pathname tekshiruvi infinite loop'ni oldini oladi
-  if (isAuthenticated && user && location.pathname === '/login') {
+  if (isAuthenticated && user && location.pathname.startsWith('/login')) {
     const redirectTo = user.role === 'teacher' || user.role === 'admin' ? '/teacher' : '/student';
     return <Navigate to={redirectTo} replace />;
+  }
+  
+  // Agar role parametri bo'lmasa, avtomatik ?role=student qo'shish
+  // Bu tekshiruv authenticated bo'lmagan holda qilinadi
+  // location.search tekshiruvi infinite loop'ni oldini oladi
+  if (!isAuthenticated && !role && location.pathname === '/login' && !location.search.includes('role=')) {
+    return <Navigate to="/login?role=student" replace />;
   }
   
   return <LoginPage />;

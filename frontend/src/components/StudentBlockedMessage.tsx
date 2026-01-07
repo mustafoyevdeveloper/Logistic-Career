@@ -9,7 +9,7 @@ export default function StudentBlockedMessage() {
 
   const handleLogout = () => {
     logout();
-    navigate('/login');
+    navigate('/login?role=student');
   };
 
   return (
