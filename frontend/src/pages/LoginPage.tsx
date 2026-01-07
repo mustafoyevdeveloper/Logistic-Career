@@ -225,7 +225,7 @@ export default function LoginPage({ isAdminRoute = false }: LoginPageProps) {
                   <p className="text-muted-foreground">
                     O'quvchilar o'zi ro'yxatdan o'tmaydi. Email va parolni o'qituvchidan oling.
                   </p>
-                  <p className="text-muted-foreground">
+                  <p className="text-red-500 mt-1">
                     Agar tizimga muvafaqiyatli kirgan bo'lsangiz va sahifa bo'sh ko'rinsa sahifani yangilang yoki saytga qayta kiring.
                   </p>
                 </div>
