@@ -29,7 +29,7 @@ export default function LoginPage({ isAdminRoute = false }: LoginPageProps) {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const { login, adminLogin } = useAuth();
+  const { login, adminLogin, user, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
@@ -40,6 +40,17 @@ export default function LoginPage({ isAdminRoute = false }: LoginPageProps) {
       setEmail('');
     }
   }, [searchParams, isAdminRoute]);
+
+  // User state o'zgarganda avtomatik redirect
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      if (user.role === 'teacher' || user.role === 'admin') {
+        navigate('/teacher', { replace: true });
+      } else if (user.role === 'student') {
+        navigate('/student', { replace: true });
+      }
+    }
+  }, [isAuthenticated, user, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,16 +65,15 @@ export default function LoginPage({ isAdminRoute = false }: LoginPageProps) {
       if (isAdminRoute || searchParams.get('role') === 'admin') {
         await adminLogin(email, password);
         toast.success('Muvaffaqiyatli kirdingiz!');
-        navigate('/teacher');
+        // useEffect orqali avtomatik redirect bo'ladi
       } else {
         // Student login
         await login(email, password, 'student');
         toast.success('Muvaffaqiyatli kirdingiz!');
-        navigate('/student');
+        // useEffect orqali avtomatik redirect bo'ladi
       }
     } catch (error: any) {
       toast.error(error.message || 'Xatolik yuz berdi');
-    } finally {
       setIsLoading(false);
     }
   };

@@ -93,7 +93,6 @@ export default function StudentsPage() {
     groupId: '',
     email: '',
     password: '',
-    deviceName: '',
   });
   const [showPassword, setShowPassword] = useState(false);
 
@@ -167,7 +166,6 @@ export default function StudentsPage() {
       groupId: student.group || '',
       email: student.email,
       password: '', // Parol har doim bo'sh bo'ladi (yangi parol kiritish uchun)
-      deviceName: student.deviceInfo?.deviceName || '',
     });
     setEditDialogOpen(true);
   };
@@ -183,13 +181,12 @@ export default function StudentsPage() {
       if (editForm.groupId !== undefined) updateData.groupId = editForm.groupId;
       if (editForm.email) updateData.email = editForm.email;
       if (editForm.password) updateData.password = editForm.password;
-      if (editForm.deviceName !== undefined) updateData.deviceName = editForm.deviceName;
 
       await apiService.updateStudent(studentToEdit._id, updateData);
       toast.success('O\'quvchi muvaffaqiyatli yangilandi');
       setEditDialogOpen(false);
       setStudentToEdit(null);
-      setEditForm({ firstName: '', lastName: '', groupId: '', email: '', password: '', deviceName: '' });
+      setEditForm({ firstName: '', lastName: '', groupId: '', email: '', password: '' });
       loadData();
     } catch (error: any) {
       toast.error(error.message || 'O\'quvchini yangilashda xatolik');
@@ -304,12 +301,6 @@ export default function StudentsPage() {
                     {student.group && (
                       <span className="px-2 py-0.5 bg-muted rounded-full">{student.group}</span>
                     )}
-                    {student.lastActive && (
-                      <span className="flex items-center gap-1">
-                        <Clock className="w-3 h-3 shrink-0" />
-                        <span className="truncate">{student.lastActive}</span>
-                      </span>
-                    )}
                   </div>
                   {/* Device Info */}
                   {student.deviceInfo && student.lastDeviceLogin && (
@@ -328,6 +319,7 @@ export default function StudentsPage() {
                           <span className="flex items-center gap-1">
                             <Clock className="w-3 h-3" />
                             {new Date(student.lastDeviceLogin).toLocaleDateString('uz-UZ', {
+                              year: 'numeric',
                               day: '2-digit',
                               month: '2-digit',
                               hour: '2-digit',
@@ -518,21 +510,6 @@ export default function StudentsPage() {
                 ))}
               </select>
             </div>
-            
-            {/* Device Name */}
-            {studentToEdit?.deviceId && (
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Qurilma nomi</label>
-                <Input
-                  value={editForm.deviceName}
-                  onChange={(e) => setEditForm({ ...editForm, deviceName: e.target.value })}
-                  placeholder="Masalan: iPhone 13, Samsung Galaxy S21"
-                />
-                <p className="text-xs text-muted-foreground">
-                  O'quvchining qurilma nomini kiriting (ixtiyoriy)
-                </p>
-              </div>
-            )}
             
             {/* Device Clear Button */}
             {studentToEdit?.deviceId && (
