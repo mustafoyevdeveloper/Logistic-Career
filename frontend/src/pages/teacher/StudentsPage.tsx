@@ -54,6 +54,7 @@ interface Student {
     browser?: string;
     userAgent?: string;
     ipAddress?: string;
+    deviceName?: string;
   };
   lastDeviceLogin?: string;
   stats?: {
@@ -92,6 +93,7 @@ export default function StudentsPage() {
     groupId: '',
     email: '',
     password: '',
+    deviceName: '',
   });
   const [showPassword, setShowPassword] = useState(false);
 
@@ -154,6 +156,10 @@ export default function StudentsPage() {
   };
 
   const handleEdit = (student: Student) => {
+    // Event propagation'ni to'xtatish (search input'ga focus qilinmasligi uchun)
+    event?.stopPropagation?.();
+    event?.preventDefault?.();
+    
     setStudentToEdit(student);
     setEditForm({
       firstName: student.firstName,
@@ -161,6 +167,7 @@ export default function StudentsPage() {
       groupId: student.group || '',
       email: student.email,
       password: '', // Parol har doim bo'sh bo'ladi (yangi parol kiritish uchun)
+      deviceName: student.deviceInfo?.deviceName || '',
     });
     setEditDialogOpen(true);
   };
@@ -176,12 +183,13 @@ export default function StudentsPage() {
       if (editForm.groupId !== undefined) updateData.groupId = editForm.groupId;
       if (editForm.email) updateData.email = editForm.email;
       if (editForm.password) updateData.password = editForm.password;
+      if (editForm.deviceName !== undefined) updateData.deviceName = editForm.deviceName;
 
       await apiService.updateStudent(studentToEdit._id, updateData);
       toast.success('O\'quvchi muvaffaqiyatli yangilandi');
       setEditDialogOpen(false);
       setStudentToEdit(null);
-      setEditForm({ firstName: '', lastName: '', groupId: '', email: '', password: '' });
+      setEditForm({ firstName: '', lastName: '', groupId: '', email: '', password: '', deviceName: '' });
       loadData();
     } catch (error: any) {
       toast.error(error.message || 'O\'quvchini yangilashda xatolik');
@@ -307,6 +315,11 @@ export default function StudentsPage() {
                   {student.deviceInfo && student.lastDeviceLogin && (
                     <div className="mt-2 pt-2 border-t border-border/50">
                       <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                        {student.deviceInfo.deviceName && (
+                          <span className="font-medium text-foreground">
+                            📱 {student.deviceInfo.deviceName}
+                          </span>
+                        )}
                         <span className="flex items-center gap-1">
                           <span className="w-1.5 h-1.5 rounded-full bg-success"></span>
                           {student.deviceInfo.platform || 'Unknown'} • {student.deviceInfo.browser || 'Unknown'}
@@ -505,6 +518,21 @@ export default function StudentsPage() {
                 ))}
               </select>
             </div>
+            
+            {/* Device Name */}
+            {studentToEdit?.deviceId && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Qurilma nomi</label>
+                <Input
+                  value={editForm.deviceName}
+                  onChange={(e) => setEditForm({ ...editForm, deviceName: e.target.value })}
+                  placeholder="Masalan: iPhone 13, Samsung Galaxy S21"
+                />
+                <p className="text-xs text-muted-foreground">
+                  O'quvchining qurilma nomini kiriting (ixtiyoriy)
+                </p>
+              </div>
+            )}
             
             {/* Device Clear Button */}
             {studentToEdit?.deviceId && (

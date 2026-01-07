@@ -101,7 +101,7 @@ export const updateStudent = async (req, res) => {
       });
     }
 
-    const { firstName, lastName, groupId, email, password } = req.body;
+    const { firstName, lastName, groupId, email, password, deviceName } = req.body;
     const student = await User.findById(req.params.id).select('+password');
 
     if (!student || student.role !== 'student') {
@@ -131,6 +131,14 @@ export const updateStudent = async (req, res) => {
     // Parol yangilash (agar berilgan bo'lsa)
     if (password) {
       student.password = password; // Pre-save hook avtomatik hash qiladi
+    }
+    
+    // Device name yangilash (agar berilgan bo'lsa)
+    if (deviceName !== undefined) {
+      if (!student.deviceInfo) {
+        student.deviceInfo = {};
+      }
+      student.deviceInfo.deviceName = deviceName || null;
     }
     
     // Guruh yangilash

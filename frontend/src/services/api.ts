@@ -354,6 +354,7 @@ class ApiService {
     groupId?: string;
     email?: string;
     password?: string;
+    deviceName?: string;
   }) {
     return this.request<{ student: any }>(`/students/${studentId}`, {
       method: 'PUT',

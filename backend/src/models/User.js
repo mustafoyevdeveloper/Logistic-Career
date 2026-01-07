@@ -84,6 +84,7 @@ const userSchema = new mongoose.Schema(
       platform: String,
       browser: String,
       ipAddress: String,
+      deviceName: String,
     },
     lastDeviceLogin: {
       type: Date,
