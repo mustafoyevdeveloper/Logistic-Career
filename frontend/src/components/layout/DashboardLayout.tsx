@@ -76,8 +76,8 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
   const navItems = user?.role === 'teacher' || user?.role === 'admin' ? teacherNavItems : studentNavItems;
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     navigate('/login');
   };
 

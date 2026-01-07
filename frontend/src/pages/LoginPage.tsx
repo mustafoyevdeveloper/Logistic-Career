@@ -19,11 +19,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 
-interface LoginPageProps {
-  isAdminRoute?: boolean;
-}
-
-export default function LoginPage({ isAdminRoute = false }: LoginPageProps) {
+export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -32,13 +28,21 @@ export default function LoginPage({ isAdminRoute = false }: LoginPageProps) {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
-  // Admin route tekshirish
+  // Query parametrni tekshirish va redirect qilish
   useEffect(() => {
-    if (searchParams.get('role') === 'admin' || isAdminRoute) {
-      // Admin login uchun default qiymatlar
+    const role = searchParams.get('role');
+    
+    // Agar role parametri bo'lmasa, avtomatik ?role=student qo'shish
+    if (!role) {
+      navigate('/login?role=student', { replace: true });
+      return;
+    }
+    
+    // Admin login uchun default qiymatlar
+    if (role === 'admin') {
       setEmail('');
     }
-  }, [searchParams, isAdminRoute]);
+  }, [searchParams, navigate]);
 
   // useEffect'ni olib tashladik - App.tsx'dagi route redirect va handleSubmit'dagi redirect yetarli
   // Bu infinite loop'ni oldini oladi
@@ -54,12 +58,14 @@ export default function LoginPage({ isAdminRoute = false }: LoginPageProps) {
     try {
       let loggedInUser;
       
-      // Admin login tekshirish
-      if (isAdminRoute || searchParams.get('role') === 'admin') {
+      // Role tekshirish
+      const role = searchParams.get('role');
+      if (role === 'admin') {
+        // Admin/Teacher login
         loggedInUser = await adminLogin(email, password);
         toast.success('Muvaffaqiyatli kirdingiz!');
       } else {
-        // Student login
+        // Student login (default yoki ?role=student)
         loggedInUser = await login(email, password, 'student');
         toast.success('Muvaffaqiyatli kirdingiz!');
       }
@@ -135,7 +141,7 @@ export default function LoginPage({ isAdminRoute = false }: LoginPageProps) {
             <span className="text-xl font-bold text-foreground">Logistic Carrier</span>
           </div>
 
-          {isAdminRoute || searchParams.get('role') === 'admin' ? (
+          {searchParams.get('role') === 'admin' ? (
             <>
               <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">
                 Admin/Teacher Kirish
@@ -147,10 +153,10 @@ export default function LoginPage({ isAdminRoute = false }: LoginPageProps) {
           ) : (
             <>
               <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">
-                O'quvchi Kirish
+                Student Kirish
               </h2>
               <p className="text-muted-foreground mb-8">
-                O'quvchilar faqatgina o'qituvchi tomonidan berilgan email va parol bilan tizimga kirishlari mumkin
+              O'quvchilar faqatgina o'qituvchi tomonidan berilgan email va parol bilan tizimga kirishlari mumkin.
               </p>
             </>
           )}
@@ -212,18 +218,47 @@ export default function LoginPage({ isAdminRoute = false }: LoginPageProps) {
               )}
             </Button>
           </form>
+
+          {/* Admin login tugmasi */}
+          {searchParams.get('role') !== 'admin' && (
+            <div className="mt-4">
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
+                onClick={() => navigate('/login?role=admin')}
+              >
+                Admin/Teacher kirish
+              </Button>
+            </div>
+          )}
+
+          {/* Student login tugmasi */}
+          {searchParams.get('role') === 'admin' && (
+            <div className="mt-4">
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
+                onClick={() => navigate('/login?role=student')}
+              >
+                O'quvchi kirish
+              </Button>
+            </div>
+          )}
+
             <a href="/"><Button className="inline-flex w-full mt-4 items-center justify-center transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&amp;_svg]:pointer-events-none [&amp;_svg]:size-4 [&amp;_svg]:shrink-0 gradient-primary text-primary-foreground shadow-lg hover:shadow-glow active:scale-[0.98] font-semibold h-12 rounded-lg">
               Bosh sahifa
             </Button></a>
 
-          {!isAdminRoute && searchParams.get('role') !== 'admin' && (
+          {(searchParams.get('role') === 'student' || !searchParams.get('role')) && (
             <div className="mt-6 p-4 bg-info/10 border border-info/20 rounded-xl">
               <div className="flex items-start gap-3">
                 <AlertCircle className="w-5 h-5 text-info shrink-0 mt-0.5" />
                 <div className="text-sm text-foreground">
                   <p className="font-medium mb-1">Eslatma</p>
-                  <p className="text-red-500 mt-1">
-                    Agar tizimga muvafaqiyatli kirgan bo'lsangiz va sahifa bo'sh ko'rinsa sahifani yangilang yoki saytga qayta kiring.
+                  <p className="text-red-500">
+                  Agar tizimga muvafaqiyatli kirgan bo'lsangiz va sahifa bo'sh ko'rinsa sahifani yangilang yoki saytga qayta kiring.
                   </p>
                 </div>
               </div>

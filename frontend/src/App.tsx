@@ -109,9 +109,6 @@ function AppRoutes() {
       {/* Public Routes */}
       <Route path="/login" element={<LoginRouteWrapper />} />
       
-      {/* Admin/Teacher Login Route */}
-      <Route path="/teacher/admin/role" element={<LoginPage isAdminRoute />} />
-      
       {/* Student Routes */}
       <Route path="/student" element={
         <ProtectedRoute allowedRole="student"><StudentDashboard /></ProtectedRoute>
