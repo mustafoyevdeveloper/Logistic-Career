@@ -28,7 +28,7 @@ export default function LoginPage({ isAdminRoute = false }: LoginPageProps) {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const { login, adminLogin, user, isAuthenticated } = useAuth();
+  const { login, adminLogin, user, isAuthenticated, isLoading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
@@ -40,21 +40,8 @@ export default function LoginPage({ isAdminRoute = false }: LoginPageProps) {
     }
   }, [searchParams, isAdminRoute]);
 
-  // User state o'zgarganda avtomatik redirect
-  useEffect(() => {
-    if (isAuthenticated && user) {
-      // Kichik kechikish - state to'liq yangilanishi uchun
-      const timer = setTimeout(() => {
-        if (user.role === 'teacher' || user.role === 'admin') {
-          navigate('/teacher', { replace: true });
-        } else if (user.role === 'student') {
-          navigate('/student', { replace: true });
-        }
-      }, 100);
-      
-      return () => clearTimeout(timer);
-    }
-  }, [isAuthenticated, user, navigate]);
+  // useEffect'ni olib tashladik - App.tsx'dagi route redirect va handleSubmit'dagi redirect yetarli
+  // Bu infinite loop'ni oldini oladi
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -79,14 +66,16 @@ export default function LoginPage({ isAdminRoute = false }: LoginPageProps) {
       
       // Login muvaffaqiyatli bo'lganda, user state yangilanishini kutib, redirect qilish
       if (loggedInUser) {
-        setTimeout(() => {
+        setIsLoading(false);
+        // Navigate'ni keyingi render cycle'da qilish
+        // App.tsx'dagi route redirect ham ishlaydi, lekin bu yerda ham qo'shimcha redirect qilamiz
+        requestAnimationFrame(() => {
           if (loggedInUser.role === 'teacher' || loggedInUser.role === 'admin') {
             navigate('/teacher', { replace: true });
           } else if (loggedInUser.role === 'student') {
             navigate('/student', { replace: true });
           }
-          setIsLoading(false);
-        }, 200);
+        });
       }
     } catch (error: any) {
       toast.error(error.message || 'Xatolik yuz berdi');
@@ -230,7 +219,7 @@ export default function LoginPage({ isAdminRoute = false }: LoginPageProps) {
               )}
             </Button>
           </form>
-            <Button className="inline-flex items-center justify-center transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&amp;_svg]:pointer-events-none [&amp;_svg]:size-4 [&amp;_svg]:shrink-0 gradient-primary text-primary-foreground shadow-lg hover:shadow-glow active:scale-[0.98] font-semibold h-12 rounded-lg px-[178px] text-base w-100">
+            <Button className="inline-flex w-full mt-4 items-center justify-center transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&amp;_svg]:pointer-events-none [&amp;_svg]:size-4 [&amp;_svg]:shrink-0 gradient-primary text-primary-foreground shadow-lg hover:shadow-glow active:scale-[0.98] font-semibold h-12 rounded-lg">
               <a href="/">Bosh sahifa</a>
             </Button>
 

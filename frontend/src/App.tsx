@@ -63,13 +63,17 @@ function ProtectedRoute({ children, allowedRole }: { children: React.ReactNode; 
 }
 
 function AppRoutes() {
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, user, isLoading } = useAuth();
   
   return (
     <Routes>
       {/* Public Routes */}
       <Route path="/login" element={
-        isAuthenticated ? <Navigate to={user?.role === 'teacher' || user?.role === 'admin' ? '/teacher' : '/student'} replace /> : <LoginPage />
+        !isLoading && isAuthenticated && user ? (
+          <Navigate to={user.role === 'teacher' || user.role === 'admin' ? '/teacher' : '/student'} replace />
+        ) : (
+          <LoginPage />
+        )
       } />
       
       {/* Admin/Teacher Login Route */}
