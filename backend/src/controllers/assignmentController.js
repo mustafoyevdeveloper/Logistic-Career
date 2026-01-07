@@ -340,25 +340,48 @@ export const getAllSubmissions = async (req, res) => {
 
     // Format submissions for frontend
     const formattedSubmissions = submissions
-      .filter((submission) => submission.studentId && submission.assignmentId) // Faqat to'liq populate qilinganlar
-      .map((submission) => ({
-        id: submission._id.toString(),
-        studentName: `${submission.studentId?.firstName || ''} ${submission.studentId?.lastName || ''}`.trim(),
-        studentAvatar: submission.studentId 
-          ? `${submission.studentId.firstName?.charAt(0) || ''}${submission.studentId.lastName?.charAt(0) || ''}`
-          : '??',
-        assignmentTitle: submission.assignmentId?.title || 'Topshiriq topilmadi',
-        submittedAt: submission.submittedAt 
-          ? new Date(submission.submittedAt).toLocaleString('uz-UZ') 
-          : new Date(submission.createdAt).toLocaleString('uz-UZ'),
-        status: submission.status || 'pending',
-        aiScore: submission.aiScore || null,
-        teacherScore: submission.teacherScore || null,
-        feedback: submission.feedback || null,
-        answer: submission.answer || '',
-        assignmentId: submission.assignmentId?._id?.toString() || submission.assignmentId?.toString() || null,
-        studentId: submission.studentId?._id?.toString() || submission.studentId?.toString() || null,
-      }));
+      .filter((submission) => {
+        // Faqat to'liq populate qilinganlar va studentId va assignmentId mavjud bo'lganlar
+        return submission.studentId && 
+               submission.assignmentId && 
+               typeof submission.studentId === 'object' && 
+               typeof submission.assignmentId === 'object';
+      })
+      .map((submission) => {
+        // Answers array'ni string'ga o'tkazish
+        let answerText = '';
+        if (submission.answers && Array.isArray(submission.answers) && submission.answers.length > 0) {
+          answerText = submission.answers
+            .map((ans) => {
+              if (typeof ans.answer === 'string') {
+                return ans.answer;
+              } else if (typeof ans.answer === 'object') {
+                return JSON.stringify(ans.answer);
+              }
+              return String(ans.answer || '');
+            })
+            .join('\n');
+        }
+
+        return {
+          id: submission._id.toString(),
+          studentName: `${submission.studentId?.firstName || ''} ${submission.studentId?.lastName || ''}`.trim() || 'Noma\'lum',
+          studentAvatar: submission.studentId 
+            ? `${submission.studentId.firstName?.charAt(0) || ''}${submission.studentId.lastName?.charAt(0) || ''}`.toUpperCase()
+            : '??',
+          assignmentTitle: submission.assignmentId?.title || 'Topshiriq topilmadi',
+          submittedAt: submission.submittedAt 
+            ? new Date(submission.submittedAt).toLocaleString('uz-UZ') 
+            : (submission.createdAt ? new Date(submission.createdAt).toLocaleString('uz-UZ') : ''),
+          status: submission.status || 'pending',
+          aiScore: submission.aiScore || null,
+          teacherScore: submission.score || null, // score field ishlatiladi
+          feedback: submission.teacherFeedback || submission.feedback || null,
+          answer: answerText,
+          assignmentId: submission.assignmentId?._id?.toString() || submission.assignmentId?.toString() || null,
+          studentId: submission.studentId?._id?.toString() || submission.studentId?.toString() || null,
+        };
+      });
 
     res.json({
       success: true,
@@ -369,6 +392,7 @@ export const getAllSubmissions = async (req, res) => {
     res.status(500).json({
       success: false,
       message: error.message || 'Server xatosi',
+      error: process.env.NODE_ENV === 'development' ? error.stack : undefined,
     });
   }
 };

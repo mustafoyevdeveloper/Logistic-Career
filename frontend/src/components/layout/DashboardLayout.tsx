@@ -29,7 +29,7 @@ const studentNavItems: NavItem[] = [
   { icon: LayoutDashboard, label: 'Bosh sahifa', href: '/student' },
   { icon: BookOpen, label: 'Darsliklar', href: '/student/lessons' },
   { icon: MessageSquare, label: 'AI Yordamchi', href: '/student/ai-chat' },
-  { icon: ClipboardList, label: 'Topshiriqlar', href: '/student/assignments' },
+  // { icon: ClipboardList, label: 'Topshiriqlar', href: '/student/assignments' },
   { icon: User, label: 'Profil', href: '/student/profile' },
 ];
 
@@ -37,8 +37,8 @@ const teacherNavItems: NavItem[] = [
   { icon: LayoutDashboard, label: 'Bosh sahifa', href: '/teacher' },
   { icon: BookOpen, label: 'O\'quvchilar', href: '/teacher/students' },
   { icon: Users, label: 'Guruhlar', href: '/teacher/groups' },
-  { icon: ClipboardList, label: 'Topshiriqlar', href: '/teacher/assignments' },
-  { icon: Settings, label: 'Sozlamalar', href: '/teacher/settings' },
+  // { icon: ClipboardList, label: 'Topshiriqlar', href: '/teacher/assignments' },
+  // { icon: Settings, label: 'Sozlamalar', href: '/teacher/settings' },
   { icon: User, label: 'Profil', href: '/teacher/profile' },
 ];
 
