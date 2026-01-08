@@ -151,7 +151,7 @@ export const updateGroup = async (req, res) => {
 };
 
 /**
- * @desc    Guruhni o'chirish
+ * @desc    Guruhni o'chirish (hard delete - bazadan to'liq o'chirish)
  * @route   DELETE /api/groups/:id
  * @access  Private (Teacher/Admin)
  */
@@ -182,13 +182,12 @@ export const deleteGroup = async (req, res) => {
       });
     }
 
-    // Soft delete
-    group.isActive = false;
-    await group.save();
+    // Hard delete - bazadan to'liq o'chirish
+    await Group.findByIdAndDelete(req.params.id);
 
     res.json({
       success: true,
-      message: 'Guruh muvaffaqiyatli o\'chirildi',
+      message: 'Guruh bazadan to\'liq o\'chirildi',
     });
   } catch (error) {
     res.status(500).json({

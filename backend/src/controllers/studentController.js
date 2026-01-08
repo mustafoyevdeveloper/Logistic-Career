@@ -2,7 +2,7 @@ import User from '../models/User.js';
 import Group from '../models/Group.js';
 
 /**
- * @desc    O'quvchini o'chirish (soft delete)
+ * @desc    O'quvchini o'chirish (hard delete - bazadan to'liq o'chirish)
  * @route   DELETE /api/students/:id
  * @access  Private (Teacher/Admin)
  */
@@ -24,18 +24,18 @@ export const deleteStudent = async (req, res) => {
       });
     }
 
-    // Soft delete - isActive ni false qilish
-    student.isActive = false;
-    await student.save();
-
-    // Group student count yangilash
-    if (student.group) {
-      await Group.updateStudentCount(student.group);
+    // Group student count yangilash (o'chirishdan oldin)
+    const groupId = student.group;
+    if (groupId) {
+      await Group.updateStudentCount(groupId);
     }
+
+    // Hard delete - bazadan to'liq o'chirish
+    await User.findByIdAndDelete(req.params.id);
 
     res.json({
       success: true,
-      message: 'O\'quvchi muvaffaqiyatli o\'chirildi',
+      message: 'O\'quvchi bazadan to\'liq o\'chirildi',
     });
   } catch (error) {
     res.status(500).json({
