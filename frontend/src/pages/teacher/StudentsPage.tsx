@@ -48,6 +48,7 @@ interface Student {
   lastName: string;
   group?: string;
   progress: number;
+  inputPassword?: string; // Parolni hash qilinmasdan saqlash
   deviceId?: string;
   deviceInfo?: {
     platform?: string;
@@ -164,15 +165,15 @@ export default function StudentsPage() {
     }
     
     setStudentToEdit(student);
-    // Parol mavjudligini belgilash (parol har doim mavjud, chunki o'quvchi yaratilganda parol beriladi)
+    // Parolni inputPassword dan olish
     setEditForm({
       firstName: student.firstName,
       lastName: student.lastName,
       groupId: student.group || '',
       email: student.email,
-      password: '••••••••', // Parol mavjudligini ko'rsatish (placeholder sifatida)
+      password: student.inputPassword || '', // Haqiqiy parolni ko'rsatish
     });
-    setHasPassword(true); // Parol mavjud
+    setHasPassword(!!student.inputPassword); // Parol mavjudligini tekshirish
     setPasswordUpdated(false); // Reset password updated flag
     setShowPassword(false); // Password visibility'ni reset qilish
     setEditDialogOpen(true);
@@ -188,8 +189,8 @@ export default function StudentsPage() {
       if (editForm.lastName) updateData.lastName = editForm.lastName;
       if (editForm.groupId !== undefined) updateData.groupId = editForm.groupId;
       if (editForm.email) updateData.email = editForm.email;
-      // Parol faqat o'zgartirilganda yuboriladi (placeholder "••••••••" emas va bo'sh emas)
-      if (editForm.password && editForm.password !== '••••••••' && editForm.password.trim() !== '') {
+      // Parol faqat o'zgartirilganda yuboriladi (bo'sh emas)
+      if (editForm.password && editForm.password.trim() !== '') {
         updateData.password = editForm.password;
         setPasswordUpdated(true); // Parol yangilanganini belgilash
       }
@@ -513,23 +514,10 @@ export default function StudentsPage() {
                   type={showPassword ? 'text' : 'password'}
                   value={editForm.password || ''}
                   onChange={(e) => {
-                    const newPassword = e.target.value;
-                    setEditForm({ ...editForm, password: newPassword });
+                    setEditForm({ ...editForm, password: e.target.value });
                     setPasswordUpdated(false); // Parol o'zgarganda flag'ni reset qilish
                   }}
-                  onFocus={(e) => {
-                    // Focus bo'lganda, agar placeholder bo'lsa, bo'sh qilish
-                    if (e.target.value === '••••••••') {
-                      setEditForm({ ...editForm, password: '' });
-                    }
-                  }}
-                  onBlur={(e) => {
-                    // Blur bo'lganda, agar bo'sh bo'lsa va parol mavjud bo'lsa, placeholder qaytarish
-                    if (e.target.value === '' && hasPassword) {
-                      setEditForm({ ...editForm, password: '••••••••' });
-                    }
-                  }}
-                  placeholder={hasPassword ? "Parol mavjud. O'zgartirish uchun yangi parol kiriting" : "Parol o'zgartirish uchun yangi parol kiriting"}
+                  placeholder="Parol o'zgartirish uchun yangi parol kiriting"
                   className="pr-10"
                   autoComplete="new-password"
                 />

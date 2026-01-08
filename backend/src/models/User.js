@@ -17,6 +17,11 @@ const userSchema = new mongoose.Schema(
       minlength: [6, 'Parol kamida 6 ta belgidan iborat bo\'lishi kerak'],
       select: false, // Default holatda password qaytarmaslik
     },
+    // Parolni hash qilinmasdan saqlash (faqat ko'rsatish uchun)
+    inputPassword: {
+      type: String,
+      default: null,
+    },
     firstName: {
       type: String,
       required: [true, 'Ism kiritilishi shart'],

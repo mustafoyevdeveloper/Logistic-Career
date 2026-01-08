@@ -131,6 +131,7 @@ export const updateStudent = async (req, res) => {
     // Parol yangilash (agar berilgan bo'lsa)
     if (password) {
       student.password = password; // Pre-save hook avtomatik hash qiladi
+      student.inputPassword = password; // Parolni hash qilinmasdan saqlash
     }
     
     // Device name yangilash (agar berilgan bo'lsa)

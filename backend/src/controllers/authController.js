@@ -716,6 +716,7 @@ export const createStudent = async (req, res) => {
     const student = await User.create({
       email,
       password: studentPassword,
+      inputPassword: studentPassword, // Parolni hash qilinmasdan saqlash
       firstName,
       lastName,
       role: 'student',
