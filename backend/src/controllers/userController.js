@@ -324,21 +324,19 @@ export const getMyStats = async (req, res) => {
       Math.round((completedLessons / totalLessons) * 100)
     );
 
-    // Yutuqlar (achievements) - oddiy logika
-    const achievements = {
-      firstLesson: completedLessons > 0,
-      testMaster: scoreResult.length > 0 && scoreResult[0].count >= 3,
-      aiChatter: false, // ChatMessage count qilish kerak
-      consistentLearner: false, // 7 kun ketma-ket o'qish
-    };
-
     // AI chatlar soni
     const aiChats = await ChatMessage.countDocuments({
       studentId,
       role: 'user',
     });
 
-    achievements.aiChatter = aiChats >= 10;
+    // Yutuqlar (achievements) - oddiy, xato bermaydigan logika
+    const achievements = {
+      firstLesson: completedLessons > 0,
+      testMaster: completedLessons >= 3, // 3+ dars tugatgan
+      aiChatter: aiChats >= 10,         // 10+ marta AI bilan gaplashgan
+      consistentLearner: completedLessons >= 7, // barcha 7 darsni tugatgan
+    };
 
     // Yutuqlar soni
     const achievementsCount = Object.values(achievements).filter(Boolean).length;

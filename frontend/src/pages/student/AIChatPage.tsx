@@ -208,7 +208,6 @@ Savolingiz bo'lsa, bemalol yozing!`,
 
       if (response.success) {
         setMessages((prev) => prev.filter(msg => msg.id !== messageId));
-        toast.success('Xabar o\'chirildi');
       }
     } catch (error: any) {
       toast.error(error.message || 'Xabarni o\'chirishda xatolik');

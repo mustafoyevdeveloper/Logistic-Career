@@ -1,11 +1,39 @@
-import OpenAI from 'openai';
 import dotenv from 'dotenv';
 
 dotenv.config();
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
+// Model nomini .env dan boshqarish uchun:
+// GEMINI_MODEL=gemini-1.5-flash-latest yoki GEMINI_MODEL=chat-bison-001 va hokazo
+const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
+
+const callGemini = async (body) => {
+  if (!GEMINI_API_KEY) {
+    throw new Error('GEMINI_API_KEY yoki GOOGLE_API_KEY .env faylida topilmadi');
+  }
+
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    console.error('Gemini API error:', res.status, text);
+    throw new Error(`Gemini API xatosi: ${res.status}`);
+  }
+
+  const data = await res.json();
+  const candidate = data.candidates?.[0];
+  const part = candidate?.content?.parts?.[0];
+
+  return {
+    text: part?.text || '',
+    tokens: data.usageMetadata?.totalTokenCount || 0,
+  };
+};
 
 /**
  * AI bilan chat qilish
@@ -28,24 +56,45 @@ Muhim tushunchalar:
 
 Har doim o'zbek tilida javob bering va amaliy misollar keltiring.`;
 
-    const response = await openai.chat.completions.create({
-      model: 'gpt-3.5-turbo',
-      messages: [
-        { role: 'system', content: systemPrompt },
-        ...messages,
+    const body = {
+      contents: [
+        {
+          role: 'user',
+          parts: [{ text: systemPrompt }],
+        },
+        ...messages.map((m) => ({
+          role: m.role === 'assistant' ? 'model' : 'user',
+          parts: [{ text: m.content }],
+        })),
       ],
-      temperature: 0.7,
-      max_tokens: 1000,
-    });
+      generationConfig: {
+        temperature: 0.7,
+        maxOutputTokens: 1000,
+      },
+    };
+
+    const result = await callGemini(body);
 
     return {
-      content: response.choices[0].message.content,
-      tokens: response.usage.total_tokens,
-      model: 'gpt-3.5-turbo',
+      content: result.text,
+      tokens: result.tokens,
+      model: GEMINI_MODEL,
     };
   } catch (error) {
     console.error('AI Service Error:', error);
-    throw new Error('AI xizmati bilan bog\'lanishda xatolik yuz berdi');
+    
+    // 429 - Quota exceeded (pul/credit tugagan)
+    if (error.status === 429 || error.code === 'insufficient_quota') {
+      throw new Error('AI xizmati vaqtincha mavjud emas. Iltimos, keyinroq qayta urinib ko\'ring yoki administratorga murojaat qiling.');
+    }
+    
+    // 401 - Invalid API key
+    if (error.status === 401 || error.code === 'invalid_api_key') {
+      throw new Error('AI xizmati sozlanmagan. Iltimos, administratorga murojaat qiling.');
+    }
+    
+    // Boshqa xatolar
+    throw new Error('AI xizmati bilan bog\'lanishda xatolik yuz berdi. Iltimos, keyinroq qayta urinib ko\'ring.');
   }
 };
 
@@ -69,20 +118,27 @@ Baholash mezonlari:
 
 Faqat raqamli baho qaytaring (0-100).`;
 
-    const response = await openai.chat.completions.create({
-      model: 'gpt-3.5-turbo',
-      messages: [
+    const body = {
+      contents: [
         {
-          role: 'system',
-          content: 'Siz topshiriqlarni baholovchi AI yordamchisisiz. Faqat 0-100 orasidagi raqamni qaytaring.',
+          role: 'user',
+          parts: [
+            {
+              text:
+                'Siz topshiriqlarni baholovchi AI yordamchisisiz. Faqat 0-100 orasidagi raqamni qaytaring.\n\n' +
+                prompt,
+            },
+          ],
         },
-        { role: 'user', content: prompt },
       ],
-      temperature: 0.3,
-      max_tokens: 50,
-    });
+      generationConfig: {
+        temperature: 0.3,
+        maxOutputTokens: 20,
+      },
+    };
 
-    const score = parseInt(response.choices[0].message.content.trim());
+    const result = await callGemini(body);
+    const score = parseInt(result.text.trim(), 10);
     return Math.min(100, Math.max(0, isNaN(score) ? 0 : score));
   } catch (error) {
     console.error('AI Grading Error:', error);
@@ -102,20 +158,27 @@ Dars mavzulari: ${lesson.topics.join(', ')}
 
 Savol formatida qaytaring.`;
 
-    const response = await openai.chat.completions.create({
-      model: 'gpt-3.5-turbo',
-      messages: [
+    const body = {
+      contents: [
         {
-          role: 'system',
-          content: 'Siz logistika darslari uchun amaliy savollar yaratuvchi yordamchisiz.',
+          role: 'user',
+          parts: [
+            {
+              text:
+                'Siz logistika darslari uchun amaliy savollar yaratuvchi yordamchisiz.\n\n' +
+                prompt,
+            },
+          ],
         },
-        { role: 'user', content: prompt },
       ],
-      temperature: 0.8,
-      max_tokens: 300,
-    });
+      generationConfig: {
+        temperature: 0.8,
+        maxOutputTokens: 300,
+      },
+    };
 
-    return response.choices[0].message.content;
+    const result = await callGemini(body);
+    return result.text;
   } catch (error) {
     console.error('AI Question Generation Error:', error);
     return null;

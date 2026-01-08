@@ -65,7 +65,7 @@ export default function RegisterPage() {
         role: selectedRole,
         group: formData.group || undefined,
       });
-      toast.success('Muvaffaqiyatli ro\'yxatdan o\'tdingiz!');
+      // toast.success('Muvaffaqiyatli ro\'yxatdan o\'tdingiz!');
       navigate(selectedRole === 'student' ? '/student' : '/teacher');
     } catch (error) {
       toast.error('Xatolik yuz berdi');

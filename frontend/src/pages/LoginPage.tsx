@@ -54,11 +54,11 @@ export default function LoginPage() {
       if (role === 'admin') {
         // Admin/Teacher login
         loggedInUser = await adminLogin(email, password);
-        toast.success('Muvaffaqiyatli kirdingiz!');
+        // toast.success('Muvaffaqiyatli kirdingiz!');
       } else {
         // Student login (default yoki ?role=student)
         loggedInUser = await login(email, password, 'student');
-        toast.success('Muvaffaqiyatli kirdingiz!');
+        // toast.success('Muvaffaqiyatli kirdingiz!');
       }
       
       // Login muvaffaqiyatli bo'lganda, user state yangilanishini kutib, redirect qilish
