@@ -491,16 +491,6 @@ export default function LessonDetailPage() {
           <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">
             {lesson.day}-Kun: {lesson.title}
           </h1>
-          <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-            <span className="flex items-center gap-1">
-              <Clock className="w-4 h-4" />
-              {lesson.duration}
-            </span>
-            <span className="flex items-center gap-1">
-              <BookOpen className="w-4 h-4" />
-              {lesson.topics.length} mavzu
-            </span>
-          </div>
         </div>
       </div>
 
