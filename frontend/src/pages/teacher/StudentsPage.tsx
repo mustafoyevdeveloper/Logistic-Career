@@ -96,6 +96,7 @@ export default function StudentsPage() {
   });
   const [passwordUpdated, setPasswordUpdated] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [hasPassword, setHasPassword] = useState(false); // Parol mavjudligini belgilash
 
   // Ma'lumotlarni yuklash
   useEffect(() => {
@@ -163,14 +164,15 @@ export default function StudentsPage() {
     }
     
     setStudentToEdit(student);
-    // Parol har doim bo'sh bo'lishi kerak
+    // Parol mavjudligini belgilash (parol har doim mavjud, chunki o'quvchi yaratilganda parol beriladi)
     setEditForm({
       firstName: student.firstName,
       lastName: student.lastName,
       groupId: student.group || '',
       email: student.email,
-      password: '', // Parol har doim bo'sh bo'ladi (yangi parol kiritish uchun)
+      password: '••••••••', // Parol mavjudligini ko'rsatish (placeholder sifatida)
     });
+    setHasPassword(true); // Parol mavjud
     setPasswordUpdated(false); // Reset password updated flag
     setShowPassword(false); // Password visibility'ni reset qilish
     setEditDialogOpen(true);
@@ -186,7 +188,8 @@ export default function StudentsPage() {
       if (editForm.lastName) updateData.lastName = editForm.lastName;
       if (editForm.groupId !== undefined) updateData.groupId = editForm.groupId;
       if (editForm.email) updateData.email = editForm.email;
-      if (editForm.password) {
+      // Parol faqat o'zgartirilganda yuboriladi (placeholder "••••••••" emas va bo'sh emas)
+      if (editForm.password && editForm.password !== '••••••••' && editForm.password.trim() !== '') {
         updateData.password = editForm.password;
         setPasswordUpdated(true); // Parol yangilanganini belgilash
       }
@@ -458,6 +461,7 @@ export default function StudentsPage() {
             setEditForm({ firstName: '', lastName: '', groupId: '', email: '', password: '' });
             setPasswordUpdated(false);
             setShowPassword(false);
+            setHasPassword(false);
             setStudentToEdit(null);
           }
         }}
@@ -503,16 +507,29 @@ export default function StudentsPage() {
               />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium">Yangi parol (ixtiyoriy)</label>
+              <label className="text-sm font-medium">Parol</label>
               <div className="relative">
                 <Input
                   type={showPassword ? 'text' : 'password'}
                   value={editForm.password || ''}
                   onChange={(e) => {
-                    setEditForm({ ...editForm, password: e.target.value });
+                    const newPassword = e.target.value;
+                    setEditForm({ ...editForm, password: newPassword });
                     setPasswordUpdated(false); // Parol o'zgarganda flag'ni reset qilish
                   }}
-                  placeholder="Parol o'zgartirish uchun yangi parol kiriting"
+                  onFocus={(e) => {
+                    // Focus bo'lganda, agar placeholder bo'lsa, bo'sh qilish
+                    if (e.target.value === '••••••••') {
+                      setEditForm({ ...editForm, password: '' });
+                    }
+                  }}
+                  onBlur={(e) => {
+                    // Blur bo'lganda, agar bo'sh bo'lsa va parol mavjud bo'lsa, placeholder qaytarish
+                    if (e.target.value === '' && hasPassword) {
+                      setEditForm({ ...editForm, password: '••••••••' });
+                    }
+                  }}
+                  placeholder={hasPassword ? "Parol mavjud. O'zgartirish uchun yangi parol kiriting" : "Parol o'zgartirish uchun yangi parol kiriting"}
                   className="pr-10"
                   autoComplete="new-password"
                 />
@@ -531,8 +548,10 @@ export default function StudentsPage() {
               <p className="text-xs text-muted-foreground">
                 {passwordUpdated ? (
                   <span className="text-success">Parol muvaffaqiyatli yangilandi. Keyingi marta yangi parolni kiriting.</span>
+                ) : hasPassword ? (
+                  "Parol mavjud. O'zgartirish uchun yangi parol kiriting. Bo'sh qoldirilsa, parol o'zgarmaydi."
                 ) : (
-                  "Parol o'zgartirish uchun yangi parol kiriting. Bo'sh qoldirilsa, parol o'zgarmaydi."
+                  "Parol o'zgartirish uchun yangi parol kiriting."
                 )}
               </p>
             </div>
