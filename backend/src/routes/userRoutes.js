@@ -5,6 +5,7 @@ import {
   getGroups,
   getSettings,
   updateSettings,
+  getTeacherStats,
 } from '../controllers/userController.js';
 import { protect, authorize } from '../middleware/auth.js';
 
@@ -18,6 +19,7 @@ router.get('/students/:id', getStudent);
 router.get('/groups', getGroups);
 router.get('/settings', getSettings);
 router.put('/settings', updateSettings);
+router.get('/teacher/stats', getTeacherStats);
 
 export default router;
 

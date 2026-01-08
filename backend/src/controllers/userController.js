@@ -2,6 +2,7 @@ import User from '../models/User.js';
 import StudentProgress from '../models/StudentProgress.js';
 import ChatMessage from '../models/ChatMessage.js';
 import AssignmentSubmission from '../models/AssignmentSubmission.js';
+import Lesson from '../models/Lesson.js';
 
 /**
  * @desc    Barcha o'quvchilarni olish (Teacher)
@@ -18,7 +19,7 @@ export const getStudents = async (req, res) => {
     }
 
     const { group, search } = req.query;
-    let query = { role: 'student' }; // Barcha o'quvchilarni ko'rsatish (muzlatilgan va o'chirilganlarni ham)
+    let query = { role: 'student', isActive: true }; // Faqat faol o'quvchilarni ko'rsatish
 
     if (group) {
       query.group = group;
@@ -378,6 +379,73 @@ export const getMyStats = async (req, res) => {
           totalAchievements: 4,
         },
         achievements,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Server xatosi',
+    });
+  }
+};
+
+/**
+ * @desc    O'qituvchi statistikalarini olish (Teacher/Admin)
+ * @route   GET /api/users/teacher/stats
+ * @access  Private (Teacher/Admin)
+ */
+export const getTeacherStats = async (req, res) => {
+  try {
+    if (req.user.role !== 'teacher' && req.user.role !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Faqat o\'qituvchilar yoki admin statistikalarni ko\'ra oladi',
+      });
+    }
+
+    // Jami o'quvchilar (faqat faol)
+    const totalStudents = await User.countDocuments({
+      role: 'student',
+      isActive: true,
+    });
+
+    // Faol darslar (isActive: true)
+    const activeLessons = await Lesson.countDocuments({
+      isActive: true,
+    });
+
+    // Tekshirilgan topshiriqlar (status: 'graded')
+    const reviewedAssignments = await AssignmentSubmission.countDocuments({
+      status: 'graded',
+    });
+
+    // O'rtacha baho (barcha graded assignments'ning o'rtacha bahosi)
+    const avgScoreResult = await AssignmentSubmission.aggregate([
+      {
+        $match: {
+          status: 'graded',
+          score: { $ne: null },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          avgScore: { $avg: '$score' },
+        },
+      },
+    ]);
+
+    const avgScore = avgScoreResult.length > 0 
+      ? Math.round(avgScoreResult[0].avgScore) 
+      : 0;
+
+    res.json({
+      success: true,
+      data: {
+        totalStudents,
+        activeLessons,
+        reviewedAssignments,
+        avgScore,
       },
     });
   } catch (error) {

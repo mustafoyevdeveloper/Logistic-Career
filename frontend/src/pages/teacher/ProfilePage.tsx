@@ -1,5 +1,7 @@
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
+import { apiService } from '@/services/api';
 import { 
   User, 
   Mail, 
@@ -11,12 +13,37 @@ import {
 
 export default function TeacherProfilePage() {
   const { user } = useAuth();
+  const [stats, setStats] = useState({
+    totalStudents: 0,
+    activeLessons: 0,
+    reviewedAssignments: 0,
+    avgScore: 0,
+  });
+  const [isLoading, setIsLoading] = useState(true);
 
-  const stats = [
-    { label: 'Jami o\'quvchilar', value: '24' },
-    { label: 'Faol darslar', value: '12' },
-    { label: 'Tekshirilgan topshiriqlar', value: '156' },
-    { label: 'O\'rtacha baho', value: '82%' },
+  useEffect(() => {
+    loadStats();
+  }, []);
+
+  const loadStats = async () => {
+    try {
+      setIsLoading(true);
+      const response = await apiService.getTeacherStats();
+      if (response.success && response.data) {
+        setStats(response.data);
+      }
+    } catch (error: any) {
+      console.error('Stats load error:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const statsList = [
+    { label: 'Jami o\'quvchilar', value: stats.totalStudents.toString() },
+    { label: 'Faol darslar', value: stats.activeLessons.toString() },
+    { label: 'Tekshirilgan topshiriqlar', value: stats.reviewedAssignments.toString() },
+    { label: 'O\'rtacha baho', value: `${stats.avgScore}%` },
   ];
 
   return (
@@ -57,16 +84,26 @@ export default function TeacherProfilePage() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {stats.map((stat, index) => (
-          <div key={index} className="bg-card rounded-xl p-4 border border-border shadow-card">
-            <p className="text-2xl font-bold text-foreground">{stat.value}</p>
-            <p className="text-sm text-muted-foreground">{stat.label}</p>
-          </div>
-        ))}
+        {isLoading ? (
+          <>
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="bg-card rounded-xl p-4 border border-border shadow-card">
+                <div className="w-16 h-6 bg-muted animate-pulse rounded mb-2" />
+                <div className="w-24 h-4 bg-muted animate-pulse rounded" />
+              </div>
+            ))}
+          </>
+        ) : (
+          statsList.map((stat, index) => (
+            <div key={index} className="bg-card rounded-xl p-4 border border-border shadow-card">
+              <p className="text-2xl font-bold text-foreground">{stat.value}</p>
+              <p className="text-sm text-muted-foreground">{stat.label}</p>
+            </div>
+          ))
+        )}
       </div>
 
-      {/* Settings Section */}
-      <div className="bg-card rounded-2xl p-6 border border-border shadow-card">
+      {/* <div className="bg-card rounded-2xl p-6 border border-border shadow-card">
         <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
           <Settings className="w-5 h-5" />
           Sozlamalar
@@ -87,7 +124,7 @@ export default function TeacherProfilePage() {
             <Button variant="outline" size="sm">Yoqilgan</Button>
           </div>
         </div>
-      </div>
+      </div> */}
     </div>
   );
 }

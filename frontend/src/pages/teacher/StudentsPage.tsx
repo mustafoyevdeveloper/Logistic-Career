@@ -163,6 +163,7 @@ export default function StudentsPage() {
     }
     
     setStudentToEdit(student);
+    // Parol har doim bo'sh bo'lishi kerak
     setEditForm({
       firstName: student.firstName,
       lastName: student.lastName,
@@ -171,6 +172,7 @@ export default function StudentsPage() {
       password: '', // Parol har doim bo'sh bo'ladi (yangi parol kiritish uchun)
     });
     setPasswordUpdated(false); // Reset password updated flag
+    setShowPassword(false); // Password visibility'ni reset qilish
     setEditDialogOpen(true);
   };
 
@@ -192,10 +194,7 @@ export default function StudentsPage() {
       await apiService.updateStudent(studentToEdit._id, updateData);
       toast.success('O\'quvchi muvaffaqiyatli yangilandi');
       setEditDialogOpen(false);
-      setStudentToEdit(null);
-      setEditForm({ firstName: '', lastName: '', groupId: '', email: '', password: '' });
-      setPasswordUpdated(false);
-      setSearchQuery(''); // Qidiruvni tozalash
+      // Form tozalash onOpenChange handler'da qilinadi, bu yerda faqat data yangilash
       loadData();
     } catch (error: any) {
       toast.error(error.message || 'O\'quvchini yangilashda xatolik');
@@ -234,8 +233,14 @@ export default function StudentsPage() {
           <Input
             placeholder="Ism yoki email bo'yicha qidirish..."
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) => {
+              // Faqat to'g'ridan-to'g'ri qidiruv input'iga yozilganda o'zgartirish
+              setSearchQuery(e.target.value);
+            }}
             className="pl-10"
+            autoComplete="off"
+            id="student-search-input"
+            name="student-search"
           />
         </div>
         <div className="flex gap-2 overflow-x-auto">
@@ -444,7 +449,19 @@ export default function StudentsPage() {
       </AlertDialog>
 
       {/* Edit Dialog */}
-      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+      <Dialog 
+        open={editDialogOpen} 
+        onOpenChange={(open) => {
+          setEditDialogOpen(open);
+          // Dialog yopilganda parol va form ma'lumotlarini tozalash
+          if (!open) {
+            setEditForm({ firstName: '', lastName: '', groupId: '', email: '', password: '' });
+            setPasswordUpdated(false);
+            setShowPassword(false);
+            setStudentToEdit(null);
+          }
+        }}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>O'quvchini yangilash</DialogTitle>
@@ -476,8 +493,13 @@ export default function StudentsPage() {
               <Input
                 type="email"
                 value={editForm.email}
-                onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                onChange={(e) => {
+                  setEditForm({ ...editForm, email: e.target.value });
+                }}
                 placeholder="email@example.com"
+                autoComplete="off"
+                id="edit-student-email"
+                name="edit-student-email"
               />
             </div>
             <div className="space-y-2">
@@ -485,13 +507,14 @@ export default function StudentsPage() {
               <div className="relative">
                 <Input
                   type={showPassword ? 'text' : 'password'}
-                  value={editForm.password}
+                  value={editForm.password || ''}
                   onChange={(e) => {
                     setEditForm({ ...editForm, password: e.target.value });
                     setPasswordUpdated(false); // Parol o'zgarganda flag'ni reset qilish
                   }}
-                  placeholder={passwordUpdated ? "Parol yangilandi. Yangi parol kiriting" : "Parol o'zgartirish uchun kiriting"}
+                  placeholder="Parol o'zgartirish uchun yangi parol kiriting"
                   className="pr-10"
+                  autoComplete="new-password"
                 />
                 <button
                   type="button"

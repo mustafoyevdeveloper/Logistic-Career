@@ -12,6 +12,7 @@ import assignmentRoutes from './routes/assignmentRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 import studentRoutes from './routes/studentRoutes.js';
 import groupRoutes from './routes/groupRoutes.js';
+import notificationRoutes from './routes/notificationRoutes.js';
 
 // Load env vars
 dotenv.config();
@@ -104,6 +105,7 @@ app.use('/api/assignments', assignmentRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/students', studentRoutes);
 app.use('/api/groups', groupRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // 404 handler
 app.use((req, res) => {

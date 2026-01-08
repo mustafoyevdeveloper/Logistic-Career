@@ -11,13 +11,32 @@ import {
   CheckCircle2,
   AlertCircle,
   MessageSquare,
-  Group
+  Group,
+  Bell
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { toast } from 'sonner';
+
+interface Notification {
+  _id: string;
+  type: string;
+  title: string;
+  message: string;
+  studentId?: {
+    firstName: string;
+    lastName: string;
+    email: string;
+  };
+  isRead: boolean;
+  createdAt: string;
+  metadata?: any;
+}
 
 export default function TeacherDashboard() {
   const { user } = useAuth();
   const [students, setStudents] = useState<any[]>([]);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
   const [stats, setStats] = useState({
     totalStudents: 0,
     activeLessons: 0,
@@ -28,6 +47,14 @@ export default function TeacherDashboard() {
 
   useEffect(() => {
     loadData();
+    loadNotifications();
+    
+    // Notification'larni har 30 soniyada yangilash
+    const interval = setInterval(() => {
+      loadNotifications();
+    }, 30000);
+    
+    return () => clearInterval(interval);
   }, []);
 
   const loadData = async () => {
@@ -59,6 +86,31 @@ export default function TeacherDashboard() {
     }
   };
 
+  const loadNotifications = async () => {
+    try {
+      const response = await apiService.request<{ notifications: Notification[]; unreadCount: number }>('/notifications');
+      if (response.success && response.data) {
+        setNotifications(response.data.notifications.slice(0, 5)); // Faqat 5 tasini ko'rsatish
+        setUnreadCount(response.data.unreadCount || 0);
+      }
+    } catch (error) {
+      console.error('Notifications load error:', error);
+    }
+  };
+
+  const handleMarkAsRead = async (notificationId: string) => {
+    try {
+      const response = await apiService.request(`/notifications/${notificationId}/read`, {
+        method: 'PUT',
+      });
+      if (response.success) {
+        loadNotifications();
+      }
+    } catch (error: any) {
+      toast.error(error.message || 'Xatolik yuz berdi');
+    }
+  };
+
   const dashboardStats = [
     { icon: Users, label: 'Jami o\'quvchilar', value: stats.totalStudents.toString(), color: 'text-primary' },
     { icon: BookOpen, label: 'Faol darslar', value: stats.activeLessons.toString(), color: 'text-accent' },
@@ -72,11 +124,23 @@ export default function TeacherDashboard() {
       <div className="gradient-hero rounded-xl sm:rounded-2xl p-4 sm:p-6 lg:p-8 text-primary-foreground relative overflow-hidden">
         <div className="absolute top-0 right-0 w-48 h-48 sm:w-64 sm:h-64 bg-accent/10 rounded-full blur-3xl"></div>
         <div className="relative z-10">
-          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold mb-2">
-            Xush kelibsiz, {user?.firstName}! 👋
-          </h1>
+          <div className="flex items-start justify-between mb-2">
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold">
+              Xush kelibsiz, {user?.firstName}! 👋
+            </h1>
+            {unreadCount > 0 && (
+              <div className="relative">
+                <Bell className="w-5 h-5 sm:w-6 sm:h-6" />
+                <span className="absolute -top-1 -right-1 w-4 h-4 sm:w-5 sm:h-5 bg-destructive rounded-full flex items-center justify-center text-xs font-bold">
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </span>
+              </div>
+            )}
+          </div>
           <p className="text-sm sm:text-base text-primary-foreground/80 mb-4 sm:mb-6 max-w-lg">
-            Bugun 3 ta yangi AI suhbat va 2 ta yangi topshiriq tekshirishingiz kerak
+            {unreadCount > 0 
+              ? `${unreadCount} ta yangi bildirish mavjud`
+              : 'Bugun 3 ta yangi AI suhbat va 2 ta yangi topshiriq tekshirishingiz kerak'}
           </p>
           
           <div className="flex flex-wrap gap-2 sm:gap-3">
@@ -89,6 +153,73 @@ export default function TeacherDashboard() {
           </div>
         </div>
       </div>
+
+      {/* Notifications */}
+      {notifications.length > 0 && (
+        <div className="bg-card rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-border shadow-card">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-base sm:text-lg font-semibold text-foreground flex items-center gap-2">
+              <Bell className="w-4 h-4 sm:w-5 sm:h-5" />
+              Yangi bildirishlar
+              {unreadCount > 0 && (
+                <span className="px-2 py-0.5 bg-primary text-primary-foreground rounded-full text-xs font-bold">
+                  {unreadCount}
+                </span>
+              )}
+            </h2>
+          </div>
+          
+          <div className="space-y-3">
+            {notifications.map((notification) => (
+              <div
+                key={notification._id}
+                className={`p-3 sm:p-4 rounded-lg border transition-all ${
+                  notification.isRead 
+                    ? 'border-border bg-muted/30' 
+                    : 'border-warning/50 bg-warning/5 cursor-pointer hover:bg-warning/10'
+                }`}
+              >
+                <div className="flex items-start gap-3">
+                  <AlertCircle className={`w-4 h-4 sm:w-5 sm:h-5 shrink-0 mt-0.5 ${
+                    notification.isRead ? 'text-muted-foreground' : 'text-warning'
+                  }`} />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between gap-2 mb-1">
+                      <h3 className="font-medium text-sm sm:text-base text-foreground">
+                        {notification.title}
+                      </h3>
+                      {!notification.isRead && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 px-2 text-xs shrink-0"
+                          onClick={() => handleMarkAsRead(notification._id)}
+                        >
+                          O'qildi
+                        </Button>
+                      )}
+                    </div>
+                    <p className="text-xs sm:text-sm text-muted-foreground mb-2">
+                      {notification.message}
+                    </p>
+                    {notification.studentId && (
+                      <p className="text-xs text-muted-foreground">
+                        O'quvchi: {notification.studentId.firstName} {notification.studentId.lastName} ({notification.studentId.email})
+                      </p>
+                    )}
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {new Date(notification.createdAt).toLocaleString('uz-UZ')}
+                    </p>
+                  </div>
+                  {!notification.isRead && (
+                    <div className="w-2 h-2 bg-warning rounded-full shrink-0 mt-2"></div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Stats Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">

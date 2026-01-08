@@ -1,4 +1,5 @@
 import User from '../models/User.js';
+import Notification from '../models/Notification.js';
 import { generateToken } from '../utils/generateToken.js';
 import bcrypt from 'bcryptjs';
 
@@ -122,49 +123,97 @@ export const login = async (req, res) => {
         });
       }
 
-      // DeviceId format: phoneFingerprint_emailHash_sessionId
-      // Bir xil telefondan boshqa brauzerdan kirishni qo'llab-quvvatlash
-      const deviceIdParts = deviceId.split('_');
-      const phoneFingerprint = deviceIdParts[0] || deviceId; // Telefon fingerprint
-      
-      // Bir email faqat bir qurilmaga (telefonga) bog'lanishi kerak
-      // Lekin bir qurilmada (telefonda) ko'p accountlar bo'lishi mumkin
-      // Bir xil telefondan boshqa brauzerdan kirish mumkin (avvalgi brauzer logout bo'ladi)
-      
-      // Agar user'da deviceId bo'lsa, telefon fingerprint'ni tekshirish
+      // FAQAT BIRTA QURILMAGA RUXSAT BERISH
+      // Agar o'quvchida allaqachon deviceId bo'lsa, faqat o'sha deviceId bilan login qilish mumkin
+      // Boshqa barcha qurilmalardan login bloklanadi
       if (user.deviceId) {
-        const existingDeviceIdParts = user.deviceId.split('_');
-        const existingPhoneFingerprint = existingDeviceIdParts[0] || user.deviceId;
-        
-        // Agar telefon boshqa bo'lsa, ruxsat bermaslik
-        if (existingPhoneFingerprint !== phoneFingerprint) {
+        // Agar yangi deviceId mavjud deviceId dan farq qilsa, login bloklash
+        if (user.deviceId !== deviceId) {
+          // Notification yaratish - admin/teacher'ga bildirish
+          const userAgent = req.headers['user-agent'] || '';
+          const ipAddress = req.ip || req.connection.remoteAddress || '';
+          
+          // Platform va browser aniqlash
+          let platform = 'Unknown';
+          if (userAgent.includes('Windows')) platform = 'Windows';
+          else if (userAgent.includes('Mac')) platform = 'Mac';
+          else if (userAgent.includes('Linux')) platform = 'Linux';
+          else if (userAgent.includes('Android')) platform = 'Android';
+          else if (userAgent.includes('iPhone') || userAgent.includes('iPad')) platform = 'iOS';
+
+          let browser = 'Unknown';
+          if (userAgent.includes('Chrome') && !userAgent.includes('Edg')) browser = 'Chrome';
+          else if (userAgent.includes('Firefox')) browser = 'Firefox';
+          else if (userAgent.includes('Safari') && !userAgent.includes('Chrome')) browser = 'Safari';
+          else if (userAgent.includes('Edge')) browser = 'Edge';
+
+          const attemptedDeviceName = `${platform} • ${browser}`;
+          
+          // O'quvchining yaratuvchisini topish (teacher/admin)
+          const createdBy = user.createdBy;
+          
+          // Notification yaratish
+          try {
+            await Notification.create({
+              type: 'device_login_attempt',
+              title: 'Boshqa qurilmadan kirishga urinish',
+              message: `${user.firstName} ${user.lastName} (${user.email}) boshqa qurilmadan (${attemptedDeviceName}) kirishga urindi. Qurilma: ${user.deviceInfo?.deviceName || 'Noma\'lum'}`,
+              studentId: user._id,
+              teacherId: createdBy || null,
+              isGlobal: !createdBy, // Agar createdBy yo'q bo'lsa, barcha teacher/admin'lar uchun
+              metadata: {
+                attemptedDeviceId: deviceId,
+                existingDeviceId: user.deviceId,
+                attemptedDeviceName: attemptedDeviceName,
+                existingDeviceName: user.deviceInfo?.deviceName || 'Noma\'lum',
+                userAgent,
+                ipAddress,
+                attemptedAt: new Date(),
+              },
+            });
+          } catch (notifError) {
+            console.error('Notification yaratishda xatolik:', notifError);
+            // Notification yaratishda xatolik bo'lsa ham, login'ni bloklash kerak
+          }
+          
           return res.status(403).json({
             success: false,
-            message: 'Bu email boshqa qurilmaga bog\'langan. Faqat bir qurilmadan kirish mumkin.',
+            message: 'Bu email boshqa qurilmaga bog\'langan. Faqat bir qurilmadan kirish mumkin. Agar yangi qurilmadan kirish kerak bo\'lsa, o\'qituvchidan yordam so\'rang.',
           });
         }
         
-        // Agar bir xil telefondan boshqa brauzerdan kirsa, avvalgi brauzer logout bo'ladi
-        // (DeviceId yangilanadi, bu yangi brauzer session'ini ko'rsatadi)
-        console.log('🔄 Bir xil telefondan yangi brauzer: avvalgi brauzer logout bo\'ladi');
+        // Agar bir xil deviceId bo'lsa, login ruxsat beriladi
+        console.log('✅ Bir xil qurilma bilan login qilindi');
       }
 
       // Device ma'lumotlarini yangilash
       const userAgent = req.headers['user-agent'] || '';
       const ipAddress = req.ip || req.connection.remoteAddress || '';
 
+      // Platform aniqlash
+      let platform = 'Unknown';
+      if (userAgent.includes('Windows')) platform = 'Windows';
+      else if (userAgent.includes('Mac')) platform = 'Mac';
+      else if (userAgent.includes('Linux')) platform = 'Linux';
+      else if (userAgent.includes('Android')) platform = 'Android';
+      else if (userAgent.includes('iPhone') || userAgent.includes('iPad')) platform = 'iOS';
+
+      // Browser aniqlash
+      let browser = 'Unknown';
+      if (userAgent.includes('Chrome') && !userAgent.includes('Edg')) browser = 'Chrome';
+      else if (userAgent.includes('Firefox')) browser = 'Firefox';
+      else if (userAgent.includes('Safari') && !userAgent.includes('Chrome')) browser = 'Safari';
+      else if (userAgent.includes('Edge')) browser = 'Edge';
+
+      // Device nomi yaratish (Platform + Browser)
+      const deviceName = `${platform} • ${browser}`;
+
       user.deviceId = deviceId; // Yangi deviceId (yangi brauzer session bilan)
       user.deviceInfo = {
         userAgent,
-        platform: userAgent.includes('Windows') ? 'Windows' : 
-                  userAgent.includes('Mac') ? 'Mac' : 
-                  userAgent.includes('Linux') ? 'Linux' :
-                  userAgent.includes('Android') ? 'Android' :
-                  userAgent.includes('iPhone') || userAgent.includes('iPad') ? 'iOS' : 'Unknown',
-        browser: userAgent.includes('Chrome') ? 'Chrome' :
-                 userAgent.includes('Firefox') ? 'Firefox' :
-                 userAgent.includes('Safari') ? 'Safari' :
-                 userAgent.includes('Edge') ? 'Edge' : 'Unknown',
+        platform,
+        browser,
+        deviceName, // Qurilma nomi admin'ga ko'rsatish uchun
         ipAddress,
       };
       user.lastDeviceLogin = new Date();

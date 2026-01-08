@@ -392,6 +392,37 @@ class ApiService {
       method: 'DELETE',
     });
   }
+
+  // Teacher stats
+  async getTeacherStats() {
+    return this.request<{
+      totalStudents: number;
+      activeLessons: number;
+      reviewedAssignments: number;
+      avgScore: number;
+    }>('/users/teacher/stats');
+  }
+
+  // Notifications
+  async getNotifications(params?: { isRead?: boolean; limit?: number }) {
+    const query = new URLSearchParams();
+    if (params?.isRead !== undefined) query.append('isRead', String(params.isRead));
+    if (params?.limit) query.append('limit', String(params.limit));
+    
+    return this.request<{ notifications: any[]; unreadCount: number }>(`/notifications?${query.toString()}`);
+  }
+
+  async markNotificationAsRead(notificationId: string) {
+    return this.request(`/notifications/${notificationId}/read`, {
+      method: 'PUT',
+    });
+  }
+
+  async markAllNotificationsAsRead() {
+    return this.request('/notifications/read-all', {
+      method: 'PUT',
+    });
+  }
 }
 
 export const apiService = new ApiService();
