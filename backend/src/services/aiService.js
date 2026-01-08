@@ -7,32 +7,67 @@ const GEMINI_API_KEY = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
 // GEMINI_MODEL=gemini-1.5-flash-latest yoki GEMINI_MODEL=chat-bison-001 va hokazo
 const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
 
-const callGemini = async (body) => {
+const callGemini = async (body, retries = 3) => {
   if (!GEMINI_API_KEY) {
     throw new Error('GEMINI_API_KEY yoki GOOGLE_API_KEY .env faylida topilmadi');
   }
 
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  });
+  
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
 
-  if (!res.ok) {
-    const text = await res.text();
-    console.error('Gemini API error:', res.status, text);
-    throw new Error(`Gemini API xatosi: ${res.status}`);
+      if (!res.ok) {
+        const text = await res.text();
+        let errorData;
+        try {
+          errorData = JSON.parse(text);
+        } catch {
+          errorData = { error: { message: text } };
+        }
+
+        // 503 - Model overloaded, retry qilish
+        if (res.status === 503 && attempt < retries) {
+          const delay = Math.min(1000 * Math.pow(2, attempt - 1), 5000); // Exponential backoff, max 5s
+          console.log(`Gemini API 503 xatosi, ${delay}ms dan keyin qayta urinilmoqda (${attempt}/${retries})...`);
+          await new Promise(resolve => setTimeout(resolve, delay));
+          continue;
+        }
+
+        console.error('Gemini API error:', res.status, text);
+        const error = new Error(`Gemini API xatosi: ${res.status}`);
+        error.status = res.status;
+        error.message = errorData.error?.message || error.message;
+        throw error;
+      }
+
+      const data = await res.json();
+      const candidate = data.candidates?.[0];
+      const part = candidate?.content?.parts?.[0];
+
+      return {
+        text: part?.text || '',
+        tokens: data.usageMetadata?.totalTokenCount || 0,
+      };
+    } catch (error) {
+      if (attempt === retries) {
+        throw error;
+      }
+      // Boshqa xatolar uchun ham retry qilish (network xatolari)
+      if (error.status !== 400 && error.status !== 401 && error.status !== 403) {
+        const delay = Math.min(1000 * Math.pow(2, attempt - 1), 5000);
+        console.log(`Gemini API xatosi, ${delay}ms dan keyin qayta urinilmoqda (${attempt}/${retries})...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+        continue;
+      }
+      throw error;
+    }
   }
-
-  const data = await res.json();
-  const candidate = data.candidates?.[0];
-  const part = candidate?.content?.parts?.[0];
-
-  return {
-    text: part?.text || '',
-    tokens: data.usageMetadata?.totalTokenCount || 0,
-  };
 };
 
 /**
@@ -82,6 +117,11 @@ Har doim o'zbek tilida javob bering va amaliy misollar keltiring.`;
     };
   } catch (error) {
     console.error('AI Service Error:', error);
+    
+    // 503 - Model overloaded
+    if (error.status === 503) {
+      throw new Error('AI modeli hozir yuklangan. Iltimos, bir necha soniyadan keyin qayta urinib ko\'ring.');
+    }
     
     // 429 - Quota exceeded (pul/credit tugagan)
     if (error.status === 429 || error.code === 'insufficient_quota') {
