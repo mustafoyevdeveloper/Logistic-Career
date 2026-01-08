@@ -43,6 +43,11 @@ const studentProgressSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    // Keyingi dars ochilish vaqti (oldingi darsga kirilgan vaqt + ertasiga 8:00)
+    lessonUnlockTime: {
+      type: Date,
+      default: null,
+    },
   },
   {
     timestamps: true,

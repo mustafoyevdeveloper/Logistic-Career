@@ -429,6 +429,24 @@ class ApiService {
       method: 'PUT',
     });
   }
+
+  // Lessons
+  async getStudentLessons() {
+    return this.request<{
+      lessons: Array<{
+        day: number;
+        isUnlocked: boolean;
+        unlockTime: string | null;
+        timeRemaining: number | null;
+      }>;
+    }>('/lessons/student/lessons');
+  }
+
+  async unlockLessonSecret(day: number) {
+    return this.request(`/lessons/day/${day}/unlock`, {
+      method: 'POST',
+    });
+  }
 }
 
 export const apiService = new ApiService();

@@ -152,6 +152,111 @@ export const completeLesson = async (req, res) => {
 };
 
 /**
+ * @desc    Dars progress yangilash (day raqami bo'yicha)
+ * @route   PUT /api/lessons/day/:day/progress
+ * @access  Private (Student)
+ */
+export const updateLessonProgressByDay = async (req, res) => {
+  try {
+    if (req.user.role !== 'student') {
+      return res.status(403).json({
+        success: false,
+        message: 'Faqat o\'quvchilar progress yangilashi mumkin',
+      });
+    }
+
+    const { day } = req.params;
+    const dayNumber = parseInt(day);
+    const { timeSpent } = req.body;
+
+    if (dayNumber < 1 || dayNumber > 7) {
+      return res.status(400).json({
+        success: false,
+        message: 'Noto\'g\'ri dars raqami',
+      });
+    }
+
+    // Darsni topish (barcha darslar orasidan order bo'yicha, xuddi getStudentLessons kabi)
+    const allLessons = await Lesson.find({ isActive: true })
+      .sort({ order: 1 })
+      .lean();
+    
+    const lesson = allLessons.find(l => l.order === dayNumber);
+
+    if (!lesson) {
+      return res.status(404).json({
+        success: false,
+        message: `Dars topilmadi (kun: ${dayNumber})`,
+      });
+    }
+
+    const now = new Date();
+    let progress = await StudentProgress.findOne({
+      studentId: req.user._id,
+      lessonId: lesson._id,
+    });
+
+    if (progress) {
+      progress.lastAccessed = now;
+      if (timeSpent) progress.timeSpent += timeSpent;
+      await progress.save();
+    } else {
+      progress = await StudentProgress.create({
+        studentId: req.user._id,
+        lessonId: lesson._id,
+        moduleId: lesson.moduleId,
+        lastAccessed: now,
+        timeSpent: timeSpent || 0,
+      });
+    }
+
+    // Keyingi dars uchun ochilish vaqtini hisoblash (keyingi kuni soat 8:00)
+    // Har safar darsga kirilganda keyingi dars keyingi kuni soat 8:00 da ochiladi
+    if (dayNumber >= 1 && dayNumber < 7) {
+      const nextLessonDay = dayNumber + 1;
+      // Keyingi darsni topish (barcha darslar orasidan order bo'yicha, xuddi getStudentLessons kabi)
+      const nextLesson = allLessons.find(l => l.order === nextLessonDay);
+      
+      if (nextLesson) {
+        let nextProgress = await StudentProgress.findOne({
+          studentId: req.user._id,
+          lessonId: nextLesson._id,
+        });
+
+        // Keyingi kuni soat 8:00 ni hisoblash
+        const tomorrow = new Date(now);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        tomorrow.setHours(8, 0, 0, 0);
+
+        if (!nextProgress) {
+          // Keyingi dars progress'i yo'q bo'lsa, yaratish
+          await StudentProgress.create({
+            studentId: req.user._id,
+            lessonId: nextLesson._id,
+            moduleId: nextLesson.moduleId,
+            lessonUnlockTime: tomorrow,
+          });
+        } else {
+          // Keyingi dars progress'i mavjud bo'lsa, ochilish vaqtini yangilash
+          nextProgress.lessonUnlockTime = tomorrow;
+          await nextProgress.save();
+        }
+      }
+    }
+
+    res.json({
+      success: true,
+      data: { progress },
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Server xatosi',
+    });
+  }
+};
+
+/**
  * @desc    Dars progress yangilash
  * @route   PUT /api/lessons/:id/progress
  * @access  Private (Student)
@@ -175,13 +280,14 @@ export const updateLessonProgress = async (req, res) => {
       });
     }
 
+    const now = new Date();
     let progress = await StudentProgress.findOne({
       studentId: req.user._id,
       lessonId: lesson._id,
     });
 
     if (progress) {
-      progress.lastAccessed = new Date();
+      progress.lastAccessed = now;
       if (timeSpent) progress.timeSpent += timeSpent;
       await progress.save();
     } else {
@@ -189,13 +295,251 @@ export const updateLessonProgress = async (req, res) => {
         studentId: req.user._id,
         lessonId: lesson._id,
         moduleId: lesson.moduleId,
-        lastAccessed: new Date(),
+        lastAccessed: now,
         timeSpent: timeSpent || 0,
+      });
+    }
+
+    // Keyingi dars uchun ochilish vaqtini hisoblash (keyingi kuni soat 8:00)
+    // Har safar darsga kirilganda keyingi dars keyingi kuni soat 8:00 da ochiladi
+    const lessonDay = lesson.order || 1;
+    if (lessonDay >= 1 && lessonDay < 7) {
+      const nextLessonDay = lessonDay + 1;
+      // Keyingi darsni topish (xuddi shu modulda)
+      const nextLesson = await Lesson.findOne({ 
+        moduleId: lesson.moduleId,
+        order: nextLessonDay,
+        isActive: true 
+      }).lean();
+      
+      if (nextLesson) {
+        // Keyingi dars progress'ini tekshirish
+        let nextProgress = await StudentProgress.findOne({
+          studentId: req.user._id,
+          lessonId: nextLesson._id,
+        });
+
+        // Keyingi kuni soat 8:00 ni hisoblash
+        const tomorrow = new Date(now);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        tomorrow.setHours(8, 0, 0, 0);
+
+        if (!nextProgress) {
+          // Keyingi dars progress'i yo'q bo'lsa, yaratish
+          await StudentProgress.create({
+            studentId: req.user._id,
+            lessonId: nextLesson._id,
+            moduleId: nextLesson.moduleId,
+            lessonUnlockTime: tomorrow,
+          });
+        } else {
+          // Keyingi dars progress'i mavjud bo'lsa, ochilish vaqtini yangilash
+          nextProgress.lessonUnlockTime = tomorrow;
+          await nextProgress.save();
+        }
+      }
+    }
+
+    res.json({
+      success: true,
+      data: { progress },
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Server xatosi',
+    });
+  }
+};
+
+/**
+ * @desc    O'quvchi darslarini olish (ochiq/yopiq holat bilan)
+ * @route   GET /api/lessons/student/lessons
+ * @access  Private (Student)
+ */
+export const getStudentLessons = async (req, res) => {
+  try {
+    if (req.user.role !== 'student') {
+      return res.status(403).json({
+        success: false,
+        message: 'Faqat o\'quvchilar darslarni ko\'ra oladi',
+      });
+    }
+
+    // Barcha darslarni olish (order bo'yicha)
+    const allLessons = await Lesson.find({ isActive: true })
+      .sort({ order: 1 })
+      .lean();
+
+    const lessons = [];
+    const now = new Date();
+
+    // O'quvchi birinchi marta kirganligini tekshirish (hech qanday progress yo'q)
+    const hasAnyProgress = await StudentProgress.exists({ studentId: req.user._id });
+    
+    // Agar birinchi marta kirgan bo'lsa, 1-dars progress'ini yaratish
+    if (!hasAnyProgress) {
+      const firstLesson = allLessons.find(l => l.order === 1);
+      if (firstLesson) {
+        await StudentProgress.create({
+          studentId: req.user._id,
+          lessonId: firstLesson._id,
+          moduleId: firstLesson.moduleId,
+          lastAccessed: now,
+        });
+      }
+    }
+
+    for (let day = 1; day <= 7; day++) {
+      const lesson = allLessons.find(l => l.order === day);
+      
+      if (!lesson) {
+        lessons.push({
+          day,
+          isUnlocked: false,
+          unlockTime: null,
+          timeRemaining: null,
+        });
+        continue;
+      }
+
+      let isUnlocked = false;
+      let unlockTime = null;
+      let timeRemaining = null;
+
+      // 1-dars har doim ochiq bo'lishi kerak
+      if (day === 1) {
+        isUnlocked = true;
+        // 1-dars progress'i mavjud emasligini tekshirish va yaratish
+        const firstProgress = await StudentProgress.findOne({
+          studentId: req.user._id,
+          lessonId: lesson._id,
+        });
+        
+        if (!firstProgress) {
+          // 1-dars progress'ini yaratish (agar yo'q bo'lsa)
+          await StudentProgress.create({
+            studentId: req.user._id,
+            lessonId: lesson._id,
+            moduleId: lesson.moduleId,
+            lastAccessed: now,
+          });
+        }
+      } else {
+        // Joriy dars progress'ini tekshirish
+        const progress = await StudentProgress.findOne({
+          studentId: req.user._id,
+          lessonId: lesson._id,
+        }).lean();
+
+        if (progress && progress.lessonUnlockTime) {
+          unlockTime = progress.lessonUnlockTime;
+          if (now >= unlockTime) {
+            isUnlocked = true;
+          } else {
+            timeRemaining = unlockTime.getTime() - now.getTime();
+          }
+        } else {
+          // Agar progress yo'q bo'lsa, oldingi darsga kirilganligini tekshirish
+          const previousDay = day - 1;
+          const previousLesson = allLessons.find(l => l.order === previousDay);
+          
+          if (previousLesson) {
+            const previousProgress = await StudentProgress.findOne({
+              studentId: req.user._id,
+              lessonId: previousLesson._id,
+            }).lean();
+
+            if (previousProgress && previousProgress.lastAccessed) {
+              // Oldingi darsga kirilgan, lekin keyingi dars ochilish vaqti belgilanmagan
+              // Bu holatda dars yopiq bo'ladi
+              isUnlocked = false;
+            }
+          }
+        }
+      }
+
+      lessons.push({
+        day,
+        isUnlocked,
+        unlockTime,
+        timeRemaining, // milliseconds
       });
     }
 
     res.json({
       success: true,
+      data: { lessons },
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Server xatosi',
+    });
+  }
+};
+
+/**
+ * @desc    Darsni maxfiy ochish (long press - 2-10 sekund)
+ * @route   POST /api/lessons/day/:day/unlock
+ * @access  Private (Student)
+ */
+export const unlockLessonSecret = async (req, res) => {
+  try {
+    if (req.user.role !== 'student') {
+      return res.status(403).json({
+        success: false,
+        message: 'Faqat o\'quvchilar darsni ochishi mumkin',
+      });
+    }
+
+    const { day } = req.params;
+    const dayNumber = parseInt(day);
+
+    if (dayNumber < 1 || dayNumber > 7) {
+      return res.status(400).json({
+        success: false,
+        message: 'Noto\'g\'ri dars raqami',
+      });
+    }
+
+    // Darsni topish (barcha darslar orasidan order bo'yicha)
+    const allLessons = await Lesson.find({ isActive: true })
+      .sort({ order: 1 })
+      .lean();
+    
+    const lesson = allLessons.find(l => l.order === dayNumber);
+
+    if (!lesson) {
+      return res.status(404).json({
+        success: false,
+        message: 'Dars topilmadi',
+      });
+    }
+
+    // Dars progress'ini topish yoki yaratish
+    let progress = await StudentProgress.findOne({
+      studentId: req.user._id,
+      lessonId: lesson._id,
+    });
+
+    if (progress) {
+      // Darsni ochish (lessonUnlockTime ni hozirgi vaqtga o'rnatish)
+      progress.lessonUnlockTime = new Date();
+      await progress.save();
+    } else {
+      // Progress yaratish
+      progress = await StudentProgress.create({
+        studentId: req.user._id,
+        lessonId: lesson._id,
+        moduleId: lesson.moduleId,
+        lessonUnlockTime: new Date(),
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'Dars muvaffaqiyatli ochildi',
       data: { progress },
     });
   } catch (error) {

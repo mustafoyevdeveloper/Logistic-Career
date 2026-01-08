@@ -1,7 +1,10 @@
 import { useParams, useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, BookOpen, Clock, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, BookOpen, Clock, CheckCircle2, Lock } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { apiService } from '@/services/api';
+import { toast } from 'sonner';
 
 // 7 kunlik darslar ma'lumotlari
 const weekLessons: Record<number, {
@@ -386,15 +389,83 @@ const weekLessons: Record<number, {
 export default function LessonDetailPage() {
   const { day } = useParams<{ day: string }>();
   const navigate = useNavigate();
+  const [isCheckingAccess, setIsCheckingAccess] = useState(true);
+  const [hasAccess, setHasAccess] = useState(false);
   
   const dayNumber = day ? parseInt(day, 10) : null;
   const lesson = dayNumber && weekLessons[dayNumber];
 
-  if (!lesson) {
+  // Dars holatini tekshirish (qulflangan bo'lsa kirishga ruxsat berilmasligi kerak)
+  useEffect(() => {
+    const checkLessonAccess = async () => {
+      if (!dayNumber) {
+        setIsCheckingAccess(false);
+        return;
+      }
+
+      // 1-dars har doim ochiq
+      if (dayNumber === 1) {
+        setHasAccess(true);
+        setIsCheckingAccess(false);
+        return;
+      }
+
+      try {
+        // Dars holatini olish
+        const response = await apiService.getStudentLessons();
+        if (response.success && response.data) {
+          const lessonStatus = response.data.lessons.find((l: any) => l.day === dayNumber);
+          if (lessonStatus && lessonStatus.isUnlocked) {
+            setHasAccess(true);
+          } else {
+            // Dars qulflangan
+            toast.error('Bu dars hali ochilmagan');
+            navigate('/student/lessons');
+          }
+        }
+      } catch (error: any) {
+        toast.error(error.message || 'Dars holatini tekshirishda xatolik');
+        navigate('/student/lessons');
+      } finally {
+        setIsCheckingAccess(false);
+      }
+    };
+
+    checkLessonAccess();
+  }, [dayNumber, navigate]);
+
+  // Darsga kirilganda progress yangilash
+  useEffect(() => {
+    if (dayNumber && hasAccess) {
+      // Dars progress'ini yangilash (keyingi dars ochilish vaqtini hisoblash uchun)
+      apiService.request(`/lessons/day/${dayNumber}/progress`, {
+        method: 'PUT',
+        body: JSON.stringify({ timeSpent: 0 }),
+      }).catch(() => {
+        // Xatolikni e'tiborsiz qoldirish
+      });
+    }
+  }, [dayNumber, hasAccess]);
+
+  if (isCheckingAccess) {
     return (
       <div className="space-y-6 animate-fade-in">
         <div className="text-center py-12">
-          <p className="text-muted-foreground mb-4">Dars topilmadi</p>
+          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-muted-foreground">Tekshirilmoqda...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!lesson || !hasAccess) {
+    return (
+      <div className="space-y-6 animate-fade-in">
+        <div className="text-center py-12">
+          <Lock className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+          <p className="text-muted-foreground mb-4">
+            {!lesson ? 'Dars topilmadi' : 'Bu dars hali ochilmagan'}
+          </p>
           <Button onClick={() => navigate('/student/lessons')} variant="outline">
             <ArrowLeft className="w-4 h-4 mr-2" />
             Darsliklarga qaytish
@@ -457,7 +528,8 @@ export default function LessonDetailPage() {
       </div>
 
       {/* Navigation */}
-      <div className="flex items-center justify-between gap-4">
+      
+      {/* <div className="flex items-center justify-between gap-4">
         <Button
           onClick={() => {
             if (dayNumber > 1) {
@@ -486,7 +558,7 @@ export default function LessonDetailPage() {
           Keyingi dars
           <ArrowLeft className="w-4 h-4 ml-2 rotate-180" />
         </Button>
-      </div>
+      </div> */}
     </div>
   );
 }
