@@ -47,11 +47,37 @@ const callGemini = async (body, retries = 3) => {
       }
 
       const data = await res.json();
-      const candidate = data.candidates?.[0];
-      const part = candidate?.content?.parts?.[0];
+      
+      // Debug: javob formatini ko'rish
+      if (!data.candidates || data.candidates.length === 0) {
+        console.error('Gemini API javobida candidates yo\'q:', JSON.stringify(data, null, 2));
+        throw new Error('AI javobida ma\'lumot topilmadi. Iltimos, qayta urinib ko\'ring.');
+      }
+      
+      const candidate = data.candidates[0];
+      
+      // finishReason tekshirish
+      if (candidate.finishReason && candidate.finishReason !== 'STOP') {
+        console.warn('Gemini finishReason:', candidate.finishReason);
+        if (candidate.finishReason === 'SAFETY') {
+          throw new Error('AI javob berishdan bosh tortdi (xavfsizlik sababidan). Iltimos, savolni o\'zgartiring.');
+        }
+      }
+      
+      if (!candidate.content || !candidate.content.parts || candidate.content.parts.length === 0) {
+        console.error('Gemini API javobida parts yo\'q:', JSON.stringify(candidate, null, 2));
+        throw new Error('AI javobida ma\'lumot topilmadi. Iltimos, qayta urinib ko\'ring.');
+      }
+      
+      const part = candidate.content.parts[0];
+      
+      if (!part.text) {
+        console.error('Gemini API javobida text yo\'q:', JSON.stringify(part, null, 2));
+        throw new Error('AI javobida matn topilmadi. Iltimos, qayta urinib ko\'ring.');
+      }
 
       return {
-        text: part?.text || '',
+        text: part.text,
         tokens: data.usageMetadata?.totalTokenCount || 0,
       };
     } catch (error) {
@@ -91,16 +117,19 @@ Muhim tushunchalar:
 
 Har doim o'zbek tilida javob bering va amaliy misollar keltiring.`;
 
+    // Messages formatini tekshirish
+    const formattedMessages = messages.map((m) => ({
+      role: m.role === 'assistant' ? 'model' : 'user',
+      parts: [{ text: m.content || '' }],
+    }));
+
     const body = {
       contents: [
         {
           role: 'user',
           parts: [{ text: systemPrompt }],
         },
-        ...messages.map((m) => ({
-          role: m.role === 'assistant' ? 'model' : 'user',
-          parts: [{ text: m.content }],
-        })),
+        ...formattedMessages,
       ],
       generationConfig: {
         temperature: 0.7,
@@ -108,7 +137,17 @@ Har doim o'zbek tilida javob bering va amaliy misollar keltiring.`;
       },
     };
 
+    // Debug: yuborilayotgan body'ni ko'rish (faqat development uchun)
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Gemini API ga yuborilayotgan body:', JSON.stringify(body, null, 2));
+    }
+
     const result = await callGemini(body);
+
+    if (!result.text || result.text.trim() === '') {
+      console.error('Gemini API bo\'sh javob qaytardi:', JSON.stringify(result, null, 2));
+      throw new Error('AI javob bermadi. Iltimos, qayta urinib ko\'ring.');
+    }
 
     return {
       content: result.text,
