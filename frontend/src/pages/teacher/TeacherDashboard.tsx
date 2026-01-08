@@ -12,7 +12,8 @@ import {
   AlertCircle,
   MessageSquare,
   Group,
-  Bell
+  Bell,
+  Trash2
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -39,7 +40,7 @@ export default function TeacherDashboard() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [stats, setStats] = useState({
     totalStudents: 0,
-    activeLessons: 0,
+    activeLessons: 7,
     avgProgress: 0,
     totalChats: 0,
   });
@@ -60,23 +61,22 @@ export default function TeacherDashboard() {
   const loadData = async () => {
     try {
       setIsLoading(true);
-      const response = await apiService.getStudents();
-      if (response.success && response.data) {
-        const studentsData = response.data.students || [];
+      const [studentsRes, statsRes] = await Promise.all([
+        apiService.getStudents(),
+        apiService.getTeacherStats(),
+      ]);
+
+      if (studentsRes.success && studentsRes.data) {
+        const studentsData = studentsRes.data.students || [];
         setStudents(studentsData.slice(0, 4)); // Faqat 4 tasini ko'rsatish
-        
-        // Stats hisoblash
-        const totalStudents = studentsData.length;
-        const avgProgress = studentsData.length > 0
-          ? Math.round(studentsData.reduce((acc: number, s: any) => acc + (s.progress || 0), 0) / studentsData.length)
-          : 0;
-        const totalChats = studentsData.reduce((acc: number, s: any) => acc + (s.stats?.aiChats || 0), 0);
-        
+      }
+
+      if (statsRes.success && statsRes.data) {
         setStats({
-          totalStudents,
-          activeLessons: 12, // Bu backend'dan kelishi kerak
-          avgProgress,
-          totalChats,
+          totalStudents: statsRes.data.totalStudents || 0,
+          activeLessons: 7, // doimiy
+          avgProgress: statsRes.data.avgProgress || 0,
+          totalChats: statsRes.data.totalChats || 0,
         });
       }
     } catch (error) {
@@ -104,6 +104,18 @@ export default function TeacherDashboard() {
         method: 'PUT',
       });
       if (response.success) {
+        loadNotifications();
+      }
+    } catch (error: any) {
+      toast.error(error.message || 'Xatolik yuz berdi');
+    }
+  };
+
+  const handleDeleteNotification = async (notificationId: string) => {
+    try {
+      const response = await apiService.deleteNotification(notificationId);
+      if (response.success) {
+        toast.success('Bildirishnoma o\'chirildi');
         loadNotifications();
       }
     } catch (error: any) {
@@ -188,16 +200,27 @@ export default function TeacherDashboard() {
                       <h3 className="font-medium text-sm sm:text-base text-foreground">
                         {notification.title}
                       </h3>
-                      {!notification.isRead && (
+                      <div className="flex items-center gap-2">
+                        {!notification.isRead && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 px-2 text-xs shrink-0"
+                            onClick={() => handleMarkAsRead(notification._id)}
+                          >
+                            O'qildi
+                          </Button>
+                        )}
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="h-6 px-2 text-xs shrink-0"
-                          onClick={() => handleMarkAsRead(notification._id)}
+                          className="h-6 px-2 text-xs shrink-0 text-destructive"
+                          onClick={() => handleDeleteNotification(notification._id)}
                         >
-                          O'qildi
+                          <Trash2 className="w-3 h-3 mr-1" />
+                          O'chirish
                         </Button>
-                      )}
+                      </div>
                     </div>
                     <p className="text-xs sm:text-sm text-muted-foreground mb-2">
                       {notification.message}

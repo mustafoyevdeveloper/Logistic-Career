@@ -21,7 +21,7 @@ export default function StudentDashboard() {
   const [modules, setModules] = useState<any[]>([]);
   const [stats, setStats] = useState({
     completedLessons: 0,
-    totalLessons: 0,
+    totalLessons: 7,
     aiChats: 0,
     avgScore: 0,
   });
@@ -34,23 +34,32 @@ export default function StudentDashboard() {
   const loadData = async () => {
     try {
       setIsLoading(true);
-      const response = await apiService.request<{ modules: any[] }>('/lessons/modules');
-      if (response.success && response.data) {
-        setModules(response.data.modules || []);
-        
-        // Stats hisoblash
-        const totalLessons = response.data.modules.reduce((acc: number, mod: any) => 
-          acc + (mod.lessons?.length || 0), 0
-        );
-        const completedLessons = response.data.modules.reduce((acc: number, mod: any) => 
-          acc + (mod.lessons?.filter((l: any) => l.progress?.completed).length || 0), 0
-        );
-        
-        setStats(prev => ({
-          ...prev,
+      // Statistikani /auth/me/stats dan olamiz
+      const [modulesRes, statsRes] = await Promise.all([
+        apiService.request<{ modules: any[] }>('/lessons/modules'),
+        apiService.request<{
+          stats: {
+            completedLessons: number;
+            totalLessons: number;
+            aiChats: number;
+            avgScore: number;
+            progressPercent: number;
+          }
+        }>('/auth/me/stats'),
+      ]);
+
+      if (modulesRes.success && modulesRes.data) {
+        setModules(modulesRes.data.modules || []);
+      }
+
+      if (statsRes.success && statsRes.data?.stats) {
+        const { completedLessons, totalLessons, aiChats, avgScore } = statsRes.data.stats;
+        setStats({
           completedLessons,
-          totalLessons,
-        }));
+          totalLessons: totalLessons || 7,
+          aiChats,
+          avgScore,
+        });
       }
     } catch (error) {
       console.error('Dashboard data load error:', error);
@@ -60,7 +69,7 @@ export default function StudentDashboard() {
   };
 
   const progressPercent = stats.totalLessons > 0 
-    ? Math.round((stats.completedLessons / stats.totalLessons) * 100) 
+    ? Math.min(100, Math.round((stats.completedLessons / stats.totalLessons) * 100))
     : 0;
 
   const dashboardStats = [

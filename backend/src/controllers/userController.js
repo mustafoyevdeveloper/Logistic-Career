@@ -3,6 +3,7 @@ import StudentProgress from '../models/StudentProgress.js';
 import ChatMessage from '../models/ChatMessage.js';
 import AssignmentSubmission from '../models/AssignmentSubmission.js';
 import Lesson from '../models/Lesson.js';
+import mongoose from 'mongoose';
 
 /**
  * @desc    Barcha o'quvchilarni olish (Teacher)
@@ -288,15 +289,12 @@ export const getMyStats = async (req, res) => {
     }
 
     const studentId = req.user._id;
+    const totalLessons = 7; // Doimiy 7 ta dars
 
     // Darslar statistikasi
     const completedLessons = await StudentProgress.countDocuments({
       studentId,
       completed: true,
-    });
-
-    const totalLessons = await StudentProgress.countDocuments({
-      studentId,
     });
 
     // O'qish vaqti (daqiqalarda)
@@ -315,35 +313,16 @@ export const getMyStats = async (req, res) => {
     const timeSpentMinutes = timeSpentResult.length > 0 ? timeSpentResult[0].totalTime : 0;
     const timeSpentHours = Math.round((timeSpentMinutes / 60) * 10) / 10; // 1 xona aniqlik
 
-    // Ball statistikasi
-    const scoreResult = await AssignmentSubmission.aggregate([
-      {
-        $match: {
-          studentId,
-          status: 'graded',
-          score: { $ne: null },
-        },
-      },
-      {
-        $group: {
-          _id: null,
-          totalScore: { $sum: '$score' },
-          maxScore: { $sum: '$maxScore' },
-          count: { $sum: 1 },
-        },
-      },
-    ]);
-
-    const totalScore = scoreResult.length > 0 ? scoreResult[0].totalScore : 0;
-    const maxScore = scoreResult.length > 0 ? scoreResult[0].maxScore : 0;
-    const avgScore = scoreResult.length > 0 && scoreResult[0].count > 0
-      ? Math.round(scoreResult[0].totalScore / scoreResult[0].count)
-      : 0;
+    // Ball: har bir dars 10 ball
+    const totalScore = completedLessons * 10;
+    const maxScore = totalLessons * 10;
+    const avgScore = completedLessons > 0 ? 10 : 0;
 
     // Progress foizi
-    const progressPercent = totalLessons > 0
-      ? Math.round((completedLessons / totalLessons) * 100)
-      : 0;
+    const progressPercent = Math.min(
+      100,
+      Math.round((completedLessons / totalLessons) * 100)
+    );
 
     // Yutuqlar (achievements) - oddiy logika
     const achievements = {
@@ -354,12 +333,12 @@ export const getMyStats = async (req, res) => {
     };
 
     // AI chatlar soni
-    const aiChatsCount = await ChatMessage.countDocuments({
+    const aiChats = await ChatMessage.countDocuments({
       studentId,
       role: 'user',
     });
 
-    achievements.aiChatter = aiChatsCount >= 10;
+    achievements.aiChatter = aiChats >= 10;
 
     // Yutuqlar soni
     const achievementsCount = Object.values(achievements).filter(Boolean).length;
@@ -377,6 +356,7 @@ export const getMyStats = async (req, res) => {
           progressPercent,
           achievementsCount: achievementsCount,
           totalAchievements: 4,
+          aiChats,
         },
         achievements,
       },
@@ -409,43 +389,49 @@ export const getTeacherStats = async (req, res) => {
       isActive: true,
     });
 
-    // Faol darslar (isActive: true)
-    const activeLessons = await Lesson.countDocuments({
-      isActive: true,
-    });
+    // Faol darslar doimiy 7 ta
+    const activeLessons = 7;
 
-    // Tekshirilgan topshiriqlar (status: 'graded')
-    const reviewedAssignments = await AssignmentSubmission.countDocuments({
-      status: 'graded',
-    });
-
-    // O'rtacha baho (barcha graded assignments'ning o'rtacha bahosi)
-    const avgScoreResult = await AssignmentSubmission.aggregate([
+    // O'rtacha progress: barcha o'quvchilarning tugatilgan darslari o'rtacha foizi (100/7 har dars)
+    // StudentProgress'da completed=true bo'lganlarni hisoblaymiz
+    const progressAgg = await StudentProgress.aggregate([
+      { $match: { completed: true } },
       {
-        $match: {
-          status: 'graded',
-          score: { $ne: null },
+        $group: {
+          _id: '$studentId',
+          completedCount: { $sum: 1 },
+        },
+      },
+      {
+        $project: {
+          percent: {
+            $min: [
+              { $multiply: [{ $divide: ['$completedCount', 7] }, 100] },
+              100,
+            ],
+          },
         },
       },
       {
         $group: {
           _id: null,
-          avgScore: { $avg: '$score' },
+          avgProgress: { $avg: '$percent' },
         },
       },
     ]);
 
-    const avgScore = avgScoreResult.length > 0 
-      ? Math.round(avgScoreResult[0].avgScore) 
-      : 0;
+    const avgProgress = progressAgg.length > 0 ? Math.round(progressAgg[0].avgProgress || 0) : 0;
+
+    // AI suhbatlar: barcha o'quvchilar ChatMessage (role: user) soni
+    const totalChats = await ChatMessage.countDocuments({ role: 'user' });
 
     res.json({
       success: true,
       data: {
         totalStudents,
         activeLessons,
-        reviewedAssignments,
-        avgScore,
+        avgProgress,
+        totalChats,
       },
     });
   } catch (error) {

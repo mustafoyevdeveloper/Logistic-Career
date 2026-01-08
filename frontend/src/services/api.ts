@@ -398,8 +398,8 @@ class ApiService {
     return this.request<{
       totalStudents: number;
       activeLessons: number;
-      reviewedAssignments: number;
-      avgScore: number;
+      avgProgress: number;
+      totalChats: number;
     }>('/users/teacher/stats');
   }
 
@@ -415,6 +415,12 @@ class ApiService {
   async markNotificationAsRead(notificationId: string) {
     return this.request(`/notifications/${notificationId}/read`, {
       method: 'PUT',
+    });
+  }
+
+  async deleteNotification(notificationId: string) {
+    return this.request(`/notifications/${notificationId}`, {
+      method: 'DELETE',
     });
   }
 

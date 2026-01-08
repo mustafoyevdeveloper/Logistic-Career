@@ -15,9 +15,9 @@ export default function TeacherProfilePage() {
   const { user } = useAuth();
   const [stats, setStats] = useState({
     totalStudents: 0,
-    activeLessons: 0,
-    reviewedAssignments: 0,
-    avgScore: 0,
+    activeLessons: 7,
+    avgProgress: 0,
+    totalChats: 0,
   });
   const [isLoading, setIsLoading] = useState(true);
 
@@ -30,7 +30,12 @@ export default function TeacherProfilePage() {
       setIsLoading(true);
       const response = await apiService.getTeacherStats();
       if (response.success && response.data) {
-        setStats(response.data);
+        setStats({
+          totalStudents: response.data.totalStudents || 0,
+          activeLessons: 7, // doimiy 7 ta
+          avgProgress: response.data.avgProgress || 0,
+          totalChats: response.data.totalChats || 0,
+        });
       }
     } catch (error: any) {
       console.error('Stats load error:', error);
@@ -42,8 +47,8 @@ export default function TeacherProfilePage() {
   const statsList = [
     { label: 'Jami o\'quvchilar', value: stats.totalStudents.toString() },
     { label: 'Faol darslar', value: stats.activeLessons.toString() },
-    { label: 'Tekshirilgan topshiriqlar', value: stats.reviewedAssignments.toString() },
-    { label: 'O\'rtacha baho', value: `${stats.avgScore}%` },
+    { label: 'O\'rtacha progress', value: `${stats.avgProgress}%` },
+    { label: 'AI suhbatlar', value: stats.totalChats.toString() },
   ];
 
   return (

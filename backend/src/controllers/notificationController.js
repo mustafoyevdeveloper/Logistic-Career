@@ -180,3 +180,51 @@ export const markAllAsRead = async (req, res) => {
   }
 };
 
+/**
+ * @desc    Notification'ni o'chirish
+ * @route   DELETE /api/notifications/:id
+ * @access  Private (Teacher/Admin)
+ */
+export const deleteNotification = async (req, res) => {
+  try {
+    if (req.user.role !== 'teacher' && req.user.role !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Faqat o\'qituvchilar yoki admin notification\'larni o\'chirishi mumkin',
+      });
+    }
+
+    const notification = await Notification.findById(req.params.id);
+
+    if (!notification) {
+      return res.status(404).json({
+        success: false,
+        message: 'Notification topilmadi',
+      });
+    }
+
+    // Faqat o'ziga tegishli yoki global notification'ni o'chira oladi
+    const isOwner = notification.teacherId?.toString() === req.user._id.toString();
+    const canDelete = isOwner || notification.isGlobal === true || req.user.role === 'admin';
+
+    if (!canDelete) {
+      return res.status(403).json({
+        success: false,
+        message: 'Bu notification\'ni o\'chirishga ruxsat yo\'q',
+      });
+    }
+
+    await notification.deleteOne();
+
+    res.json({
+      success: true,
+      message: 'Notification muvaffaqiyatli o\'chirildi',
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Server xatosi',
+    });
+  }
+};
+
