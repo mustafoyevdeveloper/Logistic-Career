@@ -19,6 +19,19 @@ import {
 import { useState, useEffect, useRef } from 'react';
 import { cn } from '@/lib/utils';
 
+// Ovoz ijro etish funksiyasi
+const playClickSound = () => {
+  try {
+    const audio = new Audio('/voice/click.wav');
+    audio.volume = 0.5; // Ovoz balandligi
+    audio.play().catch(() => {
+      // Agar ovoz ijro etilmasa, xatolikni e'tiborsiz qoldirish
+    });
+  } catch (error) {
+    // Xatolikni e'tiborsiz qoldirish
+  }
+};
+
 interface NavItem {
   icon: React.ElementType;
   label: string;
@@ -150,7 +163,10 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               <Link
                 key={item.href}
                 to={item.href}
-                onClick={() => setIsMobileMenuOpen(false)}
+                onClick={() => {
+                  playClickSound();
+                  setIsMobileMenuOpen(false);
+                }}
                 className={cn(
                   "flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200",
                   isActive
@@ -203,6 +219,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               <Link
                 key={item.href}
                 to={item.href}
+                onClick={playClickSound}
                 className={cn(
                   "flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200",
                   isActive
