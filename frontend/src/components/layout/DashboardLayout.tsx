@@ -98,7 +98,29 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     navigate('/login?role=student');
   };
 
+  // Asosiy sahifalarni tekshirish (navItems dagi sahifalar)
+  const isMainPage = () => {
+    const path = location.pathname;
+    return navItems.some(item => item.href === path);
+  };
+
+  // Parent route ni topish (masalan /student/lessons/2 -> /student/lessons)
+  const getParentRoute = () => {
+    const path = location.pathname;
+    const parts = path.split('/').filter(Boolean);
+    
+    // Agar path 3 qismdan iborat bo'lsa (masalan /student/lessons/2)
+    if (parts.length >= 3) {
+      return '/' + parts.slice(0, 2).join('/');
+    }
+    
+    return null;
+  };
+
   // Swipe gesture handler (chapdan o'nga surish)
+  const touchEndX = useRef<number | null>(null);
+  const touchEndY = useRef<number | null>(null);
+
   const handleTouchStart = (e: React.TouchEvent) => {
     touchStartX.current = e.touches[0].clientX;
     touchStartY.current = e.touches[0].clientY;
@@ -106,21 +128,45 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
   const handleTouchMove = (e: React.TouchEvent) => {
     if (touchStartX.current === null || touchStartY.current === null) return;
-    
-    const touchEndX = e.touches[0].clientX;
-    const touchEndY = e.touches[0].clientY;
-    const diffX = touchEndX - touchStartX.current;
-    const diffY = touchEndY - touchStartY.current;
-
-    // Faqat gorizontal harakat bo'lsa va chapdan o'nga surilsa
-    if (Math.abs(diffX) > Math.abs(diffY) && diffX > 50 && !isMobileMenuOpen) {
-      setIsMobileMenuOpen(true);
-    }
+    touchEndX.current = e.touches[0].clientX;
+    touchEndY.current = e.touches[0].clientY;
   };
 
   const handleTouchEnd = () => {
+    if (touchStartX.current === null || touchStartY.current === null || 
+        touchEndX.current === null || touchEndY.current === null) {
+      touchStartX.current = null;
+      touchStartY.current = null;
+      touchEndX.current = null;
+      touchEndY.current = null;
+      return;
+    }
+
+    const diffX = touchEndX.current - touchStartX.current;
+    const diffY = touchEndY.current - touchStartY.current;
+
+    // Faqat gorizontal harakat bo'lsa va chapdan o'nga surilsa (minimum 80px)
+    if (Math.abs(diffX) > Math.abs(diffY) && diffX > 80) {
+      if (isMainPage()) {
+        // Asosiy sahifada bo'lsa, hamburger menuni ochish
+        if (!isMobileMenuOpen) {
+          playClickSound();
+          setIsMobileMenuOpen(true);
+        }
+      } else {
+        // Sahifa ichida bo'lsa, parent route ga qaytish
+        const parentRoute = getParentRoute();
+        if (parentRoute) {
+          playClickSound();
+          navigate(parentRoute);
+        }
+      }
+    }
+
     touchStartX.current = null;
     touchStartY.current = null;
+    touchEndX.current = null;
+    touchEndY.current = null;
   };
 
   return (
