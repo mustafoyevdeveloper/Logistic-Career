@@ -39,15 +39,35 @@ export const getStudents = async (req, res) => {
       .sort({ createdAt: -1 })
       .lean();
 
+    // Jami darslar soni (faqat bir marta hisoblash - faqat order 1-7)
+    const totalActiveLessons = await Lesson.countDocuments({ isActive: true, order: { $gte: 1, $lte: 7 } });
+
     // Har bir o'quvchi uchun statistikalar
     for (const student of students) {
+      // Ochilgan darslarni hisoblash - faqat lastAccessed mavjud bo'lgan darslar (order 1-7)
+      const allOpenedProgress = await StudentProgress.find({
+        studentId: student._id,
+        lastAccessed: { $exists: true, $ne: null },
+      })
+        .select('lessonId')
+        .lean();
+
+      const openedLessonIds = [...new Set(allOpenedProgress.map(p => p.lessonId.toString()))];
+      
+      // Faqat order 1-7 orasidagi darslarni tekshiramiz
+      const validLessons = await Lesson.find({
+        _id: { $in: openedLessonIds },
+        isActive: true,
+        order: { $gte: 1, $lte: 7 }
+      })
+        .select('_id')
+        .lean();
+      
+      const openedLessons = validLessons.length;
+
       const completedLessons = await StudentProgress.countDocuments({
         studentId: student._id,
         completed: true,
-      });
-
-      const totalLessons = await StudentProgress.countDocuments({
-        studentId: student._id,
       });
 
       const aiChats = await ChatMessage.countDocuments({
@@ -60,29 +80,33 @@ export const getStudents = async (req, res) => {
         status: 'graded',
       });
 
-      const avgScore = await AssignmentSubmission.aggregate([
-        {
-          $match: {
-            studentId: student._id,
-            status: 'graded',
-            score: { $ne: null },
-          },
-        },
-        {
-          $group: {
-            _id: null,
-            avgScore: { $avg: '$score' },
-          },
-        },
-      ]);
+      // Ball: har bir ochilgan dars uchun 10 ball (foizda emas)
+      const totalScore = openedLessons * 10;
+
+      // Progress foizi - ochilgan darslar foizida
+      const progressPercent = totalActiveLessons > 0
+        ? Math.round((openedLessons / totalActiveLessons) * 100)
+        : 0;
+
+      // Yutuqlar (achievements) hisoblash
+      let achievements = 0;
+      if (openedLessons >= 1) achievements++; // Birinchi dars
+      if (aiChats >= 10) achievements++; // AI suhbatchi
+      if (openedLessons >= 7) achievements++; // Izchil o'quvchi
 
       student.stats = {
         completedLessons,
-        totalLessons,
+        totalLessons: totalActiveLessons, // Jami mavjud darslar (7)
+        openedLessons, // Ko'rilgan darslar
         aiChats,
         completedAssignments,
-        avgScore: avgScore.length > 0 ? Math.round(avgScore[0].avgScore) : 0,
+        totalScore, // Ball (foizda emas)
+        achievements,
+        progressPercent, // Progress foizi
       };
+
+      // student.progress ni yangilash (backward compatibility uchun)
+      student.progress = progressPercent;
 
       // Last active
       const lastChat = await ChatMessage.findOne({ studentId: student._id })

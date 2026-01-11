@@ -61,9 +61,12 @@ interface Student {
   stats?: {
     completedLessons: number;
     totalLessons: number;
+    openedLessons: number;
     aiChats: number;
     completedAssignments: number;
-    avgScore: number;
+    totalScore?: number;
+    achievements: number;
+    progressPercent?: number;
   };
   lastActive?: string;
   isActive: boolean;
@@ -349,30 +352,28 @@ export default function StudentsPage() {
                     </div>
                   )}
                 </div>
-
-                {/* Progress */}
-                <div className="text-right shrink-0">
-                  <p className="text-xl sm:text-2xl font-bold text-foreground">{student.progress}%</p>
-                  <Progress value={student.progress} className="w-16 sm:w-20 h-2 mt-1" />
-                </div>
               </div>
 
               {/* Stats */}
               {student.stats && (
-                <div className="mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-border grid grid-cols-3 gap-2 sm:gap-4">
+                <div className="mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-border grid grid-cols-4 sm:grid-cols-4 gap-2 sm:gap-4">
+                  <div className="text-center">
+                    <p className="text-base sm:text-lg font-semibold text-foreground">{student.stats.progressPercent ?? 0}%</p>
+                    <p className="text-xs text-muted-foreground">Foiz</p>
+                  </div>
                   <div className="text-center">
                     <p className="text-base sm:text-lg font-semibold text-foreground">
-                      {student.stats.completedLessons}/{student.stats.totalLessons}
+                      {student.stats.openedLessons ?? 0}/{student.stats.totalLessons ?? 7}
                     </p>
                     <p className="text-xs text-muted-foreground">Darslar</p>
                   </div>
                   <div className="text-center">
-                    <p className="text-base sm:text-lg font-semibold text-foreground">{student.stats.aiChats}</p>
-                    <p className="text-xs text-muted-foreground">AI suhbatlar</p>
+                    <p className="text-base sm:text-lg font-semibold text-foreground">{student.stats.totalScore ?? 0}</p>
+                    <p className="text-xs text-muted-foreground">Ball</p>
                   </div>
                   <div className="text-center">
-                    <p className="text-base sm:text-lg font-semibold text-foreground">{student.stats.avgScore}%</p>
-                    <p className="text-xs text-muted-foreground">O'rtacha ball</p>
+                    <p className="text-base sm:text-lg font-semibold text-foreground">{student.stats.achievements ?? 0}/3</p>
+                    <p className="text-xs text-muted-foreground">Yutuqlar</p>
                   </div>
                 </div>
               )}
