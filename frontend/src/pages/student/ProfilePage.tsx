@@ -19,18 +19,19 @@ export default function StudentProfilePage() {
   const { user } = useAuth();
   const [stats, setStats] = useState({
     completedLessons: 0,
+    openedLessons: 0,
     totalLessons: 0,
     timeSpent: 0,
+    timeSpentFormatted: '0:00',
     totalScore: 0,
     maxScore: 0,
     avgScore: 0,
     progressPercent: 0,
     achievementsCount: 0,
-    totalAchievements: 4,
+    totalAchievements: 3,
   });
   const [achievements, setAchievements] = useState({
     firstLesson: false,
-    testMaster: false,
     aiChatter: false,
     consistentLearner: false,
   });
@@ -46,8 +47,10 @@ export default function StudentProfilePage() {
       const response = await apiService.request<{
         stats: {
           completedLessons: number;
+          openedLessons: number;
           totalLessons: number;
           timeSpent: number;
+          timeSpentFormatted: string;
           totalScore: number;
           maxScore: number;
           avgScore: number;
@@ -57,7 +60,6 @@ export default function StudentProfilePage() {
         };
         achievements: {
           firstLesson: boolean;
-          testMaster: boolean;
           aiChatter: boolean;
           consistentLearner: boolean;
         };
@@ -75,10 +77,9 @@ export default function StudentProfilePage() {
   };
 
   const achievementsList = [
-    { icon: BookOpen, title: 'Birinchi dars', description: 'Birinchi darsni tugatdingiz', unlocked: achievements.firstLesson },
-    { icon: Trophy, title: 'Test ustasi', description: '3 ta testdan o\'ting', unlocked: achievements.testMaster },
+    { icon: BookOpen, title: 'Birinchi dars', description: 'Birinchi darsni ochdingiz', unlocked: achievements.firstLesson },
     { icon: Award, title: 'AI suhbatchi', description: '10 ta AI suhbat olib boring', unlocked: achievements.aiChatter },
-    { icon: Clock, title: 'Izchil o\'quvchi', description: '7 kun ketma-ket o\'qing', unlocked: achievements.consistentLearner },
+    { icon: Clock, title: 'Izchil o\'quvchi', description: '7 ta dars ochdingiz', unlocked: achievements.consistentLearner },
   ];
 
   if (isLoading) {
@@ -160,17 +161,19 @@ export default function StudentProfilePage() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-card rounded-xl p-4 border border-border shadow-card">
           <BookOpen className="w-5 h-5 text-primary mb-2" />
-          <p className="text-2xl font-bold text-foreground">{stats.completedLessons}/{stats.totalLessons}</p>
+          <p className="text-2xl font-bold text-foreground">{stats.openedLessons || stats.completedLessons}/{stats.totalLessons}</p>
           <p className="text-sm text-muted-foreground">Darslar</p>
+          <Progress value={stats.progressPercent} className="h-2 mt-2" />
+          <p className="text-xs text-muted-foreground mt-1">{stats.progressPercent}%</p>
         </div>
         <div className="bg-card rounded-xl p-4 border border-border shadow-card">
           <Trophy className="w-5 h-5 text-warning mb-2" />
-          <p className="text-2xl font-bold text-foreground">{stats.totalScore}</p>
+          <p className="text-2xl font-bold text-foreground">{stats.totalScore}/{stats.maxScore}</p>
           <p className="text-sm text-muted-foreground">Ball</p>
         </div>
         <div className="bg-card rounded-xl p-4 border border-border shadow-card">
           <Clock className="w-5 h-5 text-success mb-2" />
-          <p className="text-2xl font-bold text-foreground">{stats.timeSpent} soat</p>
+          <p className="text-2xl font-bold text-foreground">{stats.timeSpentFormatted || '0:00'} soat</p>
           <p className="text-sm text-muted-foreground">O'qish vaqti</p>
         </div>
         <div className="bg-card rounded-xl p-4 border border-border shadow-card">

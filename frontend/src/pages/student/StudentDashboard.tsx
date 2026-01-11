@@ -21,6 +21,7 @@ export default function StudentDashboard() {
   const [modules, setModules] = useState<any[]>([]);
   const [stats, setStats] = useState({
     completedLessons: 0,
+    openedLessons: 0,
     totalLessons: 7,
     aiChats: 0,
     avgScore: 0,
@@ -40,6 +41,7 @@ export default function StudentDashboard() {
         apiService.request<{
           stats: {
             completedLessons: number;
+            openedLessons: number;
             totalLessons: number;
             aiChats: number;
             avgScore: number;
@@ -53,9 +55,10 @@ export default function StudentDashboard() {
       }
 
       if (statsRes.success && statsRes.data?.stats) {
-        const { completedLessons, totalLessons, aiChats, avgScore } = statsRes.data.stats;
+        const { completedLessons, openedLessons, totalLessons, aiChats, avgScore } = statsRes.data.stats;
         setStats({
-          completedLessons,
+          completedLessons: openedLessons || completedLessons,
+          openedLessons: openedLessons || completedLessons,
           totalLessons: totalLessons || 7,
           aiChats,
           avgScore,
@@ -88,7 +91,7 @@ export default function StudentDashboard() {
     { 
       icon: Trophy, 
       label: 'O\'rtacha ball', 
-      value: `${stats.avgScore}%`,
+      value: `${stats.avgScore} Ball`,
       color: 'text-warning'
     },
     { 

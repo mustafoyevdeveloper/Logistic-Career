@@ -374,19 +374,32 @@ export const getStudentLessons = async (req, res) => {
     const lessons = [];
     const now = new Date();
 
-    // O'quvchi birinchi marta kirganligini tekshirish (hech qanday progress yo'q)
-    const hasAnyProgress = await StudentProgress.exists({ studentId: req.user._id });
+    // 1-dars uchun progress'ni tekshirish va yaratish (faqat bir marta)
+    const firstLesson = allLessons.find(l => l.order === 1);
+    let firstProgress = null;
     
-    // Agar birinchi marta kirgan bo'lsa, 1-dars progress'ini yaratish
-    if (!hasAnyProgress) {
-      const firstLesson = allLessons.find(l => l.order === 1);
-      if (firstLesson) {
-        await StudentProgress.create({
-          studentId: req.user._id,
-          lessonId: firstLesson._id,
-          moduleId: firstLesson.moduleId,
-          lastAccessed: now,
-        });
+    if (firstLesson) {
+      firstProgress = await StudentProgress.findOne({
+        studentId: req.user._id,
+        lessonId: firstLesson._id,
+      });
+      
+      // Agar 1-dars progress'i yo'q bo'lsa, yaratish
+      if (!firstProgress) {
+        try {
+          firstProgress = await StudentProgress.create({
+            studentId: req.user._id,
+            lessonId: firstLesson._id,
+            moduleId: firstLesson.moduleId,
+            lastAccessed: now,
+          });
+        } catch (error) {
+          // Unique constraint error - progress allaqachon yaratilgan
+          firstProgress = await StudentProgress.findOne({
+            studentId: req.user._id,
+            lessonId: firstLesson._id,
+          });
+        }
       }
     }
 
@@ -410,21 +423,6 @@ export const getStudentLessons = async (req, res) => {
       // 1-dars har doim ochiq bo'lishi kerak
       if (day === 1) {
         isUnlocked = true;
-        // 1-dars progress'i mavjud emasligini tekshirish va yaratish
-        const firstProgress = await StudentProgress.findOne({
-          studentId: req.user._id,
-          lessonId: lesson._id,
-        });
-        
-        if (!firstProgress) {
-          // 1-dars progress'ini yaratish (agar yo'q bo'lsa)
-          await StudentProgress.create({
-            studentId: req.user._id,
-            lessonId: lesson._id,
-            moduleId: lesson.moduleId,
-            lastAccessed: now,
-          });
-        }
       } else {
         // Joriy dars progress'ini tekshirish
         const progress = await StudentProgress.findOne({
