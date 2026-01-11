@@ -47,7 +47,7 @@ const weekLessons: Record<number, {
         <li>Dengiz transporti - eng arzon, lekin sekin</li>
       </ul>
     `,
-    duration: "2 soat",
+    duration: "",
     topics: [
       "Logistika tushunchasi",
       "Dispatcher vazifalari",
@@ -120,7 +120,7 @@ const weekLessons: Record<number, {
         <li>Havo sharoitiga bog'liq</li>
       </ul>
     `,
-    duration: "2.5 soat",
+    duration: "",
     topics: [
       "Xalqaro logistika asoslari",
       "Avtomobil transporti",
@@ -164,7 +164,7 @@ const weekLessons: Record<number, {
         <li>Hujjatlar bilan bog'liq muammolar</li>
       </ul>
     `,
-    duration: "3 soat",
+    duration: "",
     topics: [
       "CMR hujjati",
       "AWB hujjati",
@@ -211,7 +211,7 @@ const weekLessons: Record<number, {
       <h3 class="text-xl font-semibold mb-3">Import-Export operatsiyalari</h3>
       <p class="mb-4">Import - bu yukni boshqa mamlakatdan olib kirish. Export - bu yukni boshqa mamlakatga olib chiqish. Har ikkala operatsiya ham bo'jxona rasmiylashtirishni talab qiladi.</p>
     `,
-    duration: "2.5 soat",
+    duration: "",
     topics: [
       "Bo'jxona rasmiylashtirish jarayoni",
       "Zarur hujjatlar",
@@ -261,7 +261,7 @@ const weekLessons: Record<number, {
       <p class="mb-4"><strong>Foyda = Daromad - Xarajatlar</strong></p>
       <p class="mb-4"><strong>Rentabellik = (Foyda / Daromad) × 100%</strong></p>
     `,
-    duration: "3 soat",
+    duration: "",
     topics: [
       "Xarajatlar turlari",
       "Narxlash usullari",
@@ -316,7 +316,7 @@ const weekLessons: Record<number, {
         <li>Doimiy aloqa</li>
       </ul>
     `,
-    duration: "2 soat",
+    duration: "",
     topics: [
       "Muloqot qilish",
       "Shikoyatlar bilan ishlash",
@@ -371,7 +371,7 @@ const weekLessons: Record<number, {
         <li>Ma'lumotlarni tez qayta ishlash</li>
       </ul>
     `,
-    duration: "2.5 soat",
+    duration: "",
     topics: [
       "TMS tizimlari",
       "GPS kuzatuv",

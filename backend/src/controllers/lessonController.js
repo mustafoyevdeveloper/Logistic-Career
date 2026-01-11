@@ -16,7 +16,20 @@ export const getModules = async (req, res) => {
       .lean();
 
     // Har bir modul uchun progress hisoblash (student uchun)
+    let lastAccessedLessonId = null;
     if (req.user.role === 'student') {
+      // Oxirgi ko'rilgan darsni topish
+      const lastProgress = await StudentProgress.findOne({
+        studentId: req.user._id,
+        lastAccessed: { $exists: true, $ne: null },
+      })
+        .sort({ lastAccessed: -1 })
+        .lean();
+
+      if (lastProgress) {
+        lastAccessedLessonId = lastProgress.lessonId.toString();
+      }
+
       for (const module of modules) {
         const lessons = await Lesson.find({ moduleId: module._id, isActive: true })
           .sort({ order: 1 })
@@ -45,7 +58,10 @@ export const getModules = async (req, res) => {
 
     res.json({
       success: true,
-      data: { modules },
+      data: { 
+        modules,
+        lastAccessedLessonId, // Oxirgi ko'rilgan dars ID'si
+      },
     });
   } catch (error) {
     res.status(500).json({

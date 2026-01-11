@@ -19,6 +19,7 @@ import { apiService } from '@/services/api';
 export default function StudentDashboard() {
   const { user } = useAuth();
   const [modules, setModules] = useState<any[]>([]);
+  const [lastAccessedLessonId, setLastAccessedLessonId] = useState<string | null>(null);
   const [stats, setStats] = useState({
     completedLessons: 0,
     openedLessons: 0,
@@ -38,7 +39,7 @@ export default function StudentDashboard() {
       setIsLoading(true);
       // Statistikani /auth/me/stats dan olamiz
       const [modulesRes, statsRes] = await Promise.all([
-        apiService.request<{ modules: any[] }>('/lessons/modules'),
+        apiService.request<{ modules: any[]; lastAccessedLessonId?: string | null }>('/lessons/modules'),
         apiService.request<{
           stats: {
             completedLessons: number;
@@ -53,6 +54,7 @@ export default function StudentDashboard() {
 
       if (modulesRes.success && modulesRes.data) {
         setModules(modulesRes.data.modules || []);
+        setLastAccessedLessonId(modulesRes.data.lastAccessedLessonId || null);
       }
 
       if (statsRes.success && statsRes.data?.stats) {
@@ -176,7 +178,7 @@ export default function StudentDashboard() {
         
         <div className="space-y-4">
           {(() => {
-            // Barcha modullardan barcha darslarni olish va order bo'yicha tartiblash
+            // Barcha modullardan barcha darslarni olish
             const allLessons = modules
               .flatMap((module: any) => (module.lessons || []).map((lesson: any) => ({
                 ...lesson,
@@ -185,36 +187,39 @@ export default function StudentDashboard() {
               .filter((lesson: any) => lesson && (lesson.order >= 1 && lesson.order <= 7))
               .sort((a: any, b: any) => (a.order || 0) - (b.order || 0));
 
-            return allLessons.length > 0 ? allLessons.map((lesson: any, index: number) => (
+            // Faqat oxirgi ko'rilgan darsni topish
+            const lastAccessedLesson = lastAccessedLessonId 
+              ? allLessons.find(
+                  (lesson: any) => (lesson._id || lesson.id)?.toString() === lastAccessedLessonId
+                )
+              : null;
+
+            // Agar oxirgi ko'rilgan dars topilmasa, 1-darsni ko'rsatamiz
+            const displayLesson = lastAccessedLesson || allLessons.find((l: any) => l.order === 1);
+
+            if (!displayLesson) {
+              return (
+                <p className="text-muted-foreground text-center py-4">Darslar topilmadi</p>
+              );
+            }
+
+            return (
               <div 
-                key={lesson._id || lesson.id || `lesson-${lesson.order || index}`}
-                className={`flex items-center gap-4 p-4 rounded-xl border transition-all duration-200 ${
-                  index === 0 
-                    ? 'border-primary bg-primary/5' 
-                    : 'border-border hover:border-primary/50'
-                }`}
+                key={displayLesson._id || displayLesson.id || `lesson-${displayLesson.order}`}
+                className="flex items-center gap-4 p-4 rounded-xl border border-primary bg-primary/5 transition-all duration-200"
               >
-                <div className={`w-10 h-10 rounded-lg flex items-center justify-center font-semibold ${
-                  index === 0 
-                    ? 'gradient-primary text-primary-foreground' 
-                    : 'bg-muted text-muted-foreground'
-                }`}>
-                  {lesson.order || (index + 1)}
+                <div className="w-10 h-10 rounded-lg flex items-center justify-center font-semibold gradient-primary text-primary-foreground">
+                  {displayLesson.order || 1}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h3 className="font-medium text-foreground truncate">{lesson.title}</h3>
-                  <p className="text-sm text-muted-foreground">{lesson.duration || '2 soat'}</p>
+                  <h3 className="font-medium text-foreground truncate">{displayLesson.title}</h3>
                 </div>
-                {index === 0 && (
-                  <Link to={`/student/lessons/${lesson.order || 1}`}>
-                    <Button size="sm" variant="gradient">
-                      Davom etish
-                    </Button>
-                  </Link>
-                )}
+                <Link to={`/student/lessons/${displayLesson.order || 1}`}>
+                  <Button size="sm" variant="gradient">
+                    Davom etish
+                  </Button>
+                </Link>
               </div>
-            )) : (
-              <p className="text-muted-foreground text-center py-4">Darslar topilmadi</p>
             );
           })()}
         </div>

@@ -219,8 +219,6 @@ export default function LessonsPage() {
                       </p>
                       {!isUnlocked && timeRemaining && (
                         <div className="flex items-center gap-2 mt-2 text-sm text-warning font-medium">
-                          <Clock className="w-4 h-4" />
-                          <span>{formatTimeRemaining(timeRemaining)} soat qoldi</span>
                         </div>
                       )}
                     </div>

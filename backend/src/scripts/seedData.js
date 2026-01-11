@@ -33,7 +33,6 @@ const seedModules = async () => {
       {
         title: 'Logistika asoslari, tushunchalar va hujjatlar bilan tanishish',
         description: 'Logistika nima, dispatcher nima, logistika turlari, asosiy hujjatlar va ularning maqsadlari, transport turlari va ularning xususiyatlari.',
-        duration: '2 soat',
         level: 'beginner',
         order: 1,
         moduleId: mainModule._id,
@@ -42,7 +41,6 @@ const seedModules = async () => {
       {
         title: 'Xalqaro logistika va transport turlari',
         description: 'Xalqaro logistika asoslari, transport turlari (avtomobil, temir yo\'l, havo, dengiz), ularning afzalliklari va kamchiliklari.',
-        duration: '2 soat',
         level: 'beginner',
         order: 2,
         moduleId: mainModule._id,
@@ -51,7 +49,6 @@ const seedModules = async () => {
       {
         title: 'Yuk tashish hujjatlari va shartnomalar',
         description: 'CMR, AWB, Bill of Lading kabi asosiy hujjatlar, shartnoma tuzish, yuk tashish shartlari va javobgarlik masalalari.',
-        duration: '2 soat',
         level: 'intermediate',
         order: 3,
         moduleId: mainModule._id,
@@ -60,7 +57,6 @@ const seedModules = async () => {
       {
         title: 'Bo\'jxona va rasmiylashtirish',
         description: 'Bo\'jxona rasmiylashtirish jarayoni, zarur hujjatlar, bojxona to\'lovlari va qoidalari, import-export operatsiyalari.',
-        duration: '2 soat',
         level: 'intermediate',
         order: 4,
         moduleId: mainModule._id,
@@ -69,7 +65,6 @@ const seedModules = async () => {
       {
         title: 'Logistika xarajatlari va narxlash',
         description: 'Logistika xarajatlari turlari, narxlash usullari, xarajatlarni hisoblash, rentabellik va foyda koeffitsiyentlari.',
-        duration: '2 soat',
         level: 'intermediate',
         order: 5,
         moduleId: mainModule._id,
@@ -78,7 +73,6 @@ const seedModules = async () => {
       {
         title: 'Mijozlar bilan ishlash va muloqot',
         description: 'Mijozlar bilan muloqot qilish, shikoyatlar bilan ishlash, xizmat ko\'rsatish standartlari, mijozlar bilan munosabatlar.',
-        duration: '2 soat',
         level: 'advanced',
         order: 6,
         moduleId: mainModule._id,
@@ -87,7 +81,6 @@ const seedModules = async () => {
       {
         title: 'Logistika tizimlari va texnologiyalar',
         description: 'Zamonaviy logistika tizimlari, TMS (Transport Management System), GPS kuzatuv, raqamli logistika va avtomatlashtirish.',
-        duration: '2 soat',
         level: 'advanced',
         order: 7,
         moduleId: mainModule._id,
