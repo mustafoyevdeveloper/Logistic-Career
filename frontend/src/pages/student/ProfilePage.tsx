@@ -46,6 +46,9 @@ export default function StudentProfilePage() {
 
   // Real-time timer (har sekundda yangilanadi) va har 5 sekundda MongoDB'ga yangilash
   const lastUpdateTimeRef = useRef<number>(Date.now());
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const isActiveRef = useRef<boolean>(true);
+  const pauseStartTimeRef = useRef<number | null>(null); // Pause boshlanish vaqti
 
   useEffect(() => {
     if (!sessionStartTime) {
@@ -57,6 +60,8 @@ export default function StudentProfilePage() {
     console.log('✅ sessionStartTime mavjud:', sessionStartTime);
 
     const updateTime = () => {
+      if (!isActiveRef.current) return; // Agar offline bo'lsa, to'xtatish
+
       const now = new Date();
       const start = new Date(sessionStartTime);
       
@@ -66,7 +71,13 @@ export default function StudentProfilePage() {
         return;
       }
 
-      const diffMs = now.getTime() - start.getTime();
+      let diffMs = now.getTime() - start.getTime();
+      
+      // Agar pause vaqti bo'lsa, uni ayirish
+      // Pause vaqti: pauseStartTimeRef.current dan hozirgi vaqtgacha bo'lgan vaqt
+      // Lekin faqat pause davomida bo'lsa (isActiveRef.current === false)
+      // Bu yerda pause vaqtini hisoblamaymiz, chunki updateTime faqat isActiveRef.current === true bo'lganda chaqiriladi
+
       const totalSeconds = Math.floor(diffMs / 1000);
       
       // Agar vaqt manfiy bo'lsa (kelajakda bo'lsa), 0 qaytaramiz
@@ -92,13 +103,75 @@ export default function StudentProfilePage() {
       }
     };
 
+    // Page visibility change handler (tab yopilganda/ochilganda)
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        // Tab yopilganda yoki browser yopilganda - to'xtatish
+        if (isActiveRef.current) {
+          isActiveRef.current = false;
+          pauseStartTimeRef.current = Date.now(); // Pause boshlanish vaqtini saqlash
+          console.log('⏸️ Tab yopildi - vaqt to\'xtatildi');
+        }
+      } else {
+        // Tab ochilganda - davom ettirish
+        if (!isActiveRef.current && pauseStartTimeRef.current) {
+          // Pause vaqtini qo'shish (hech narsa qilmaymiz, chunki diffMs da avtomatik hisoblanadi)
+          pauseStartTimeRef.current = null;
+          isActiveRef.current = true;
+          console.log('▶️ Tab ochildi - vaqt davom etmoqda');
+          updateTime(); // Darhol yangilash
+        }
+      }
+    };
+
+    // Before unload handler (browser yopilganda)
+    const handleBeforeUnload = () => {
+      // Browser yopilganda interval'ni to'xtatish
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    };
+
+    // Focus/blur handlers (sayt fokusda bo'lganda/yuqoridan chiqqanda)
+    const handleFocus = () => {
+      if (!isActiveRef.current && pauseStartTimeRef.current) {
+        pauseStartTimeRef.current = null;
+        isActiveRef.current = true;
+        console.log('▶️ Sayt fokusda - vaqt davom etmoqda');
+        updateTime();
+      }
+    };
+
+    const handleBlur = () => {
+      if (isActiveRef.current) {
+        isActiveRef.current = false;
+        pauseStartTimeRef.current = Date.now(); // Pause boshlanish vaqtini saqlash
+        console.log('⏸️ Sayt fokusdan chiqdi - vaqt to\'xtatildi');
+      }
+    };
+
+    // Event listener'larni qo'shish
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    window.addEventListener('focus', handleFocus);
+    window.addEventListener('blur', handleBlur);
+
     // Darhol yangilash
     updateTime();
 
     // Har sekundda yangilash
-    const interval = setInterval(updateTime, 1000);
+    intervalRef.current = setInterval(updateTime, 1000);
 
-    return () => clearInterval(interval);
+    return () => {
+      // Cleanup
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      window.removeEventListener('focus', handleFocus);
+      window.removeEventListener('blur', handleBlur);
+    };
   }, [sessionStartTime]);
 
   const loadStats = async () => {
