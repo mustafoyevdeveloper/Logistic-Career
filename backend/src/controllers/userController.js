@@ -291,70 +291,92 @@ export const getMyStats = async (req, res) => {
     const studentId = req.user._id;
     const totalLessons = 7; // Doimiy 7 ta dars
 
-    // Ochilgan darslar statistikasi to'g'ri hisoblanadi (quyidagi kodda)
+    // Statistikalar bazada saqlangan bo'lsa, ularni olamiz
+    const user = await User.findById(studentId).select('stats').lean();
+    let stats = user?.stats || {};
 
-    // O'qish vaqti (daqiqalarda) - o'quvchi saytda necha soat onlayn bo'lgan
-    const timeSpentResult = await StudentProgress.aggregate([
-      {
-        $match: { studentId },
-      },
-      {
-        $group: {
-          _id: null,
-          totalTime: { $sum: '$timeSpent' },
+    // Agar statistikalar bazada mavjud bo'lsa va yangi bo'lsa, ularni qaytaramiz
+    // Aks holda real-time hisoblaymiz va yangilaymiz
+    let openedLessons = stats.openedLessons || 0;
+    let totalScore = stats.totalScore || 0;
+    let progressPercent = stats.progressPercent || 0;
+    let timeSpentMinutes = stats.timeSpentMinutes || 0;
+    let aiChats = stats.aiChats || 0;
+
+    // Agar statistikalar eski bo'lsa yoki mavjud emas bo'lsa, yangilaymiz
+    // Har safar yangilaymiz (chunki darsga kirilganda statistikalar yangilanadi)
+    const shouldUpdate = true; // Har safar yangilaymiz
+
+    if (shouldUpdate) {
+      // O'qish vaqti (daqiqalarda) - o'quvchi saytda necha soat onlayn bo'lgan
+      const timeSpentResult = await StudentProgress.aggregate([
+        {
+          $match: { studentId },
         },
-      },
-    ]);
+        {
+          $group: {
+            _id: null,
+            totalTime: { $sum: '$timeSpent' },
+          },
+        },
+      ]);
 
-    const timeSpentMinutes = timeSpentResult.length > 0 ? timeSpentResult[0].totalTime : 0;
-    
-    // O'qish vaqtini soat:daqiqa formatiga o'zgartirish (backend'da faqat daqiqalarni qaytarish, frontend'da formatlash)
-    // Lekin backward compatibility uchun soat:daqiqa formatini ham qaytaramiz
+      timeSpentMinutes = timeSpentResult.length > 0 ? timeSpentResult[0].totalTime : 0;
+
+      // Ochilgan darslarni hisoblash - faqat lastAccessed mavjud bo'lgan darslar
+      const allOpenedProgress = await StudentProgress.find({
+        studentId,
+        lastAccessed: { $exists: true, $ne: null },
+      })
+        .select('lessonId')
+        .lean();
+
+      const openedLessonIds = [...new Set(allOpenedProgress.map(p => p.lessonId))];
+      
+      // Faqat order 1-7 orasidagi darslarni tekshiramiz
+      const validLessons = await Lesson.find({
+        _id: { $in: openedLessonIds },
+        isActive: true,
+        order: { $gte: 1, $lte: 7 }
+      })
+        .select('_id')
+        .lean();
+      
+      openedLessons = validLessons.length;
+
+      // Ball: har bir ochilgan dars uchun 10 ball (umumiy 70 ball)
+      totalScore = openedLessons * 10;
+      const maxScore = totalLessons * 10; // 70 ball
+
+      // Progress foizi - ochilgan darslar foizida
+      progressPercent = Math.min(
+        100,
+        Math.round((openedLessons / totalLessons) * 100)
+      );
+
+      // AI chatlar soni
+      aiChats = await ChatMessage.countDocuments({
+        studentId,
+        role: 'user',
+      });
+
+      // Statistikani bazada yangilash
+      await User.findByIdAndUpdate(studentId, {
+        'stats.openedLessons': openedLessons,
+        'stats.totalLessons': totalLessons,
+        'stats.totalScore': totalScore,
+        'stats.maxScore': maxScore,
+        'stats.progressPercent': progressPercent,
+        'stats.timeSpentMinutes': timeSpentMinutes,
+        'stats.aiChats': aiChats,
+        'stats.lastStatsUpdate': new Date(),
+      });
+    }
+
+    // O'qish vaqtini soat:daqiqa formatiga o'zgartirish
     const timeSpentHours = Math.floor(timeSpentMinutes / 60);
     const timeSpentMins = timeSpentMinutes % 60;
     const timeSpentFormatted = `${timeSpentHours}:${timeSpentMins.toString().padStart(2, '0')}`;
-
-    // Ochilgan darslarni hisoblash - faqat lastAccessed mavjud bo'lgan darslar
-    // Oddiy va aniq yondashuv: faqat lastAccessed mavjud bo'lgan progress'lar
-    // Va ularga tegishli darslar order 1-7 orasida bo'lishi kerak
-    
-    // Barcha lastAccessed mavjud bo'lgan progress'larni olamiz
-    const allOpenedProgress = await StudentProgress.find({
-      studentId,
-      lastAccessed: { $exists: true, $ne: null },
-    })
-      .select('lessonId')
-      .lean();
-    
-    // Progress'larga tegishli dars ID'larini olamiz (unique qilish uchun Set ishlatamiz)
-    const openedLessonIds = [...new Set(allOpenedProgress.map(p => p.lessonId))];
-    
-    // Faqat order 1-7 orasidagi darslarni tekshiramiz
-    const validLessons = await Lesson.find({
-      _id: { $in: openedLessonIds },
-      isActive: true,
-      order: { $gte: 1, $lte: 7 }
-    })
-      .select('_id')
-      .lean();
-    
-    const validOpenedLessons = validLessons.length;
-
-    // Ball: har bir ochilgan dars uchun 10 ball (umumiy 70 ball)
-    const totalScore = validOpenedLessons * 10;
-    const maxScore = totalLessons * 10; // 70 ball
-
-    // Progress foizi - ochilgan darslar foizida
-    const progressPercent = Math.min(
-      100,
-      Math.round((validOpenedLessons / totalLessons) * 100)
-    );
-
-    // AI chatlar soni
-    const aiChats = await ChatMessage.countDocuments({
-      studentId,
-      role: 'user',
-    });
 
     // Yutuqlar (achievements)
     const achievements = {
@@ -378,7 +400,7 @@ export const getMyStats = async (req, res) => {
     achievements.aiChatter = aiChats >= 10;
 
     // Izchil o'quvchi - 7 ta dars ochilgan bo'lsa
-    achievements.consistentLearner = validOpenedLessons >= 7;
+    achievements.consistentLearner = openedLessons >= 7;
 
     // Yutuqlar soni (test ustasi olib tashlandi, endi 3 ta yutuq)
     const achievementsCount = Object.values(achievements).filter(Boolean).length;
@@ -387,14 +409,14 @@ export const getMyStats = async (req, res) => {
       success: true,
       data: {
         stats: {
-          completedLessons: validOpenedLessons, // Ochilgan darslar (backward compatibility uchun)
-          openedLessons: validOpenedLessons, // Ochilgan darslar
+          completedLessons: openedLessons, // Ochilgan darslar (backward compatibility uchun)
+          openedLessons, // Ochilgan darslar
           totalLessons,
           timeSpent: timeSpentMinutes, // Daqiqalarda (frontend'da formatlash uchun)
           timeSpentFormatted, // Soat:daqiqa formatida (2:43)
           totalScore,
-          maxScore,
-          avgScore: validOpenedLessons > 0 ? 10 : 0, // Har bir ochilgan dars 10 ball
+          maxScore: totalLessons * 10, // 70 ball
+          avgScore: openedLessons > 0 ? 10 : 0, // Har bir ochilgan dars 10 ball
           progressPercent,
           achievementsCount: achievementsCount,
           totalAchievements: 3, // Test ustasi olib tashlandi

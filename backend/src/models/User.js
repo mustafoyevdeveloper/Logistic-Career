@@ -120,6 +120,43 @@ const userSchema = new mongoose.Schema(
         default: true,
       },
     },
+    // Statistikalar (faqat student uchun, bazada saqlanadi)
+    stats: {
+      openedLessons: {
+        type: Number,
+        default: 0,
+      },
+      totalLessons: {
+        type: Number,
+        default: 7,
+      },
+      totalScore: {
+        type: Number,
+        default: 0,
+      },
+      maxScore: {
+        type: Number,
+        default: 70,
+      },
+      progressPercent: {
+        type: Number,
+        default: 0,
+        min: 0,
+        max: 100,
+      },
+      timeSpentMinutes: {
+        type: Number,
+        default: 0,
+      },
+      aiChats: {
+        type: Number,
+        default: 0,
+      },
+      lastStatsUpdate: {
+        type: Date,
+        default: null,
+      },
+    },
   },
   {
     timestamps: true,

@@ -1,6 +1,8 @@
 import Lesson from '../models/Lesson.js';
 import LessonModule from '../models/LessonModule.js';
 import StudentProgress from '../models/StudentProgress.js';
+import User from '../models/User.js';
+import ChatMessage from '../models/ChatMessage.js';
 
 /**
  * @desc    Barcha modullarni olish
@@ -210,8 +212,8 @@ export const updateLessonProgressByDay = async (req, res) => {
       });
     }
 
-    // Keyingi dars uchun ochilish vaqtini hisoblash (keyingi kuni soat 8:00)
-    // Har safar darsga kirilganda keyingi dars keyingi kuni soat 8:00 da ochiladi
+    // Keyingi darsni darhol ochish (vaqt kutish kerak emas)
+    // Har safar darsga kirilganda keyingi dars darhol ochiladi
     if (dayNumber >= 1 && dayNumber < 7) {
       const nextLessonDay = dayNumber + 1;
       // Keyingi darsni topish (barcha darslar orasidan order bo'yicha, xuddi getStudentLessons kabi)
@@ -223,23 +225,23 @@ export const updateLessonProgressByDay = async (req, res) => {
           lessonId: nextLesson._id,
         });
 
-        // Keyingi kuni soat 8:00 ni hisoblash
-        const tomorrow = new Date(now);
-        tomorrow.setDate(tomorrow.getDate() + 1);
-        tomorrow.setHours(8, 0, 0, 0);
-
         if (!nextProgress) {
-          // Keyingi dars progress'i yo'q bo'lsa, yaratish
+          // Keyingi dars progress'i yo'q bo'lsa, yaratish va darhol ochish
           await StudentProgress.create({
             studentId: req.user._id,
             lessonId: nextLesson._id,
             moduleId: nextLesson.moduleId,
-            lessonUnlockTime: tomorrow,
+            lastAccessed: now, // Darhol ochiladi
+            lessonUnlockTime: null, // Artiq kerak emas
           });
         } else {
-          // Keyingi dars progress'i mavjud bo'lsa, ochilish vaqtini yangilash
-          nextProgress.lessonUnlockTime = tomorrow;
-          await nextProgress.save();
+          // Keyingi dars progress'i mavjud bo'lsa, darhol ochish
+          // Agar lastAccessed mavjud bo'lsa, o'zgartirmaymiz (allaqachon ochilgan)
+          if (!nextProgress.lastAccessed) {
+            nextProgress.lastAccessed = now; // Darhol ochiladi
+            nextProgress.lessonUnlockTime = null; // Artiq kerak emas
+            await nextProgress.save();
+          }
         }
       }
     }
@@ -340,6 +342,9 @@ export const updateLessonProgress = async (req, res) => {
       }
     }
 
+    // Statistikani yangilash (bazada saqlash)
+    await updateStudentStats(req.user._id);
+
     res.json({
       success: true,
       data: { progress },
@@ -430,7 +435,11 @@ export const getStudentLessons = async (req, res) => {
           lessonId: lesson._id,
         }).lean();
 
-        if (progress && progress.lessonUnlockTime) {
+        // MUHIM: Agar lastAccessed mavjud bo'lsa, dars doimiy ochiq bo'lishi kerak (qulflanmasligi kerak)
+        if (progress && progress.lastAccessed) {
+          isUnlocked = true;
+        } else if (progress && progress.lessonUnlockTime) {
+          // Agar lastAccessed yo'q, lekin lessonUnlockTime mavjud bo'lsa, vaqtni tekshiramiz
           unlockTime = progress.lessonUnlockTime;
           if (now >= unlockTime) {
             isUnlocked = true;
@@ -521,9 +530,11 @@ export const unlockLessonSecret = async (req, res) => {
       lessonId: lesson._id,
     });
 
+    const now = new Date();
     if (progress) {
-      // Darsni ochish (lessonUnlockTime ni hozirgi vaqtga o'rnatish)
-      progress.lessonUnlockTime = new Date();
+      // Darsni ochish (lastAccessed ni saqlash - dars doimiy ochiq bo'lishi uchun)
+      progress.lastAccessed = now;
+      progress.lessonUnlockTime = null; // Artiq kerak emas, chunki dars ochilgan
       await progress.save();
     } else {
       // Progress yaratish
@@ -531,9 +542,13 @@ export const unlockLessonSecret = async (req, res) => {
         studentId: req.user._id,
         lessonId: lesson._id,
         moduleId: lesson.moduleId,
-        lessonUnlockTime: new Date(),
+        lastAccessed: now, // Dars ochilgan, doimiy ochiq bo'lishi uchun
+        lessonUnlockTime: null, // Artiq kerak emas
       });
     }
+
+    // Statistikani yangilash
+    await updateStudentStats(req.user._id);
 
     res.json({
       success: true,
@@ -561,7 +576,6 @@ const updateUserProgress = async (userId) => {
       ? Math.round((completedLessons / totalLessons) * 100) 
       : 0;
 
-    const User = (await import('../models/User.js')).default;
     await User.findByIdAndUpdate(userId, { progress });
 
     // Level aniqlash
@@ -572,6 +586,79 @@ const updateUserProgress = async (userId) => {
     await User.findByIdAndUpdate(userId, { currentLevel });
   } catch (error) {
     console.error('Progress yangilash xatosi:', error);
+  }
+};
+
+// Helper: Student statistikasini yangilash (bazada saqlash)
+const updateStudentStats = async (studentId) => {
+  try {
+    const totalLessons = 7; // Doimiy 7 ta dars
+
+    // O'qish vaqti (daqiqalarda)
+    const timeSpentResult = await StudentProgress.aggregate([
+      {
+        $match: { studentId },
+      },
+      {
+        $group: {
+          _id: null,
+          totalTime: { $sum: '$timeSpent' },
+        },
+      },
+    ]);
+
+    const timeSpentMinutes = timeSpentResult.length > 0 ? timeSpentResult[0].totalTime : 0;
+
+    // Ochilgan darslarni hisoblash - faqat lastAccessed mavjud bo'lgan darslar
+    const allOpenedProgress = await StudentProgress.find({
+      studentId,
+      lastAccessed: { $exists: true, $ne: null },
+    })
+      .select('lessonId')
+      .lean();
+
+    const openedLessonIds = [...new Set(allOpenedProgress.map(p => p.lessonId))];
+    
+    // Faqat order 1-7 orasidagi darslarni tekshiramiz
+    const validLessons = await Lesson.find({
+      _id: { $in: openedLessonIds },
+      isActive: true,
+      order: { $gte: 1, $lte: 7 }
+    })
+      .select('_id')
+      .lean();
+    
+    const openedLessons = validLessons.length;
+
+    // Ball: har bir ochilgan dars uchun 10 ball (umumiy 70 ball)
+    const totalScore = openedLessons * 10;
+    const maxScore = totalLessons * 10; // 70 ball
+
+    // Progress foizi - ochilgan darslar foizida
+    const progressPercent = Math.min(
+      100,
+      Math.round((openedLessons / totalLessons) * 100)
+    );
+
+    // AI chatlar soni
+    const aiChats = await ChatMessage.countDocuments({
+      studentId,
+      role: 'user',
+    });
+
+    // Statistikani bazada yangilash
+    await User.findByIdAndUpdate(studentId, {
+      'stats.openedLessons': openedLessons,
+      'stats.totalLessons': totalLessons,
+      'stats.totalScore': totalScore,
+      'stats.maxScore': maxScore,
+      'stats.progressPercent': progressPercent,
+      'stats.timeSpentMinutes': timeSpentMinutes,
+      'stats.aiChats': aiChats,
+      'stats.lastStatsUpdate': new Date(),
+    });
+  } catch (error) {
+    console.error('Statistika yangilash xatosi:', error);
   }
 };
 

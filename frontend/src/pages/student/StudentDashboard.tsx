@@ -25,6 +25,7 @@ export default function StudentDashboard() {
     totalLessons: 7,
     aiChats: 0,
     avgScore: 0,
+    progressPercent: 0,
   });
   const [isLoading, setIsLoading] = useState(true);
   
@@ -55,13 +56,14 @@ export default function StudentDashboard() {
       }
 
       if (statsRes.success && statsRes.data?.stats) {
-        const { completedLessons, openedLessons, totalLessons, aiChats, avgScore } = statsRes.data.stats;
+        const { completedLessons, openedLessons, totalLessons, aiChats, avgScore, progressPercent } = statsRes.data.stats;
         setStats({
           completedLessons: openedLessons || completedLessons,
           openedLessons: openedLessons || completedLessons,
           totalLessons: totalLessons || 7,
           aiChats,
           avgScore,
+          progressPercent: progressPercent || 0,
         });
       }
     } catch (error) {
@@ -71,9 +73,10 @@ export default function StudentDashboard() {
     }
   };
 
-  const progressPercent = stats.totalLessons > 0 
+  // Backend'dan kelgan progressPercent ni ishlatamiz, aks holda hisoblaymiz
+  const progressPercent = stats.progressPercent || (stats.totalLessons > 0 
     ? Math.min(100, Math.round((stats.completedLessons / stats.totalLessons) * 100))
-    : 0;
+    : 0);
 
   const dashboardStats = [
     { 
@@ -172,35 +175,48 @@ export default function StudentDashboard() {
         </div>
         
         <div className="space-y-4">
-          {modules.length > 0 && modules[0]?.lessons?.slice(0, 3).map((lesson: any, index: number) => (
-            <div 
-              key={lesson.id}
-              className={`flex items-center gap-4 p-4 rounded-xl border transition-all duration-200 ${
-                index === 0 
-                  ? 'border-primary bg-primary/5' 
-                  : 'border-border hover:border-primary/50'
-              }`}
-            >
-              <div className={`w-10 h-10 rounded-lg flex items-center justify-center font-semibold ${
-                index === 0 
-                  ? 'gradient-primary text-primary-foreground' 
-                  : 'bg-muted text-muted-foreground'
-              }`}>
-                {index + 1}
+          {(() => {
+            // Barcha modullardan barcha darslarni olish va order bo'yicha tartiblash
+            const allLessons = modules
+              .flatMap((module: any) => (module.lessons || []).map((lesson: any) => ({
+                ...lesson,
+                moduleTitle: module.title,
+              })))
+              .filter((lesson: any) => lesson && (lesson.order >= 1 && lesson.order <= 7))
+              .sort((a: any, b: any) => (a.order || 0) - (b.order || 0));
+
+            return allLessons.length > 0 ? allLessons.map((lesson: any, index: number) => (
+              <div 
+                key={lesson._id || lesson.id || `lesson-${lesson.order || index}`}
+                className={`flex items-center gap-4 p-4 rounded-xl border transition-all duration-200 ${
+                  index === 0 
+                    ? 'border-primary bg-primary/5' 
+                    : 'border-border hover:border-primary/50'
+                }`}
+              >
+                <div className={`w-10 h-10 rounded-lg flex items-center justify-center font-semibold ${
+                  index === 0 
+                    ? 'gradient-primary text-primary-foreground' 
+                    : 'bg-muted text-muted-foreground'
+                }`}>
+                  {lesson.order || (index + 1)}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-medium text-foreground truncate">{lesson.title}</h3>
+                  <p className="text-sm text-muted-foreground">{lesson.duration || '2 soat'}</p>
+                </div>
+                {index === 0 && (
+                  <Link to={`/student/lessons/${lesson.order || 1}`}>
+                    <Button size="sm" variant="gradient">
+                      Davom etish
+                    </Button>
+                  </Link>
+                )}
               </div>
-              <div className="flex-1 min-w-0">
-                <h3 className="font-medium text-foreground truncate">{lesson.title}</h3>
-                <p className="text-sm text-muted-foreground">{lesson.duration}</p>
-              </div>
-              {index === 0 && (
-                <Link to="/student/lessons">
-                  <Button size="sm" variant="gradient">
-                    Davom etish
-                  </Button>
-                </Link>
-              )}
-            </div>
-          ))}
+            )) : (
+              <p className="text-muted-foreground text-center py-4">Darslar topilmadi</p>
+            );
+          })()}
         </div>
       </div>
 
