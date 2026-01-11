@@ -94,6 +94,18 @@ export const getStudents = async (req, res) => {
       if (aiChats >= 10) achievements++; // AI suhbatchi
       if (openedLessons >= 7) achievements++; // Izchil o'quvchi
 
+      // Real-time onlayn vaqtni hisoblash (sessionStartTime dan boshlab)
+      let onlineTimeFormatted = '00:00:00';
+      if (student.sessionStartTime) {
+        const now = new Date();
+        const diffMs = now.getTime() - new Date(student.sessionStartTime).getTime();
+        const totalSeconds = Math.floor(diffMs / 1000);
+        const hours = Math.floor(totalSeconds / 3600);
+        const minutes = Math.floor((totalSeconds % 3600) / 60);
+        const seconds = totalSeconds % 60;
+        onlineTimeFormatted = `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+      }
+
       student.stats = {
         completedLessons,
         totalLessons: totalActiveLessons, // Jami mavjud darslar (7)
@@ -103,10 +115,14 @@ export const getStudents = async (req, res) => {
         totalScore, // Ball (foizda emas)
         achievements,
         progressPercent, // Progress foizi
+        onlineTimeFormatted, // Real-time onlayn vaqt (H:MM:SS formatida, masalan: 2:41:53)
       };
 
       // student.progress ni yangilash (backward compatibility uchun)
       student.progress = progressPercent;
+      
+      // sessionStartTime ni qaytarish (frontend'da real-time timer uchun) - ISO string formatida
+      student.sessionStartTime = student.sessionStartTime ? new Date(student.sessionStartTime).toISOString() : null;
 
       // Last active
       const lastChat = await ChatMessage.findOne({ studentId: student._id })
@@ -316,8 +332,9 @@ export const getMyStats = async (req, res) => {
     const totalLessons = 7; // Doimiy 7 ta dars
 
     // Statistikalar bazada saqlangan bo'lsa, ularni olamiz
-    const user = await User.findById(studentId).select('stats').lean();
+    const user = await User.findById(studentId).select('stats sessionStartTime').lean();
     let stats = user?.stats || {};
+    const sessionStartTime = user?.sessionStartTime || null;
 
     // Agar statistikalar bazada mavjud bo'lsa va yangi bo'lsa, ularni qaytaramiz
     // Aks holda real-time hisoblaymiz va yangilaymiz
@@ -402,6 +419,18 @@ export const getMyStats = async (req, res) => {
     const timeSpentMins = timeSpentMinutes % 60;
     const timeSpentFormatted = `${timeSpentHours}:${timeSpentMins.toString().padStart(2, '0')}`;
 
+    // Real-time onlayn vaqtni hisoblash (sessionStartTime dan boshlab)
+    let onlineTimeFormatted = '0:00:00';
+    if (sessionStartTime) {
+      const now = new Date();
+      const diffMs = now.getTime() - new Date(sessionStartTime).getTime();
+      const totalSeconds = Math.floor(diffMs / 1000);
+      const hours = Math.floor(totalSeconds / 3600);
+      const minutes = Math.floor((totalSeconds % 3600) / 60);
+      const seconds = totalSeconds % 60;
+      onlineTimeFormatted = `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    }
+
     // Yutuqlar (achievements)
     const achievements = {
       firstLesson: false,
@@ -438,6 +467,7 @@ export const getMyStats = async (req, res) => {
           totalLessons,
           timeSpent: timeSpentMinutes, // Daqiqalarda (frontend'da formatlash uchun)
           timeSpentFormatted, // Soat:daqiqa formatida (2:43)
+          onlineTimeFormatted, // Real-time onlayn vaqt (H:MM:SS formatida, masalan: 2:41:53)
           totalScore,
           maxScore: totalLessons * 10, // 70 ball
           avgScore: openedLessons > 0 ? 10 : 0, // Har bir ochilgan dars 10 ball
@@ -447,6 +477,51 @@ export const getMyStats = async (req, res) => {
           aiChats,
         },
         achievements,
+        sessionStartTime: sessionStartTime ? new Date(sessionStartTime).toISOString() : null, // Frontend'da real-time timer uchun (ISO string formatida)
+      },
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Server xatosi',
+    });
+  }
+};
+
+/**
+ * @desc    Onlayn vaqtni yangilash (Student)
+ * @route   PUT /api/auth/me/update-online-time
+ * @access  Private (Student)
+ */
+export const updateOnlineTime = async (req, res) => {
+  try {
+    if (req.user.role !== 'student') {
+      return res.status(403).json({
+        success: false,
+        message: 'Faqat o\'quvchilar onlayn vaqtni yangilashi mumkin',
+      });
+    }
+
+    const { totalSeconds } = req.body;
+
+    if (totalSeconds === undefined || totalSeconds < 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Total seconds kiritilishi shart',
+      });
+    }
+
+    // Onlayn vaqtni yangilash
+    await User.findByIdAndUpdate(req.user._id, {
+      'stats.totalOnlineTimeSeconds': totalSeconds,
+      'stats.lastStatsUpdate': new Date(),
+    });
+
+    res.json({
+      success: true,
+      message: 'Onlayn vaqt muvaffaqiyatli yangilandi',
+      data: {
+        totalOnlineTimeSeconds: totalSeconds,
       },
     });
   } catch (error) {

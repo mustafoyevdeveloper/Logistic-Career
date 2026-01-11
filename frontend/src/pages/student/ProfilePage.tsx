@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
@@ -23,6 +23,7 @@ export default function StudentProfilePage() {
     totalLessons: 0,
     timeSpent: 0,
     timeSpentFormatted: '0:00',
+    onlineTimeFormatted: '0:00:00',
     totalScore: 0,
     maxScore: 0,
     avgScore: 0,
@@ -35,11 +36,70 @@ export default function StudentProfilePage() {
     aiChatter: false,
     consistentLearner: false,
   });
+  const [sessionStartTime, setSessionStartTime] = useState<string | null>(null);
+  const [onlineTime, setOnlineTime] = useState('0:00:00');
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     loadStats();
   }, []);
+
+  // Real-time timer (har sekundda yangilanadi) va har 5 sekundda MongoDB'ga yangilash
+  const lastUpdateTimeRef = useRef<number>(Date.now());
+
+  useEffect(() => {
+    if (!sessionStartTime) {
+      console.log('⚠️ sessionStartTime yo\'q:', sessionStartTime);
+      setOnlineTime('0:00:00');
+      return;
+    }
+
+    console.log('✅ sessionStartTime mavjud:', sessionStartTime);
+
+    const updateTime = () => {
+      const now = new Date();
+      const start = new Date(sessionStartTime);
+      
+      // Debug
+      if (isNaN(start.getTime())) {
+        console.error('❌ sessionStartTime noto\'g\'ri format:', sessionStartTime);
+        return;
+      }
+
+      const diffMs = now.getTime() - start.getTime();
+      const totalSeconds = Math.floor(diffMs / 1000);
+      
+      // Agar vaqt manfiy bo'lsa (kelajakda bo'lsa), 0 qaytaramiz
+      if (totalSeconds < 0) {
+        setOnlineTime('0:00:00');
+        return;
+      }
+
+      const hours = Math.floor(totalSeconds / 3600);
+      const minutes = Math.floor((totalSeconds % 3600) / 60);
+      const seconds = totalSeconds % 60;
+      const formatted = `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+      setOnlineTime(formatted);
+
+      // Har 5 sekundda MongoDB'ga yangilash
+      const nowMs = Date.now();
+      if (nowMs - lastUpdateTimeRef.current >= 5000) {
+        lastUpdateTimeRef.current = nowMs;
+        // Backend'ga so'rov yuborish (xatoliklarni ahamiyatsiz qoldirish)
+        apiService.updateOnlineTime(totalSeconds).catch((error) => {
+          console.error('❌ updateOnlineTime xatosi:', error);
+        });
+      }
+    };
+
+    // Darhol yangilash
+    updateTime();
+
+    // Har sekundda yangilash
+    const interval = setInterval(updateTime, 1000);
+
+    return () => clearInterval(interval);
+  }, [sessionStartTime]);
 
   const loadStats = async () => {
     try {
@@ -51,6 +111,7 @@ export default function StudentProfilePage() {
           totalLessons: number;
           timeSpent: number;
           timeSpentFormatted: string;
+          onlineTimeFormatted?: string;
           totalScore: number;
           maxScore: number;
           avgScore: number;
@@ -63,11 +124,19 @@ export default function StudentProfilePage() {
           aiChatter: boolean;
           consistentLearner: boolean;
         };
+        sessionStartTime?: string | null;
       }>('/auth/me/stats');
       
       if (response.success && response.data) {
         setStats(response.data.stats);
         setAchievements(response.data.achievements);
+        console.log('📥 Backend\'dan kelgan sessionStartTime:', response.data.sessionStartTime);
+        if (response.data.sessionStartTime) {
+          setSessionStartTime(response.data.sessionStartTime);
+          console.log('✅ sessionStartTime o\'rnatildi:', response.data.sessionStartTime);
+        } else {
+          console.warn('⚠️ sessionStartTime backend\'dan kelmadi yoki null');
+        }
       }
     } catch (error: any) {
       toast.error(error.message || 'Statistikani yuklashda xatolik');
@@ -173,8 +242,8 @@ export default function StudentProfilePage() {
         </div>
         <div className="bg-card rounded-xl p-4 border border-border shadow-card">
           <Clock className="w-5 h-5 text-success mb-2" />
-          <p className="text-2xl font-bold text-foreground">{stats.timeSpentFormatted || '0:00'} soat</p>
-          <p className="text-sm text-muted-foreground">O'qish vaqti</p>
+          <p className="text-2xl font-bold text-foreground">{onlineTime || stats.onlineTimeFormatted || '0:00:00'}</p>
+          <p className="text-sm text-muted-foreground">O'qish</p>
         </div>
         <div className="bg-card rounded-xl p-4 border border-border shadow-card">
           <Award className="w-5 h-5 text-accent mb-2" />

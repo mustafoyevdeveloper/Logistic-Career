@@ -224,6 +224,10 @@ export const login = async (req, res) => {
 
     // Last login yangilash
     user.lastLogin = new Date();
+    // Session start time yangilash (o'quvchi kirgan vaqt)
+    if (user.role === 'student') {
+      user.sessionStartTime = new Date();
+    }
     await user.save({ validateBeforeSave: false });
 
     res.json({

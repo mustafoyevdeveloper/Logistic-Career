@@ -95,6 +95,11 @@ const userSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+    // Session boshlanish vaqti (o'quvchi kirgan vaqt)
+    sessionStartTime: {
+      type: Date,
+      default: null,
+    },
     // O'qituvchi/admin tomonidan yaratilganligi
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
@@ -145,6 +150,10 @@ const userSchema = new mongoose.Schema(
         max: 100,
       },
       timeSpentMinutes: {
+        type: Number,
+        default: 0,
+      },
+      totalOnlineTimeSeconds: {
         type: Number,
         default: 0,
       },

@@ -403,6 +403,14 @@ class ApiService {
     }>('/users/teacher/stats');
   }
 
+  // Update online time
+  async updateOnlineTime(totalSeconds: number) {
+    return this.request<{ totalOnlineTimeSeconds: number }>('/auth/me/update-online-time', {
+      method: 'PUT',
+      body: JSON.stringify({ totalSeconds }),
+    });
+  }
+
   // Notifications
   async getNotifications(params?: { isRead?: boolean; limit?: number }) {
     const query = new URLSearchParams();
