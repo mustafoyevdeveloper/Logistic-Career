@@ -16,7 +16,7 @@ import {
   ChevronRight,
   Settings,
 } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { cn } from '@/lib/utils';
 
 interface NavItem {
@@ -51,6 +51,8 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const location = useLocation();
   const navigate = useNavigate();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const touchStartX = useRef<number | null>(null);
+  const touchStartY = useRef<number | null>(null);
 
   // Student blocked tekshirish
   useEffect(() => {
@@ -83,12 +85,35 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     navigate('/login?role=student');
   };
 
+  // Swipe gesture handler (chapdan o'nga surish)
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+    touchStartY.current = e.touches[0].clientY;
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (touchStartX.current === null || touchStartY.current === null) return;
+    
+    const touchEndX = e.touches[0].clientX;
+    const touchEndY = e.touches[0].clientY;
+    const diffX = touchEndX - touchStartX.current;
+    const diffY = touchEndY - touchStartY.current;
+
+    // Faqat gorizontal harakat bo'lsa va chapdan o'nga surilsa
+    if (Math.abs(diffX) > Math.abs(diffY) && diffX > 50 && !isMobileMenuOpen) {
+      setIsMobileMenuOpen(true);
+    }
+  };
+
+  const handleTouchEnd = () => {
+    touchStartX.current = null;
+    touchStartY.current = null;
+  };
+
   return (
     <div className="min-h-screen bg-background">
       {/* Mobile Header */}
       <header className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-card border-b border-border z-50 flex items-center justify-between px-4">
-        <Logo variant="icon" size="sm" />
-        
         <button
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
           className="p-2 hover:bg-muted rounded-lg transition-colors"
@@ -99,6 +124,8 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             <Menu className="w-6 h-6 text-foreground" />
           )}
         </button>
+        
+        <Logo variant="icon" size="sm" />
       </header>
 
       {/* Mobile Menu Overlay */}
@@ -214,7 +241,12 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       </aside>
 
       {/* Main Content */}
-      <main className="lg:ml-64 xl:ml-72 pt-16 lg:pt-0 min-h-screen">
+      <main 
+        className="lg:ml-64 xl:ml-72 pt-16 lg:pt-0 min-h-screen"
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+      >
         <div className="p-3 sm:p-4 md:p-6 lg:p-8">
           {children}
         </div>
