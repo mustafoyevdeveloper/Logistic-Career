@@ -22,6 +22,12 @@ import { cn } from '@/lib/utils';
 // Ovoz ijro etish funksiyasi
 const playClickSound = () => {
   try {
+    // localStorage'dan ovoz holatini o'qish
+    const soundEnabled = localStorage.getItem('buttonSoundEnabled');
+    if (soundEnabled === 'false') {
+      return; // Ovoz o'chirilgan bo'lsa, ovoz chiqarmaslik
+    }
+    
     const audio = new Audio('/voice/click.wav');
     audio.volume = 0.5; // Ovoz balandligi
     audio.play().catch(() => {
