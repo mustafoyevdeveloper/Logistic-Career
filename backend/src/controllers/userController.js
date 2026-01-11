@@ -480,35 +480,47 @@ export const getTeacherStats = async (req, res) => {
     // Faol darslar doimiy 7 ta
     const activeLessons = 7;
 
-    // O'rtacha progress: barcha o'quvchilarning tugatilgan darslari o'rtacha foizi (100/7 har dars)
-    // StudentProgress'da completed=true bo'lganlarni hisoblaymiz
-    const progressAgg = await StudentProgress.aggregate([
-      { $match: { completed: true } },
-      {
-        $group: {
-          _id: '$studentId',
-          completedCount: { $sum: 1 },
-        },
-      },
-      {
-        $project: {
-          percent: {
-            $min: [
-              { $multiply: [{ $divide: ['$completedCount', 7] }, 100] },
-              100,
-            ],
-          },
-        },
-      },
-      {
-        $group: {
-          _id: null,
-          avgProgress: { $avg: '$percent' },
-        },
-      },
-    ]);
+    // O'rtacha progress: barcha o'quvchilarning progressPercent lari qo'shilgan va o'quvchilar soniga bo'lingan
+    const students = await User.find({ role: 'student', isActive: true }).select('_id').lean();
+    const totalActiveLessons = await Lesson.countDocuments({ isActive: true, order: { $gte: 1, $lte: 7 } });
 
-    const avgProgress = progressAgg.length > 0 ? Math.round(progressAgg[0].avgProgress || 0) : 0;
+    let totalProgressPercent = 0;
+    let studentsWithProgress = 0;
+
+    for (const student of students) {
+      // Ochilgan darslarni hisoblash - faqat lastAccessed mavjud bo'lgan darslar (order 1-7)
+      const allOpenedProgress = await StudentProgress.find({
+        studentId: student._id,
+        lastAccessed: { $exists: true, $ne: null },
+      })
+        .select('lessonId')
+        .lean();
+
+      const openedLessonIds = [...new Set(allOpenedProgress.map(p => p.lessonId.toString()))];
+      
+      // Faqat order 1-7 orasidagi darslarni tekshiramiz
+      const validLessons = await Lesson.find({
+        _id: { $in: openedLessonIds },
+        isActive: true,
+        order: { $gte: 1, $lte: 7 }
+      })
+        .select('_id')
+        .lean();
+      
+      const openedLessons = validLessons.length;
+
+      // Progress foizi - ochilgan darslar foizida
+      const progressPercent = totalActiveLessons > 0
+        ? Math.round((openedLessons / totalActiveLessons) * 100)
+        : 0;
+
+      totalProgressPercent += progressPercent;
+      studentsWithProgress++;
+    }
+
+    const avgProgress = studentsWithProgress > 0 
+      ? Math.round(totalProgressPercent / studentsWithProgress)
+      : 0;
 
     // AI suhbatlar: barcha o'quvchilar ChatMessage (role: user) soni
     const totalChats = await ChatMessage.countDocuments({ role: 'user' });
