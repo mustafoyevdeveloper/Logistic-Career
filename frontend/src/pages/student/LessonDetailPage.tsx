@@ -239,7 +239,7 @@ const VideoPlayer = ({ videoUrl, index }: { videoUrl: string; index: number }) =
         // player.js yuklanmasa, oddiy HTML5 video player ko'rsatish
         if (playerRef.current) {
           playerRef.current.innerHTML = `
-            <video controls class="w-full h-full" style="border-radius: 8px;">
+            <video controls class="w-full h-full" style="border-radius: 2px">
               <source src="${videoUrl}" type="video/mp4">
               Sizning brauzeringiz video elementini qo'llab-quvvatlamaydi.
             </video>
@@ -260,7 +260,7 @@ const VideoPlayer = ({ videoUrl, index }: { videoUrl: string; index: number }) =
         // Fallback: oddiy HTML5 video player
         if (playerRef.current) {
           playerRef.current.innerHTML = `
-            <video controls class="w-full h-full" style="border-radius: 8px;">
+            <video controls class="w-full h-full" style="border-radius: 2px;">
               <source src="${videoUrl}" type="video/mp4">
               Sizning brauzeringiz video elementini qo'llab-quvvatlamaydi.
             </video>
@@ -354,7 +354,7 @@ const VideoPlayer = ({ videoUrl, index }: { videoUrl: string; index: number }) =
   }, [videoUrl, index]);
 
   return (
-    <div className="w-full aspect-video bg-black rounded-lg overflow-hidden mb-4 relative">
+    <div className="w-full aspect-video bg-black overflow-hidden mb-4 relative" style={{ borderRadius: 0 }}>
       {isLoading && (
         <div className="absolute inset-0 flex items-center justify-center bg-black/50 z-10">
           <div className="w-8 h-8 border-2 border-white border-t-transparent rounded-full animate-spin" />

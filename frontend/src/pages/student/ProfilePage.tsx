@@ -2,6 +2,8 @@ import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import { apiService } from '@/services/api';
 import { 
   User, 
@@ -11,7 +13,9 @@ import {
   Trophy,
   Clock,
   Edit2,
-  Award
+  Award,
+  Settings,
+  Volume2
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -39,10 +43,27 @@ export default function StudentProfilePage() {
   const [sessionStartTime, setSessionStartTime] = useState<string | null>(null);
   const [onlineTime, setOnlineTime] = useState('0:00:00');
   const [isLoading, setIsLoading] = useState(true);
+  const [buttonSoundEnabled, setButtonSoundEnabled] = useState(true);
 
   useEffect(() => {
     loadStats();
+    // localStorage'dan ovoz holatini o'qish
+    const soundEnabled = localStorage.getItem('buttonSoundEnabled');
+    if (soundEnabled !== null) {
+      setButtonSoundEnabled(soundEnabled === 'true');
+    } else {
+      // Default: yoqilgan
+      setButtonSoundEnabled(true);
+      localStorage.setItem('buttonSoundEnabled', 'true');
+    }
   }, []);
+
+  const handleButtonSoundToggle = (checked: boolean) => {
+    setButtonSoundEnabled(checked);
+    localStorage.setItem('buttonSoundEnabled', checked.toString());
+    // Storage event yuborish barcha tab'larga xabar berish uchun
+    window.dispatchEvent(new Event('storage'));
+  };
 
   // Real-time timer (har sekundda yangilanadi) va har 5 sekundda MongoDB'ga yangilash
   const lastUpdateTimeRef = useRef<number>(Date.now());
@@ -376,6 +397,32 @@ export default function StudentProfilePage() {
               </div>
             </div>
           ))}
+        </div>
+      </div>
+
+      {/* Settings */}
+      <div className="bg-card rounded-2xl p-6 border border-border shadow-card">
+        <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
+          <Settings className="w-5 h-5" />
+          Sozlamalar
+        </h3>
+        <div className="space-y-3">
+          <div className="flex items-center justify-between p-4 bg-muted/50 rounded-xl">
+            <div className="flex items-center gap-3">
+              <Volume2 className="w-5 h-5 text-muted-foreground" />
+              <div>
+                <Label htmlFor="button-sound" className="font-medium text-foreground cursor-pointer">
+                  Tugmalar ovozi
+                </Label>
+                <p className="text-sm text-muted-foreground">Tugmalar bosilganda ovoz chiqishi</p>
+              </div>
+            </div>
+            <Switch
+              id="button-sound"
+              checked={buttonSoundEnabled}
+              onCheckedChange={handleButtonSoundToggle}
+            />
+          </div>
         </div>
       </div>
     </div>
