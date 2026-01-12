@@ -547,7 +547,7 @@ export default function LessonDetailPage() {
           `}</style>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Chap ustun - Matn (scroll qilinadigan) */}
-            <div className="bg-card rounded-xl p-4 sm:p-6 border border-border flex flex-col h-[calc(102vh-300px)]">
+            <div className="bg-card rounded-xl p-4 sm:p-6 border border-border flex flex-col h-100vh">
               <div 
                 className="flex-1 overflow-y-auto pr-2 custom-scrollbar"
                 style={{
@@ -564,10 +564,10 @@ export default function LessonDetailPage() {
             </div>
 
             {/* O'ng ustun - Videolar (scroll qilinadigan) */}
-            <div className="bg-card rounded-xl p-4 sm:p-6 border border-border flex flex-col h-[calc(102vh-300px)]">
-              <h3 className="text-lg font-semibold text-foreground mb-4">Videolar</h3>
+            <div className="bg-card rounded-xl p-2 sm:p-2 border border-border flex flex-col h-100vh">
+              <h3 className="text-lg font-semibold text-foreground pl-2 pt-2 mb-4">Video darsliklar</h3>
               <div 
-                className="flex-1 overflow-y-auto pr-2 custom-scrollbar"
+                className="flex-1 overflow-y-auto custom-scrollbar"
                 style={{
                   scrollbarWidth: 'thin',
                   scrollbarColor: 'rgba(148, 163, 184, 0.5) transparent',
