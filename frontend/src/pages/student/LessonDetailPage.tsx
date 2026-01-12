@@ -1,389 +1,368 @@
 import { useParams, useNavigate } from 'react-router-dom';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, BookOpen, Clock, CheckCircle2, Lock } from 'lucide-react';
+import { ArrowLeft, Lock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { apiService } from '@/services/api';
 import { toast } from 'sonner';
+
+// Player.js type declaration
+declare global {
+  interface Window {
+    PlayerJS?: new (options: {
+      id: string;
+      file: string;
+      width?: string;
+      height?: string;
+    }) => {
+      api: (method: string) => void;
+    };
+    Playerjs?: new (options: {
+      id: string;
+      file: string;
+      width?: string;
+      height?: string;
+    }) => {
+      api: (method: string) => void;
+    };
+  }
+}
+
+// Mavzu ma'lumotlari interfeysi
+interface TopicContent {
+  title: string;
+  content: string;
+  videos: string[]; // Video URL'lar ro'yxati
+}
+
+// Player.js instance type
+interface PlayerInstance {
+  api: (method: string) => void;
+}
 
 // 7 kunlik darslar ma'lumotlari
 const weekLessons: Record<number, {
   day: number;
   title: string;
   description: string;
-  fullContent: string;
   duration: string;
-  topics: string[];
+  topics: Record<string, TopicContent>;
 }> = {
   1: {
     day: 1,
     title: "Logistika asoslari, tushunchalar va hujjatlar bilan tanishish",
     description: "Logistika nima, dispatcher nima, logistika turlari, asosiy hujjatlar va ularning maqsadlari, transport turlari va ularning xususiyatlari.",
-    fullContent: `
-      <h2 class="text-2xl font-bold mb-4">Logistika asoslari</h2>
-      <p class="mb-4">Logistika - bu mahsulotlar, xizmatlar va ma'lumotlarni manbadan iste'molchigacha samarali va tejamkor tarzda harakatlantirish, saqlash va boshqarish jarayonidir.</p>
-      
-      <h3 class="text-xl font-semibold mb-3">Dispatcher nima?</h3>
-      <p class="mb-4">Dispatcher - bu transport vositalarini, haydovchilarni va yuk tashish jarayonlarini boshqaruvchi mutaxassis. U yuk tashish rejalarini tuzadi, transport vositalarini kuzatadi va mijozlar bilan muloqot qiladi.</p>
-      
-      <h3 class="text-xl font-semibold mb-3">Logistika turlari</h3>
-      <ul class="list-disc list-inside mb-4 space-y-2">
-        <li>Ichki logistika - mamlakat ichidagi yuk tashish</li>
-        <li>Xalqaro logistika - mamlakatlar orasidagi yuk tashish</li>
-        <li>Ombor logistikasi - omborlarda saqlash va boshqarish</li>
-        <li>Transport logistikasi - transport vositalarini boshqarish</li>
-      </ul>
-      
-      <h3 class="text-xl font-semibold mb-3">Asosiy hujjatlar</h3>
-      <ul class="list-disc list-inside mb-4 space-y-2">
-        <li>CMR (Convention relative au contrat de transport international de marchandises par route) - xalqaro avtomobil transporti shartnomasi</li>
-        <li>Bill of Lading - dengiz transporti uchun yuk hujjati</li>
-        <li>AWB (Air Waybill) - havo transporti uchun yuk hujjati</li>
-        <li>Invoice - hisob-faktura</li>
-        <li>Packing List - yuk ro'yxati</li>
-      </ul>
-      
-      <h3 class="text-xl font-semibold mb-3">Transport turlari</h3>
-      <ul class="list-disc list-inside mb-4 space-y-2">
-        <li>Avtomobil transporti - eng moslashuvchan va tez</li>
-        <li>Temir yo'l transporti - og'ir yuklar uchun</li>
-        <li>Havo transporti - tezkor va qimmat</li>
-        <li>Dengiz transporti - eng arzon, lekin sekin</li>
-      </ul>
-    `,
     duration: "",
-    topics: [
-      "Logistika tushunchasi",
-      "Dispatcher vazifalari",
-      "Logistika turlari",
-      "Asosiy hujjatlar",
-      "Transport turlari"
-    ]
+    topics: {
+      "Logistika tushunchasi": {
+        title: "Logistika tushunchasi",
+        content: `
+          <h2 class="text-2xl font-bold mb-4">Logistika asoslari</h2>
+          <p class="mb-4">Logistika - bu mahsulotlar, xizmatlar va ma'lumotlarni manbadan iste'molchigacha samarali va tejamkor tarzda harakatlantirish, saqlash va boshqarish jarayonidir.</p>
+          <p class="mb-4">Logistika so'zi yunoncha "logistikos" so'zidan kelib chiqqan bo'lib, "hisob-kitob" yoki "sanash" degan ma'noni anglatadi. Zamonaviy logistika esa kengroq tushuncha bo'lib, u faqat transportni emas, balki butun tarmoqni boshqarishni o'z ichiga oladi.</p>
+          <p class="mb-4">Logistika asosiy maqsadi - bu mahsulotlarni eng kam xarajat bilan va eng qisqa vaqtda manbadan maqsadgacha yetkazib berishdir.</p>
+        `,
+        videos: [
+          "https://pub-e29856519e414c75bfcf296d0dc7f3ad.r2.dev/Kino/1762382269471-Interstellar.mp4", // Misol video URL
+          "https://pub-e29856519e414c75bfcf296d0dc7f3ad.r2.dev/Kino/1764166949478-tor-4-1080p-ozbek-tilida-asilmedia.net.mp4" // Ikkinchi video
+        ]
+      },
+      "Dispatcher vazifalari": {
+        title: "Dispatcher vazifalari",
+        content: `
+          <h2 class="text-2xl font-bold mb-4">Dispatcher nima?</h2>
+          <p class="mb-4">Dispatcher - bu transport vositalarini, haydovchilarni va yuk tashish jarayonlarini boshqaruvchi mutaxassis. U yuk tashish rejalarini tuzadi, transport vositalarini kuzatadi va mijozlar bilan muloqot qiladi.</p>
+          <h3 class="text-xl font-semibold mb-3">Dispatcherning asosiy vazifalari:</h3>
+          <ul class="list-disc list-inside mb-4 space-y-2">
+            <li>Yuk tashish rejalarini tuzish va optimallashtirish</li>
+            <li>Transport vositalarini va haydovchilarni boshqarish</li>
+            <li>Mijozlar bilan muloqot qilish va buyurtmalarni qabul qilish</li>
+            <li>Yuk tashish jarayonini kuzatish va nazorat qilish</li>
+            <li>Muammolarni hal qilish va yechimlar topish</li>
+            <li>Hujjatlarni tayyorlash va rasmiylashtirish</li>
+            <li>Xarajatlarni hisoblash va narxlarni belgilash</li>
+          </ul>
+          <p class="mb-4">Dispatcher - bu logistika sohasidagi eng muhim kasb bo'lib, u butun transport jarayonini boshqaradi va samarali ishlashini ta'minlaydi.</p>
+        `,
+        videos: [
+          "https://pub-e29856519e414c75bfcf296d0dc7f3ad.r2.dev/Kino/1762382269471-Interstellar.mp4"
+        ]
+      },
+      "Logistika turlari": {
+        title: "Logistika turlari",
+        content: `
+          <h2 class="text-2xl font-bold mb-4">Logistika turlari</h2>
+          <p class="mb-4">Logistika turli xil sohalarga bo'linadi va har biri o'ziga xos xususiyatlarga ega:</p>
+          <h3 class="text-xl font-semibold mb-3">1. Ichki logistika</h3>
+          <p class="mb-4">Ichki logistika - mamlakat ichidagi yuk tashish va boshqarish jarayonidir. Bu turdagi logistika ichki bozor uchun mo'ljallangan va milliy qonun-qoidalarga bo'ysunadi.</p>
+          <h3 class="text-xl font-semibold mb-3">2. Xalqaro logistika</h3>
+          <p class="mb-4">Xalqaro logistika - mamlakatlar orasidagi yuk tashish va boshqarish jarayonidir. Bu turdagi logistika xalqaro qonun-qoidalarga bo'ysunadi va bojxona rasmiylashtirishni talab qiladi.</p>
+          <h3 class="text-xl font-semibold mb-3">3. Ombor logistikasi</h3>
+          <p class="mb-4">Ombor logistikasi - omborlarda saqlash va boshqarish jarayonidir. Bu turdagi logistika yuklarni saqlash, inventarizatsiya va boshqarishni o'z ichiga oladi.</p>
+          <h3 class="text-xl font-semibold mb-3">4. Transport logistikasi</h3>
+          <p class="mb-4">Transport logistikasi - transport vositalarini boshqarish jarayonidir. Bu turdagi logistika transport vositalarini tanlash, marshrutlarni tuzish va optimallashtirishni o'z ichiga oladi.</p>
+        `,
+        videos: [
+          "https://pub-e29856519e414c75bfcf296d0dc7f3ad.r2.dev/Kino/1762382269471-Interstellar.mp4"
+        ]
+      },
+      "Asosiy hujjatlar": {
+        title: "Asosiy hujjatlar",
+        content: `
+          <h2 class="text-2xl font-bold mb-4">Asosiy hujjatlar</h2>
+          <p class="mb-4">Logistika sohasida turli xil hujjatlar ishlatiladi va har biri o'ziga xos maqsadga ega:</p>
+          <h3 class="text-xl font-semibold mb-3">CMR (Convention relative au contrat de transport international de marchandises par route)</h3>
+          <p class="mb-4">CMR - xalqaro avtomobil transporti uchun standart shartnoma. U yuk tashish shartlarini, javobgarlikni va to'lovlarni belgilaydi. Bu hujjat xalqaro avtomobil transporti uchun majburiydir.</p>
+          <h3 class="text-xl font-semibold mb-3">Bill of Lading</h3>
+          <p class="mb-4">Bill of Lading - dengiz transporti uchun yuk hujjati. Bu hujjat yukning egalik huquqini ham ko'rsatadi va sotish hujjati sifatida ham ishlatiladi.</p>
+          <h3 class="text-xl font-semibold mb-3">AWB (Air Waybill)</h3>
+          <p class="mb-4">AWB - havo transporti uchun yuk hujjati. Bu hujjat yukning havo orqali tashilishini tasdiqlaydi va yukning manbasi, yo'nalishi va maqsadini ko'rsatadi.</p>
+          <h3 class="text-xl font-semibold mb-3">Invoice (Hisob-faktura)</h3>
+          <p class="mb-4">Invoice - bu yukning narxi va to'lov shartlarini ko'rsatadigan hujjat. Bu hujjat bojxona rasmiylashtirishda ham ishlatiladi.</p>
+          <h3 class="text-xl font-semibold mb-3">Packing List (Yuk ro'yxati)</h3>
+          <p class="mb-4">Packing List - bu yukning tarkibini va miqdorini ko'rsatadigan hujjat. Bu hujjat yukni tekshirish va inventarizatsiya qilishda ishlatiladi.</p>
+        `,
+        videos: [
+          "https://pub-e29856519e414c75bfcf296d0dc7f3ad.r2.dev/Kino/1762382269471-Interstellar.mp4"
+        ]
+      },
+      "Transport turlari": {
+        title: "Transport turlari",
+        content: `
+          <h2 class="text-2xl font-bold mb-4">Transport turlari</h2>
+          <p class="mb-4">Transport turlari yukning xususiyatlariga va maqsadiga qarab tanlanadi:</p>
+          <h3 class="text-xl font-semibold mb-3">Avtomobil transporti</h3>
+          <p class="mb-4">Avtomobil transporti - eng moslashuvchan va tez transport turi. U kichik va o'rta yuklar uchun qulay va to'g'ridan-to'g'ri yetkazib berish imkonini beradi. Afzalliklari: moslashuvchanlik, tezlik, qulaylik. Kamchiliklari: chegara bojxonalari, yoqilg'i xarajatlari, cheklangan yuk hajmi.</p>
+          <h3 class="text-xl font-semibold mb-3">Temir yo'l transporti</h3>
+          <p class="mb-4">Temir yo'l transporti - og'ir yuklar uchun eng qulay transport turi. U katta yuk hajmlarini tashish imkonini beradi va arzon narxga ega. Afzalliklari: katta yuk hajmlari, arzon narx, barqarorlik. Kamchiliklari: cheklangan marshrutlar, sekin tezlik, yuklash-tushirish muammolari.</p>
+          <h3 class="text-xl font-semibold mb-3">Havo transporti</h3>
+          <p class="mb-4">Havo transporti - eng tez transport turi. U uzoq masofalar uchun qulay va xavfsiz. Afzalliklari: eng tez transport, uzoq masofalar, xavfsizlik. Kamchiliklari: eng qimmat transport, cheklangan yuk hajmi, havo sharoitiga bog'liq.</p>
+          <h3 class="text-xl font-semibold mb-3">Dengiz transporti</h3>
+          <p class="mb-4">Dengiz transporti - eng arzon transport turi. U katta yuk hajmlarini tashish imkonini beradi va uzoq masofalar uchun qulay. Afzalliklari: eng arzon transport, katta yuk hajmlari, uzoq masofalar. Kamchiliklari: eng sekin transport, portga bog'liq, havo sharoitiga bog'liq.</p>
+        `,
+        videos: [
+          "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+        ]
+      }
+    }
   },
+  // Boshqa kunlar uchun ham shunga o'xshash struktura...
   2: {
     day: 2,
     title: "Xalqaro logistika va transport turlari",
     description: "Xalqaro logistika asoslari, transport turlari (avtomobil, temir yo'l, havo, dengiz), ularning afzalliklari va kamchiliklari.",
-    fullContent: `
-      <h2 class="text-2xl font-bold mb-4">Xalqaro logistika</h2>
-      <p class="mb-4">Xalqaro logistika - bu turli mamlakatlar orasida yuk va xizmatlarni tashish, saqlash va boshqarish jarayonidir.</p>
-      
-      <h3 class="text-xl font-semibold mb-3">Avtomobil transporti</h3>
-      <p class="mb-2"><strong>Afzalliklari:</strong></p>
-      <ul class="list-disc list-inside mb-4 space-y-2">
-        <li>Moslashuvchanlik va tezlik</li>
-        <li>Kichik va o'rta yuklar uchun qulay</li>
-        <li>To'g'ridan-to'g'ri yetkazib berish</li>
-      </ul>
-      <p class="mb-2"><strong>Kamchiliklari:</strong></p>
-      <ul class="list-disc list-inside mb-4 space-y-2">
-        <li>Chegara bojxonalari</li>
-        <li>Yoqilg'i xarajatlari</li>
-        <li>Cheklangan yuk hajmi</li>
-      </ul>
-      
-      <h3 class="text-xl font-semibold mb-3">Temir yo'l transporti</h3>
-      <p class="mb-2"><strong>Afzalliklari:</strong></p>
-      <ul class="list-disc list-inside mb-4 space-y-2">
-        <li>Katta yuk hajmlari</li>
-        <li>Arzon narx</li>
-        <li>Barqaror va xavfsiz</li>
-      </ul>
-      <p class="mb-2"><strong>Kamchiliklari:</strong></p>
-      <ul class="list-disc list-inside mb-4 space-y-2">
-        <li>Cheklangan marshrutlar</li>
-        <li>Sekin tezlik</li>
-        <li>Yuklash-tushirish muammolari</li>
-      </ul>
-      
-      <h3 class="text-xl font-semibold mb-3">Havo transporti</h3>
-      <p class="mb-2"><strong>Afzalliklari:</strong></p>
-      <ul class="list-disc list-inside mb-4 space-y-2">
-        <li>Eng tez transport turi</li>
-        <li>Uzoq masofalar uchun qulay</li>
-        <li>Xavfsizlik</li>
-      </ul>
-      <p class="mb-2"><strong>Kamchiliklari:</strong></p>
-      <ul class="list-disc list-inside mb-4 space-y-2">
-        <li>Eng qimmat transport</li>
-        <li>Cheklangan yuk hajmi</li>
-        <li>Havo sharoitiga bog'liq</li>
-      </ul>
-      
-      <h3 class="text-xl font-semibold mb-3">Dengiz transporti</h3>
-      <p class="mb-2"><strong>Afzalliklari:</strong></p>
-      <ul class="list-disc list-inside mb-4 space-y-2">
-        <li>Eng arzon transport</li>
-        <li>Katta yuk hajmlari</li>
-        <li>Uzoq masofalar uchun qulay</li>
-      </ul>
-      <p class="mb-2"><strong>Kamchiliklari:</strong></p>
-      <ul class="list-disc list-inside mb-4 space-y-2">
-        <li>Eng sekin transport</li>
-        <li>Portga bog'liq</li>
-        <li>Havo sharoitiga bog'liq</li>
-      </ul>
-    `,
     duration: "",
-    topics: [
-      "Xalqaro logistika asoslari",
-      "Avtomobil transporti",
-      "Temir yo'l transporti",
-      "Havo transporti",
-      "Dengiz transporti"
-    ]
+    topics: {
+      "Xalqaro logistika asoslari": {
+        title: "Xalqaro logistika asoslari",
+        content: `<p>Xalqaro logistika - bu turli mamlakatlar orasida yuk va xizmatlarni tashish, saqlash va boshqarish jarayonidir.</p>`,
+        videos: []
+      }
+    }
   },
   3: {
     day: 3,
     title: "Yuk tashish hujjatlari va shartnomalar",
     description: "CMR, AWB, Bill of Lading kabi asosiy hujjatlar, shartnoma tuzish, yuk tashish shartlari va javobgarlik masalalari.",
-    fullContent: `
-      <h2 class="text-2xl font-bold mb-4">Yuk tashish hujjatlari</h2>
-      
-      <h3 class="text-xl font-semibold mb-3">CMR (Convention relative au contrat de transport international de marchandises par route)</h3>
-      <p class="mb-4">CMR - bu xalqaro avtomobil transporti uchun standart shartnoma. U yuk tashish shartlarini, javobgarlikni va to'lovlarni belgilaydi.</p>
-      
-      <h3 class="text-xl font-semibold mb-3">AWB (Air Waybill)</h3>
-      <p class="mb-4">AWB - havo transporti uchun yuk hujjati. Bu hujjat yukning havo orqali tashilishini tasdiqlaydi va yukning manbasi, yo'nalishi va maqsadini ko'rsatadi.</p>
-      
-      <h3 class="text-xl font-semibold mb-3">Bill of Lading</h3>
-      <p class="mb-4">Bill of Lading - dengiz transporti uchun asosiy hujjat. Bu hujjat yukning egalik huquqini ham ko'rsatadi va sotish hujjati sifatida ham ishlatiladi.</p>
-      
-      <h3 class="text-xl font-semibold mb-3">Shartnoma tuzish</h3>
-      <p class="mb-4">Yuk tashish shartnomasi quyidagi ma'lumotlarni o'z ichiga olishi kerak:</p>
-      <ul class="list-disc list-inside mb-4 space-y-2">
-        <li>Yukning tavsifi va og'irligi</li>
-        <li>Manba va maqsad manzillari</li>
-        <li>Yuk tashish sanasi va muddati</li>
-        <li>Narx va to'lov shartlari</li>
-        <li>Javobgarlik va sug'urta</li>
-      </ul>
-      
-      <h3 class="text-xl font-semibold mb-3">Javobgarlik masalalari</h3>
-      <p class="mb-4">Transport kompaniyasi quyidagi holatlarda javobgar bo'lishi mumkin:</p>
-      <ul class="list-disc list-inside mb-4 space-y-2">
-        <li>Yukning yo'qolishi yoki shikastlanishi</li>
-        <li>Kechikishlar</li>
-        <li>Noto'g'ri manzilga yetkazib berish</li>
-        <li>Hujjatlar bilan bog'liq muammolar</li>
-      </ul>
-    `,
     duration: "",
-    topics: [
-      "CMR hujjati",
-      "AWB hujjati",
-      "Bill of Lading",
-      "Shartnoma tuzish",
-      "Javobgarlik masalalari"
-    ]
+    topics: {}
   },
   4: {
     day: 4,
     title: "Bo'jxona va rasmiylashtirish",
     description: "Bo'jxona rasmiylashtirish jarayoni, zarur hujjatlar, bojxona to'lovlari va qoidalari, import-export operatsiyalari.",
-    fullContent: `
-      <h2 class="text-2xl font-bold mb-4">Bo'jxona rasmiylashtirish</h2>
-      
-      <h3 class="text-xl font-semibold mb-3">Bo'jxona rasmiylashtirish jarayoni</h3>
-      <p class="mb-4">Bo'jxona rasmiylashtirish - bu yukning chegara bo'ylab o'tishi uchun zarur bo'lgan rasmiy jarayon. Bu jarayon quyidagi bosqichlarni o'z ichiga oladi:</p>
-      <ol class="list-decimal list-inside mb-4 space-y-2">
-        <li>Hujjatlarni tayyorlash</li>
-        <li>Bo'jxona organlariga ariza berish</li>
-        <li>Yukni tekshirish</li>
-        <li>To'lovlarni to'lash</li>
-        <li>Ruxsat olish</li>
-      </ol>
-      
-      <h3 class="text-xl font-semibold mb-3">Zarur hujjatlar</h3>
-      <ul class="list-disc list-inside mb-4 space-y-2">
-        <li>Invoice (Hisob-faktura)</li>
-        <li>Packing List (Yuk ro'yxati)</li>
-        <li>Certificate of Origin (Kelib chiqish sertifikati)</li>
-        <li>Transport hujjatlari (CMR, AWB, va h.k.)</li>
-        <li>Sertifikatlar va ruxsatnomalar</li>
-      </ul>
-      
-      <h3 class="text-xl font-semibold mb-3">Bojxona to'lovlari</h3>
-      <p class="mb-4">Bojxona to'lovlari quyidagilarni o'z ichiga oladi:</p>
-      <ul class="list-disc list-inside mb-4 space-y-2">
-        <li>Bojxona boj'i - yukning qiymatiga nisbatan</li>
-        <li>Qo'shimcha soliqlar</li>
-        <li>Bojxona xizmatlari uchun to'lovlar</li>
-        <li>Yukni saqlash to'lovlari</li>
-      </ul>
-      
-      <h3 class="text-xl font-semibold mb-3">Import-Export operatsiyalari</h3>
-      <p class="mb-4">Import - bu yukni boshqa mamlakatdan olib kirish. Export - bu yukni boshqa mamlakatga olib chiqish. Har ikkala operatsiya ham bo'jxona rasmiylashtirishni talab qiladi.</p>
-    `,
     duration: "",
-    topics: [
-      "Bo'jxona rasmiylashtirish jarayoni",
-      "Zarur hujjatlar",
-      "Bojxona to'lovlari",
-      "Import operatsiyalari",
-      "Export operatsiyalari"
-    ]
+    topics: {}
   },
   5: {
     day: 5,
     title: "Logistika xarajatlari va narxlash",
     description: "Logistika xarajatlari turlari, narxlash usullari, xarajatlarni hisoblash, rentabellik va foyda koeffitsiyentlari.",
-    fullContent: `
-      <h2 class="text-2xl font-bold mb-4">Logistika xarajatlari</h2>
-      
-      <h3 class="text-xl font-semibold mb-3">Xarajatlar turlari</h3>
-      <ul class="list-disc list-inside mb-4 space-y-2">
-        <li><strong>Transport xarajatlari</strong> - yuk tashish uchun to'lovlar</li>
-        <li><strong>Ombor xarajatlari</strong> - yukni saqlash uchun to'lovlar</li>
-        <li><strong>Bojxona xarajatlari</strong> - bojxona to'lovlari va xizmatlari</li>
-        <li><strong>Sug'urta xarajatlari</strong> - yukni sug'urtalash</li>
-        <li><strong>Boshqaruv xarajatlari</strong> - logistika boshqaruvi</li>
-      </ul>
-      
-      <h3 class="text-xl font-semibold mb-3">Narxlash usullari</h3>
-      <p class="mb-4">Logistika xizmatlari uchun narxlash quyidagi usullar bilan amalga oshiriladi:</p>
-      <ul class="list-disc list-inside mb-4 space-y-2">
-        <li><strong>Masofaga asoslangan narxlash</strong> - masofaga qarab narx belgilanadi</li>
-        <li><strong>Og'irlikka asoslangan narxlash</strong> - yukning og'irligiga qarab</li>
-        <li><strong>Hajmga asoslangan narxlash</strong> - yukning hajmiga qarab</li>
-        <li><strong>Qo'shma narxlash</strong> - bir necha omillarni hisobga olgan holda</li>
-      </ul>
-      
-      <h3 class="text-xl font-semibold mb-3">Xarajatlarni hisoblash</h3>
-      <p class="mb-4">Xarajatlarni hisoblashda quyidagilar hisobga olinadi:</p>
-      <ul class="list-disc list-inside mb-4 space-y-2">
-        <li>Yoqilg'i xarajatlari</li>
-        <li>Haydovchi ish haqi</li>
-        <li>Transport vositasining amortizatsiyasi</li>
-        <li>Yo'l to'lovlari</li>
-        <li>Bojxona to'lovlari</li>
-        <li>Boshqaruv xarajatlari</li>
-      </ul>
-      
-      <h3 class="text-xl font-semibold mb-3">Rentabellik va foyda</h3>
-      <p class="mb-4">Rentabellik - bu xizmatdan olingan foyda va xarajatlar nisbati. Foyda koeffitsiyenti quyidagicha hisoblanadi:</p>
-      <p class="mb-4"><strong>Foyda = Daromad - Xarajatlar</strong></p>
-      <p class="mb-4"><strong>Rentabellik = (Foyda / Daromad) × 100%</strong></p>
-    `,
     duration: "",
-    topics: [
-      "Xarajatlar turlari",
-      "Narxlash usullari",
-      "Xarajatlarni hisoblash",
-      "Rentabellik",
-      "Foyda koeffitsiyentlari"
-    ]
+    topics: {}
   },
   6: {
     day: 6,
     title: "Mijozlar bilan ishlash va muloqot",
     description: "Mijozlar bilan muloqot qilish, shikoyatlar bilan ishlash, xizmat ko'rsatish standartlari, mijozlar bilan munosabatlar.",
-    fullContent: `
-      <h2 class="text-2xl font-bold mb-4">Mijozlar bilan ishlash</h2>
-      
-      <h3 class="text-xl font-semibold mb-3">Muloqot qilish</h3>
-      <p class="mb-4">Mijozlar bilan samarali muloqot quyidagi prinsiplarga asoslanadi:</p>
-      <ul class="list-disc list-inside mb-4 space-y-2">
-        <li>Vaqtida javob berish</li>
-        <li>Aniq va tushunarli ma'lumot berish</li>
-        <li>Xushmuomala va professional bo'lish</li>
-        <li>Muammolarni hal qilishga intilish</li>
-        <li>Mijozning ehtiyojlarini tushunish</li>
-      </ul>
-      
-      <h3 class="text-xl font-semibold mb-3">Shikoyatlar bilan ishlash</h3>
-      <p class="mb-4">Shikoyatlar bilan ishlashda quyidagi bosqichlar muhim:</p>
-      <ol class="list-decimal list-inside mb-4 space-y-2">
-        <li>Shikoyatni diqqat bilan tinglash</li>
-        <li>Muammoni tushunish va tahlil qilish</li>
-        <li>Yechim taklif qilish</li>
-        <li>Yechimni amalga oshirish</li>
-        <li>Natijani kuzatish va baholash</li>
-      </ol>
-      
-      <h3 class="text-xl font-semibold mb-3">Xizmat ko'rsatish standartlari</h3>
-      <ul class="list-disc list-inside mb-4 space-y-2">
-        <li>Vaqtida javob berish (24 soat ichida)</li>
-        <li>Aniq va to'liq ma'lumot berish</li>
-        <li>Professional xizmat ko'rsatish</li>
-        <li>Muammolarni hal qilish</li>
-        <li>Mijozlarni muntazam xabardor qilish</li>
-      </ul>
-      
-      <h3 class="text-xl font-semibold mb-3">Mijozlar bilan munosabatlar</h3>
-      <p class="mb-4">Uzoq muddatli muvaffaqiyatli munosabatlar uchun:</p>
-      <ul class="list-disc list-inside mb-4 space-y-2">
-        <li>Ishonchli va halollik</li>
-        <li>Vaqtida xizmat ko'rsatish</li>
-        <li>Sifatli xizmat</li>
-        <li>Mijozlarni qadrlash</li>
-        <li>Doimiy aloqa</li>
-      </ul>
-    `,
     duration: "",
-    topics: [
-      "Muloqot qilish",
-      "Shikoyatlar bilan ishlash",
-      "Xizmat ko'rsatish standartlari",
-      "Mijozlar bilan munosabatlar",
-      "Mijozlarni qadrlash"
-    ]
+    topics: {}
   },
   7: {
     day: 7,
     title: "Logistika tizimlari va texnologiyalar",
     description: "Zamonaviy logistika tizimlari, TMS (Transport Management System), GPS kuzatuv, raqamli logistika va avtomatlashtirish.",
-    fullContent: `
-      <h2 class="text-2xl font-bold mb-4">Logistika tizimlari va texnologiyalar</h2>
-      
-      <h3 class="text-xl font-semibold mb-3">TMS (Transport Management System)</h3>
-      <p class="mb-4">TMS - bu transport operatsiyalarini boshqarish uchun mo'ljallangan dasturiy tizim. U quyidagi funksiyalarni bajaradi:</p>
-      <ul class="list-disc list-inside mb-4 space-y-2">
-        <li>Yuk tashish rejalarini tuzish</li>
-        <li>Transport vositalarini kuzatish</li>
-        <li>Xarajatlarni hisoblash</li>
-        <li>Hujjatlarni boshqarish</li>
-        <li>Hisobotlar tayyorlash</li>
-      </ul>
-      
-      <h3 class="text-xl font-semibold mb-3">GPS kuzatuv</h3>
-      <p class="mb-4">GPS kuzatuv tizimi transport vositalarining joylashuvini real vaqtda kuzatish imkonini beradi:</p>
-      <ul class="list-disc list-inside mb-4 space-y-2">
-        <li>Transport vositasining aniq joylashuvi</li>
-        <li>Marshrutni kuzatish</li>
-        <li>Tezlik va vaqtni nazorat qilish</li>
-        <li>Xavfsizlikni ta'minlash</li>
-      </ul>
-      
-      <h3 class="text-xl font-semibold mb-3">Raqamli logistika</h3>
-      <p class="mb-4">Raqamli logistika - bu zamonaviy texnologiyalardan foydalangan holda logistika jarayonlarini avtomatlashtirish:</p>
-      <ul class="list-disc list-inside mb-4 space-y-2">
-        <li>Elektron hujjatlar</li>
-        <li>Onlayn buyurtmalar</li>
-        <li>Avtomatik hisob-kitoblar</li>
-        <li>Ma'lumotlar bazalari</li>
-        <li>Bulutli xizmatlar</li>
-      </ul>
-      
-      <h3 class="text-xl font-semibold mb-3">Avtomatlashtirish</h3>
-      <p class="mb-4">Avtomatlashtirish logistika jarayonlarini yaxshilaydi:</p>
-      <ul class="list-disc list-inside mb-4 space-y-2">
-        <li>Xatoliklarni kamaytirish</li>
-        <li>Vaqtni tejash</li>
-        <li>Xarajatlarni kamaytirish</li>
-        <li>Samaradorlikni oshirish</li>
-        <li>Ma'lumotlarni tez qayta ishlash</li>
-      </ul>
-    `,
     duration: "",
-    topics: [
-      "TMS tizimlari",
-      "GPS kuzatuv",
-      "Raqamli logistika",
-      "Avtomatlashtirish",
-      "Zamonaviy texnologiyalar"
-    ]
+    topics: {}
   }
+};
+
+// Video player komponenti (player.js bilan)
+const VideoPlayer = ({ videoUrl, index }: { videoUrl: string; index: number }) => {
+  const playerRef = useRef<HTMLDivElement>(null);
+  const playerInstanceRef = useRef<PlayerInstance | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    if (!playerRef.current || !videoUrl) return;
+
+    setIsLoading(true);
+
+    // player.js script'ni yuklash
+    const loadPlayerJS = () => {
+      // Agar PlayerJS yoki Playerjs allaqachon yuklangan bo'lsa
+      if (window.PlayerJS || window.Playerjs) {
+        initializePlayer();
+        return;
+      }
+
+      // Script allaqachon yuklanmoqda bo'lsa, kutish
+      const existingScript = document.querySelector('script[src="/player/playerjs.js"]');
+      if (existingScript) {
+        existingScript.addEventListener('load', initializePlayer);
+        return;
+      }
+
+      // Yangi script yaratish va yuklash
+      const script = document.createElement('script');
+      script.src = '/player/playerjs.js';
+      script.async = true;
+      script.onload = () => {
+        // player.js yuklangandan keyin bir oz kutish
+        setTimeout(() => {
+          initializePlayer();
+        }, 100);
+      };
+      script.onerror = () => {
+        console.error('player.js yuklanmadi');
+        setIsLoading(false);
+        // player.js yuklanmasa, oddiy HTML5 video player ko'rsatish
+        if (playerRef.current) {
+          playerRef.current.innerHTML = `
+            <video controls class="w-full h-full" style="border-radius: 8px;">
+              <source src="${videoUrl}" type="video/mp4">
+              Sizning brauzeringiz video elementini qo'llab-quvvatlamaydi.
+            </video>
+          `;
+        }
+      };
+      document.body.appendChild(script);
+    };
+
+    const initializePlayer = () => {
+      if (!playerRef.current) return;
+
+      // PlayerJS yoki Playerjs yuklanganligini tekshirish
+      const PlayerConstructor = window.PlayerJS || window.Playerjs;
+      if (!PlayerConstructor) {
+        console.error('player.js yuklanmagan');
+        setIsLoading(false);
+        // Fallback: oddiy HTML5 video player
+        if (playerRef.current) {
+          playerRef.current.innerHTML = `
+            <video controls class="w-full h-full" style="border-radius: 8px;">
+              <source src="${videoUrl}" type="video/mp4">
+              Sizning brauzeringiz video elementini qo'llab-quvvatlamaydi.
+            </video>
+          `;
+        }
+        return;
+      }
+
+      // Eski player'ni tozalash
+      if (playerInstanceRef.current) {
+        try {
+          if (typeof playerInstanceRef.current.api === 'function') {
+            playerInstanceRef.current.api('destroy');
+          }
+        } catch (e) {
+          // Xatolikni e'tiborsiz qoldirish
+        }
+        playerInstanceRef.current = null;
+      }
+
+      // Yangi player yaratish
+      try {
+        const playerId = `player-${Date.now()}-${index}`;
+        
+        // Container'ni tozalash
+        if (playerRef.current) {
+          playerRef.current.innerHTML = `<div id="${playerId}"></div>`;
+          
+          // DOM yangilanishini kutish
+          setTimeout(() => {
+            if (!playerRef.current) return;
+
+            try {
+              // player.js'ni ishga tushirish
+              const PlayerConstructor = window.PlayerJS || window.Playerjs;
+              if (PlayerConstructor) {
+                playerInstanceRef.current = new PlayerConstructor({
+                  id: playerId,
+                  file: videoUrl,
+                  width: '100%',
+                  height: '100%'
+                });
+              }
+
+              setIsLoading(false);
+            } catch (error) {
+              console.error('player.js yaratishda xatolik:', error);
+              setIsLoading(false);
+              // Fallback: oddiy HTML5 video player
+              if (playerRef.current) {
+                playerRef.current.innerHTML = `
+                  <video controls class="w-full h-full" style="border-radius: 8px;">
+                    <source src="${videoUrl}" type="video/mp4">
+                    Sizning brauzeringiz video elementini qo'llab-quvvatlamaydi.
+                  </video>
+                `;
+              }
+            }
+          }, 150);
+        }
+      } catch (error) {
+        console.error('player.js xatosi:', error);
+        setIsLoading(false);
+        // Fallback: oddiy HTML5 video player
+        if (playerRef.current) {
+          playerRef.current.innerHTML = `
+            <video controls class="w-full h-full" style="border-radius: 8px;">
+              <source src="${videoUrl}" type="video/mp4">
+              Sizning brauzeringiz video elementini qo'llab-quvvatlamaydi.
+            </video>
+          `;
+        }
+      }
+    };
+
+    loadPlayerJS();
+
+    // Cleanup
+    return () => {
+      if (playerInstanceRef.current) {
+        try {
+          if (typeof playerInstanceRef.current.api === 'function') {
+            playerInstanceRef.current.api('destroy');
+          }
+        } catch (e) {
+          // Xatolikni e'tiborsiz qoldirish
+        }
+        playerInstanceRef.current = null;
+      }
+    };
+  }, [videoUrl, index]);
+
+  return (
+    <div className="w-full aspect-video bg-black rounded-lg overflow-hidden mb-4 relative">
+      {isLoading && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black/50 z-10">
+          <div className="w-8 h-8 border-2 border-white border-t-transparent rounded-full animate-spin" />
+        </div>
+      )}
+      <div ref={playerRef} className="w-full h-full" />
+    </div>
+  );
 };
 
 export default function LessonDetailPage() {
@@ -391,11 +370,12 @@ export default function LessonDetailPage() {
   const navigate = useNavigate();
   const [isCheckingAccess, setIsCheckingAccess] = useState(true);
   const [hasAccess, setHasAccess] = useState(false);
+  const [selectedTopic, setSelectedTopic] = useState<string | null>(null);
   
   const dayNumber = day ? parseInt(day, 10) : null;
   const lesson = dayNumber && weekLessons[dayNumber];
 
-  // Dars holatini tekshirish (qulflangan bo'lsa kirishga ruxsat berilmasligi kerak)
+  // Dars holatini tekshirish
   useEffect(() => {
     const checkLessonAccess = async () => {
       if (!dayNumber) {
@@ -407,24 +387,35 @@ export default function LessonDetailPage() {
       if (dayNumber === 1) {
         setHasAccess(true);
         setIsCheckingAccess(false);
+        // Birinchi mavzuni tanlash
+        if (lesson && Object.keys(lesson.topics).length > 0) {
+          setSelectedTopic(Object.keys(lesson.topics)[0]);
+        }
         return;
       }
 
       try {
-        // Dars holatini olish
         const response = await apiService.getStudentLessons();
         if (response.success && response.data) {
-          const lessonStatus = response.data.lessons.find((l: any) => l.day === dayNumber);
+          interface LessonStatus {
+            day: number;
+            isUnlocked: boolean;
+          }
+          const lessonStatus = (response.data.lessons as LessonStatus[]).find((l) => l.day === dayNumber);
           if (lessonStatus && lessonStatus.isUnlocked) {
             setHasAccess(true);
+            // Birinchi mavzuni tanlash
+            if (lesson && Object.keys(lesson.topics).length > 0) {
+              setSelectedTopic(Object.keys(lesson.topics)[0]);
+            }
           } else {
-            // Dars qulflangan
             toast.error('Bu dars hali ochilmagan');
             navigate('/student/lessons');
           }
         }
-      } catch (error: any) {
-        toast.error(error.message || 'Dars holatini tekshirishda xatolik');
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Dars holatini tekshirishda xatolik';
+        toast.error(errorMessage);
         navigate('/student/lessons');
       } finally {
         setIsCheckingAccess(false);
@@ -432,12 +423,11 @@ export default function LessonDetailPage() {
     };
 
     checkLessonAccess();
-  }, [dayNumber, navigate]);
+  }, [dayNumber, navigate, lesson]);
 
   // Darsga kirilganda progress yangilash
   useEffect(() => {
     if (dayNumber && hasAccess) {
-      // Dars progress'ini yangilash (keyingi dars ochilish vaqtini hisoblash uchun)
       apiService.request(`/lessons/day/${dayNumber}/progress`, {
         method: 'PUT',
         body: JSON.stringify({ timeSpent: 0 }),
@@ -446,6 +436,13 @@ export default function LessonDetailPage() {
       });
     }
   }, [dayNumber, hasAccess]);
+
+  // Birinchi mavzuni avtomatik tanlash
+  useEffect(() => {
+    if (lesson && Object.keys(lesson.topics).length > 0 && !selectedTopic) {
+      setSelectedTopic(Object.keys(lesson.topics)[0]);
+    }
+  }, [lesson, selectedTopic]);
 
   if (isCheckingAccess) {
     return (
@@ -475,6 +472,11 @@ export default function LessonDetailPage() {
     );
   }
 
+  const topicKeys = Object.keys(lesson.topics);
+  const currentTopic = selectedTopic && lesson.topics[selectedTopic] 
+    ? lesson.topics[selectedTopic] 
+    : null;
+
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
@@ -495,61 +497,65 @@ export default function LessonDetailPage() {
       </div>
 
       {/* Topics */}
-      <div className="bg-card rounded-xl p-4 sm:p-6 border border-border">
-        <h2 className="text-lg font-semibold text-foreground mb-3">Dars mavzulari:</h2>
-        <div className="flex flex-wrap gap-2">
-          {lesson.topics.map((topic, index) => (
-            <span
-              key={index}
-              className="px-3 py-1 bg-primary/10 text-primary rounded-full text-sm font-medium"
-            >
-              {topic}
-            </span>
-          ))}
+      {topicKeys.length > 0 && (
+        <div className="bg-card rounded-xl p-4 sm:p-6 border border-border">
+          <h2 className="text-lg font-semibold text-foreground mb-3">Dars mavzulari:</h2>
+          <div className="flex flex-wrap gap-2">
+            {topicKeys.map((topicKey) => (
+              <button
+                key={topicKey}
+                onClick={() => setSelectedTopic(topicKey)}
+                className={cn(
+                  "px-3 py-1 rounded-full text-sm font-medium transition-all",
+                  selectedTopic === topicKey
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-primary/10 text-primary hover:bg-primary/20"
+                )}
+              >
+                {topicKey}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
-      {/* Content */}
-      <div className="bg-card rounded-xl p-4 sm:p-6 border border-border">
-        <div
-          className="prose prose-sm sm:prose-base max-w-none text-foreground"
-          dangerouslySetInnerHTML={{ __html: lesson.fullContent }}
-        />
-      </div>
+      {/* Content - Ikki ustunli layout */}
+      {currentTopic && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Chap ustun - Matn (scroll qilinadigan) */}
+          <div className="bg-card rounded-xl p-4 sm:p-6 border border-border">
+            <div className="h-[calc(100vh-300px)] overflow-y-auto pr-2">
+              <div
+                className="prose prose-sm sm:prose-base max-w-none text-foreground"
+                dangerouslySetInnerHTML={{ __html: currentTopic.content }}
+              />
+            </div>
+          </div>
 
-      {/* Navigation */}
-      
-      {/* <div className="flex items-center justify-between gap-4">
-        <Button
-          onClick={() => {
-            if (dayNumber > 1) {
-              navigate(`/student/lessons/${dayNumber - 1}`);
-            } else {
-              navigate('/student/lessons');
-            }
-          }}
-          variant="outline"
-          disabled={dayNumber === 1}
-          className='text-white hover:text-white transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&amp;_svg]:pointer-events-none [&amp;_svg]:size-4 [&amp;_svg]:shrink-0 gradient-primary text-primary-foreground shadow-lg hover:shadow-glow active:scale-[0.98]'
-        >
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Oldingi dars
-        </Button>
+          {/* O'ng ustun - Videolar (scroll qilinadigan) */}
+          <div className="bg-card rounded-xl p-4 sm:p-6 border border-border">
+            <h3 className="text-lg font-semibold text-foreground mb-4">Videolar</h3>
+            <div className="h-[calc(100vh-300px)] overflow-y-auto pr-2">
+              {currentTopic.videos && currentTopic.videos.length > 0 ? (
+                currentTopic.videos.map((videoUrl, index) => (
+                  <VideoPlayer key={index} videoUrl={videoUrl} index={index} />
+                ))
+              ) : (
+                <div className="flex items-center justify-center h-full text-muted-foreground">
+                  <p>Bu mavzu uchun video mavjud emas</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
-        <Button
-          onClick={() => {
-            if (dayNumber < 7) {
-              navigate(`/student/lessons/${dayNumber + 1}`);
-            }
-          }}
-          variant="gradient"
-          disabled={dayNumber === 7}
-        >
-          Keyingi dars
-          <ArrowLeft className="w-4 h-4 ml-2 rotate-180" />
-        </Button>
-      </div> */}
+      {/* Agar mavzular bo'sh bo'lsa */}
+      {topicKeys.length === 0 && (
+        <div className="bg-card rounded-xl p-4 sm:p-6 border border-border text-center py-12">
+          <p className="text-muted-foreground">Bu dars uchun mavzular hali qo'shilmagan</p>
+        </div>
+      )}
     </div>
   );
 }
-
