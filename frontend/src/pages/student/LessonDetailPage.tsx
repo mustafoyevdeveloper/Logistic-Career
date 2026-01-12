@@ -1,6 +1,7 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useEffect, useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { ArrowLeft, Lock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { apiService } from '@/services/api';
@@ -523,29 +524,38 @@ export default function LessonDetailPage() {
       {currentTopic && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Chap ustun - Matn (scroll qilinadigan) */}
-          <div className="bg-card rounded-xl p-4 sm:p-6 border border-border">
-            <div className="h-[calc(100vh-300px)] overflow-y-auto pr-2">
+          <div className="bg-card rounded-xl p-4 sm:p-6 border border-border flex flex-col">
+            <h3 className="text-lg font-semibold text-foreground mb-4">Dars matni</h3>
+            <ScrollArea 
+              className="flex-1 pr-2"
+              style={{ maxHeight: 'calc(100vh - 350px)' }}
+            >
               <div
-                className="prose prose-sm sm:prose-base max-w-none text-foreground"
+                className="prose prose-sm sm:prose-base max-w-none text-foreground pr-4"
                 dangerouslySetInnerHTML={{ __html: currentTopic.content }}
               />
-            </div>
+            </ScrollArea>
           </div>
 
           {/* O'ng ustun - Videolar (scroll qilinadigan) */}
-          <div className="bg-card rounded-xl p-4 sm:p-6 border border-border">
+          <div className="bg-card rounded-xl p-4 sm:p-6 border border-border flex flex-col">
             <h3 className="text-lg font-semibold text-foreground mb-4">Videolar</h3>
-            <div className="h-[calc(100vh-300px)] overflow-y-auto pr-2">
-              {currentTopic.videos && currentTopic.videos.length > 0 ? (
-                currentTopic.videos.map((videoUrl, index) => (
-                  <VideoPlayer key={index} videoUrl={videoUrl} index={index} />
-                ))
-              ) : (
-                <div className="flex items-center justify-center h-full text-muted-foreground">
-                  <p>Bu mavzu uchun video mavjud emas</p>
-                </div>
-              )}
-            </div>
+            <ScrollArea 
+              className="flex-1 pr-2"
+              style={{ maxHeight: 'calc(100vh - 350px)' }}
+            >
+              <div className="pr-4">
+                {currentTopic.videos && currentTopic.videos.length > 0 ? (
+                  currentTopic.videos.map((videoUrl, index) => (
+                    <VideoPlayer key={index} videoUrl={videoUrl} index={index} />
+                  ))
+                ) : (
+                  <div className="flex items-center justify-center h-full text-muted-foreground min-h-[200px]">
+                    <p>Bu mavzu uchun video mavjud emas</p>
+                  </div>
+                )}
+              </div>
+            </ScrollArea>
           </div>
         </div>
       )}
