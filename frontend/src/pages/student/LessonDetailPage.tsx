@@ -521,64 +521,72 @@ export default function LessonDetailPage() {
 
       {/* Content - Ikki ustunli layout */}
       {currentTopic && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Chap ustun - Matn (scroll qilinadigan) */}
-          <div className="bg-card rounded-xl p-4 sm:p-6 border border-border flex flex-col h-[calc(100vh-300px)]">
-            <div 
-              className="flex-1 overflow-y-auto pr-2 custom-scrollbar"
-              style={{
-                scrollbarWidth: 'thin',
-                scrollbarColor: 'rgba(148, 163, 184, 0.5) transparent'
-              }}
-            >
-              <style>{`
-                .custom-scrollbar::-webkit-scrollbar {
-                  width: 10px;
-                }
-                .custom-scrollbar::-webkit-scrollbar-track {
-                  background: transparent;
-                  border-radius: 5px;
-                }
-                .custom-scrollbar::-webkit-scrollbar-thumb {
-                  background: rgba(148, 163, 184, 0.5);
-                  border-radius: 5px;
-                  border: 2px solid transparent;
-                  background-clip: padding-box;
-                }
-                .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-                  background: rgba(148, 163, 184, 0.7);
-                  background-clip: padding-box;
-                }
-              `}</style>
-              <div
-                className="prose prose-sm sm:prose-base max-w-none text-foreground"
-                dangerouslySetInnerHTML={{ __html: currentTopic.content }}
-              />
+        <>
+          <style>{`
+            .custom-scrollbar {
+              scrollbar-width: thin;
+              scrollbar-color: rgba(148, 163, 184, 0.5) transparent;
+            }
+            .custom-scrollbar::-webkit-scrollbar {
+              width: 10px;
+            }
+            .custom-scrollbar::-webkit-scrollbar-track {
+              background: transparent;
+              border-radius: 5px;
+            }
+            .custom-scrollbar::-webkit-scrollbar-thumb {
+              background: rgba(148, 163, 184, 0.5);
+              border-radius: 5px;
+              border: 2px solid transparent;
+              background-clip: padding-box;
+            }
+            .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+              background: rgba(148, 163, 184, 0.7);
+              background-clip: padding-box;
+            }
+          `}</style>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Chap ustun - Matn (scroll qilinadigan) */}
+            <div className="bg-card rounded-xl p-4 sm:p-6 border border-border flex flex-col h-[calc(102vh-300px)]">
+              <div 
+                className="flex-1 overflow-y-auto pr-2 custom-scrollbar"
+                style={{
+                  scrollbarWidth: 'thin',
+                  scrollbarColor: 'rgba(148, 163, 184, 0.5) transparent',
+                  minHeight: 0
+                }}
+              >
+                <div
+                  className="prose prose-sm sm:prose-base max-w-none text-foreground"
+                  dangerouslySetInnerHTML={{ __html: currentTopic.content }}
+                />
+              </div>
             </div>
-          </div>
 
-          {/* O'ng ustun - Videolar (scroll qilinadigan) */}
-          <div className="bg-card rounded-xl p-4 sm:p-6 border border-border flex flex-col h-[calc(100vh-300px)]">
-            <h3 className="text-lg font-semibold text-foreground mb-4">Videolar</h3>
-            <div 
-              className="flex-1 overflow-y-auto pr-2 custom-scrollbar"
-              style={{
-                scrollbarWidth: 'thin',
-                scrollbarColor: 'rgba(148, 163, 184, 0.5) transparent'
-              }}
-            >
-              {currentTopic.videos && currentTopic.videos.length > 0 ? (
-                currentTopic.videos.map((videoUrl, index) => (
-                  <VideoPlayer key={index} videoUrl={videoUrl} index={index} />
-                ))
-              ) : (
-                <div className="flex items-center justify-center h-full text-muted-foreground min-h-[200px]">
-                  <p>Bu mavzu uchun video mavjud emas</p>
-                </div>
-              )}
+            {/* O'ng ustun - Videolar (scroll qilinadigan) */}
+            <div className="bg-card rounded-xl p-4 sm:p-6 border border-border flex flex-col h-[calc(102vh-300px)]">
+              <h3 className="text-lg font-semibold text-foreground mb-4">Videolar</h3>
+              <div 
+                className="flex-1 overflow-y-auto pr-2 custom-scrollbar"
+                style={{
+                  scrollbarWidth: 'thin',
+                  scrollbarColor: 'rgba(148, 163, 184, 0.5) transparent',
+                  minHeight: 0
+                }}
+              >
+                {currentTopic.videos && currentTopic.videos.length > 0 ? (
+                  currentTopic.videos.map((videoUrl, index) => (
+                    <VideoPlayer key={index} videoUrl={videoUrl} index={index} />
+                  ))
+                ) : (
+                  <div className="flex items-center justify-center h-full text-muted-foreground min-h-[200px]">
+                    <p>Bu mavzu uchun video mavjud emas</p>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
-        </div>
+        </>
       )}
 
       {/* Agar mavzular bo'sh bo'lsa */}
