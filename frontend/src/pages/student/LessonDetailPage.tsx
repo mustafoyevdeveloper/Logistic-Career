@@ -1,7 +1,6 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useEffect, useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { ArrowLeft, Lock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { apiService } from '@/services/api';
@@ -524,38 +523,60 @@ export default function LessonDetailPage() {
       {currentTopic && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Chap ustun - Matn (scroll qilinadigan) */}
-          <div className="bg-card rounded-xl p-4 sm:p-6 border border-border flex flex-col">
-            <h3 className="text-lg font-semibold text-foreground mb-4">Dars matni</h3>
-            <ScrollArea 
-              className="flex-1 pr-2"
-              style={{ maxHeight: 'calc(100vh - 350px)' }}
+          <div className="bg-card rounded-xl p-4 sm:p-6 border border-border flex flex-col h-[calc(100vh-300px)]">
+            <div 
+              className="flex-1 overflow-y-auto pr-2 custom-scrollbar"
+              style={{
+                scrollbarWidth: 'thin',
+                scrollbarColor: 'rgba(148, 163, 184, 0.5) transparent'
+              }}
             >
+              <style>{`
+                .custom-scrollbar::-webkit-scrollbar {
+                  width: 10px;
+                }
+                .custom-scrollbar::-webkit-scrollbar-track {
+                  background: transparent;
+                  border-radius: 5px;
+                }
+                .custom-scrollbar::-webkit-scrollbar-thumb {
+                  background: rgba(148, 163, 184, 0.5);
+                  border-radius: 5px;
+                  border: 2px solid transparent;
+                  background-clip: padding-box;
+                }
+                .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+                  background: rgba(148, 163, 184, 0.7);
+                  background-clip: padding-box;
+                }
+              `}</style>
               <div
-                className="prose prose-sm sm:prose-base max-w-none text-foreground pr-4"
+                className="prose prose-sm sm:prose-base max-w-none text-foreground"
                 dangerouslySetInnerHTML={{ __html: currentTopic.content }}
               />
-            </ScrollArea>
+            </div>
           </div>
 
           {/* O'ng ustun - Videolar (scroll qilinadigan) */}
-          <div className="bg-card rounded-xl p-4 sm:p-6 border border-border flex flex-col">
+          <div className="bg-card rounded-xl p-4 sm:p-6 border border-border flex flex-col h-[calc(100vh-300px)]">
             <h3 className="text-lg font-semibold text-foreground mb-4">Videolar</h3>
-            <ScrollArea 
-              className="flex-1 pr-2"
-              style={{ maxHeight: 'calc(100vh - 350px)' }}
+            <div 
+              className="flex-1 overflow-y-auto pr-2 custom-scrollbar"
+              style={{
+                scrollbarWidth: 'thin',
+                scrollbarColor: 'rgba(148, 163, 184, 0.5) transparent'
+              }}
             >
-              <div className="pr-4">
-                {currentTopic.videos && currentTopic.videos.length > 0 ? (
-                  currentTopic.videos.map((videoUrl, index) => (
-                    <VideoPlayer key={index} videoUrl={videoUrl} index={index} />
-                  ))
-                ) : (
-                  <div className="flex items-center justify-center h-full text-muted-foreground min-h-[200px]">
-                    <p>Bu mavzu uchun video mavjud emas</p>
-                  </div>
-                )}
-              </div>
-            </ScrollArea>
+              {currentTopic.videos && currentTopic.videos.length > 0 ? (
+                currentTopic.videos.map((videoUrl, index) => (
+                  <VideoPlayer key={index} videoUrl={videoUrl} index={index} />
+                ))
+              ) : (
+                <div className="flex items-center justify-center h-full text-muted-foreground min-h-[200px]">
+                  <p>Bu mavzu uchun video mavjud emas</p>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}
