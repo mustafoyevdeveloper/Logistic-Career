@@ -100,6 +100,16 @@ const userSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+    // Pause vaqtlari (offline bo'lgan vaqtlar) - millisekundlarda
+    totalPauseTimeMs: {
+      type: Number,
+      default: 0,
+    },
+    // Oxirgi pause boshlanish vaqti (offline bo'lgan vaqt)
+    lastPauseStartTime: {
+      type: Date,
+      default: null,
+    },
     // O'qituvchi/admin tomonidan yaratilganligi
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,

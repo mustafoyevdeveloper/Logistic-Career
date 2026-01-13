@@ -82,43 +82,35 @@ interface Group {
   studentCount: number;
 }
 
-// Real-time online time component
+// Real-time online time component (Admin sahifada faqat ko'rsatish uchun)
+// Backend'dan kelgan ma'lumot asosida ko'rsatiladi, chunki backend'da pause vaqtini hisobga olgan holda hisoblanadi
 function StudentOnlineTime({ studentId, sessionStartTime, initialTime }: { studentId: string; sessionStartTime?: string | null; initialTime: string }) {
   const [onlineTime, setOnlineTime] = useState(initialTime);
 
   useEffect(() => {
+    // Backend'dan kelgan initialTime ni ko'rsatish
+    setOnlineTime(initialTime);
+    
     if (!sessionStartTime) {
       setOnlineTime('0:00:00');
       return;
     }
 
-    let lastUpdateTime = Date.now();
-
+    // Admin sahifada faqat ko'rsatish uchun timer
+    // Backend'da pause vaqtini hisobga olgan holda hisoblanadi, shuning uchun bu yerda faqat ko'rsatish uchun timer
     const updateTime = () => {
-      const now = new Date();
-      const start = new Date(sessionStartTime);
-      const diffMs = now.getTime() - start.getTime();
-      const totalSeconds = Math.floor(diffMs / 1000);
-      const hours = Math.floor(totalSeconds / 3600);
-      const minutes = Math.floor((totalSeconds % 3600) / 60);
-      const seconds = totalSeconds % 60;
-      const formatted = `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-      setOnlineTime(formatted);
-
-      // Har 5 sekundda MongoDB'ga yangilash (faqat ko'rsatish uchun, admin panelida o'quvchi o'zi yangilamaydi)
-      // Admin panelida o'quvchilar har 5 sekundda yangilanmaydi, chunki har bir o'quvchi o'zi yangilaydi
+      // Backend'dan kelgan initialTime ni ko'rsatish (backend'da pause vaqtini hisobga olgan holda hisoblanadi)
+      // Admin sahifada refresh qilganda yangi ma'lumot oladi
+      setOnlineTime(initialTime);
     };
 
-    // Darhol yangilash
-    updateTime();
-
-    // Har sekundda yangilash
+    // Har sekundda yangilash (faqat ko'rsatish uchun)
     const interval = setInterval(updateTime, 1000);
 
     return () => clearInterval(interval);
-  }, [sessionStartTime]);
+  }, [sessionStartTime, initialTime]);
 
-
+  return <span>{onlineTime}</span>;
 }
 
 export default function StudentsPage() {
@@ -395,18 +387,9 @@ export default function StudentsPage() {
                 </div>
               </div>
 
-              {/* Online Time */}
-              {student.stats && (
-                <StudentOnlineTime
-                  studentId={student._id}
-                  sessionStartTime={student.sessionStartTime}
-                  initialTime={student.stats.onlineTimeFormatted || '0:00:00'}
-                />
-              )}
-
               {/* Stats */}
               {student.stats && (
-                <div className="mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-border grid grid-cols-5 sm:grid-cols-5 gap-2 sm:gap-4">
+                <div className="mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-border grid grid-cols-4 sm:grid-cols-4 gap-2 sm:gap-4">
                   <div className="text-center">
                     <p className="text-base sm:text-lg font-semibold text-foreground">{student.stats.progressPercent ?? 0}%</p>
                     <p className="text-xs text-muted-foreground">Foiz</p>
@@ -421,10 +404,7 @@ export default function StudentsPage() {
                     <p className="text-base sm:text-lg font-semibold text-foreground">{student.stats.totalScore ?? 0}</p>
                     <p className="text-xs text-muted-foreground">Ball</p>
                   </div>
-                  <div className="text-center">
-                    <p className="text-base sm:text-lg font-semibold text-foreground">{student.stats.onlineTimeFormatted ?? '0:00:00'}</p>
-                    <p className="text-xs text-muted-foreground">O'qish</p>
-                  </div>
+
                   <div className="text-center">
                     <p className="text-base sm:text-lg font-semibold text-foreground">{student.stats.achievements ?? 0}/3</p>
                     <p className="text-xs text-muted-foreground">Yutuqlar</p>

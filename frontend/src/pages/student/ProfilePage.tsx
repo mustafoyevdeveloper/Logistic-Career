@@ -131,16 +131,36 @@ export default function StudentProfilePage() {
         if (isActiveRef.current) {
           isActiveRef.current = false;
           pauseStartTimeRef.current = Date.now(); // Pause boshlanish vaqtini saqlash
+          
+          // Interval'ni to'xtatish
+          if (intervalRef.current) {
+            clearInterval(intervalRef.current);
+            intervalRef.current = null;
+          }
+          
+          // Backend'ga pause boshlanishini yuborish
+          apiService.pauseStart().catch((error) => {
+            console.error('❌ pauseStart xatosi:', error);
+          });
           console.log('⏸️ Tab yopildi - vaqt to\'xtatildi');
         }
       } else {
         // Tab ochilganda - davom ettirish
         if (!isActiveRef.current && pauseStartTimeRef.current) {
-          // Pause vaqtini qo'shish (hech narsa qilmaymiz, chunki diffMs da avtomatik hisoblanadi)
+          // Backend'ga pause tugashini yuborish
+          apiService.pauseEnd().catch((error) => {
+            console.error('❌ pauseEnd xatosi:', error);
+          });
           pauseStartTimeRef.current = null;
           isActiveRef.current = true;
+          
+          // Interval'ni qayta ishga tushirish
+          if (!intervalRef.current) {
+            updateTime(); // Darhol yangilash
+            intervalRef.current = setInterval(updateTime, 1000);
+          }
+          
           console.log('▶️ Tab ochildi - vaqt davom etmoqda');
-          updateTime(); // Darhol yangilash
         }
       }
     };
@@ -151,15 +171,32 @@ export default function StudentProfilePage() {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
       }
+      // Agar pause davom etmoqda bo'lsa, backend'ga pause tugashini yuborish
+      if (!isActiveRef.current && pauseStartTimeRef.current) {
+        // Synchronous request (fetch with keepalive) - logout funksiyasida ham pause tugashini yuboramiz
+        apiService.pauseEnd().catch(() => {
+          // Xatolik bo'lsa ham, logout funksiyasida pause tugashini yuboramiz
+        });
+      }
     };
 
     // Focus/blur handlers (sayt fokusda bo'lganda/yuqoridan chiqqanda)
     const handleFocus = () => {
       if (!isActiveRef.current && pauseStartTimeRef.current) {
+        // Backend'ga pause tugashini yuborish
+        apiService.pauseEnd().catch((error) => {
+          console.error('❌ pauseEnd xatosi:', error);
+        });
         pauseStartTimeRef.current = null;
         isActiveRef.current = true;
+        
+        // Interval'ni qayta ishga tushirish
+        if (!intervalRef.current) {
+          updateTime(); // Darhol yangilash
+          intervalRef.current = setInterval(updateTime, 1000);
+        }
+        
         console.log('▶️ Sayt fokusda - vaqt davom etmoqda');
-        updateTime();
       }
     };
 
@@ -167,6 +204,17 @@ export default function StudentProfilePage() {
       if (isActiveRef.current) {
         isActiveRef.current = false;
         pauseStartTimeRef.current = Date.now(); // Pause boshlanish vaqtini saqlash
+        
+        // Interval'ni to'xtatish
+        if (intervalRef.current) {
+          clearInterval(intervalRef.current);
+          intervalRef.current = null;
+        }
+        
+        // Backend'ga pause boshlanishini yuborish
+        apiService.pauseStart().catch((error) => {
+          console.error('❌ pauseStart xatosi:', error);
+        });
         console.log('⏸️ Sayt fokusdan chiqdi - vaqt to\'xtatildi');
       }
     };
@@ -177,11 +225,12 @@ export default function StudentProfilePage() {
     window.addEventListener('focus', handleFocus);
     window.addEventListener('blur', handleBlur);
 
-    // Darhol yangilash
-    updateTime();
-
-    // Har sekundda yangilash
-    intervalRef.current = setInterval(updateTime, 1000);
+    // Darhol yangilash (faqat online bo'lganda)
+    if (isActiveRef.current) {
+      updateTime();
+      // Har sekundda yangilash (faqat online bo'lganda)
+      intervalRef.current = setInterval(updateTime, 1000);
+    }
 
     return () => {
       // Cleanup

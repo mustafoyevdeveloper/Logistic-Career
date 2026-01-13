@@ -226,6 +226,14 @@ export const login = async (req, res) => {
     user.lastLogin = new Date();
     // Session start time yangilash (o'quvchi kirgan vaqt)
     if (user.role === 'student') {
+      // Agar oldingi session bo'lsa va pause davom etmoqda bo'lsa, pause vaqtini saqlash
+      if (user.lastPauseStartTime) {
+        const now = new Date();
+        const pauseDuration = now.getTime() - new Date(user.lastPauseStartTime).getTime();
+        user.totalPauseTimeMs = (user.totalPauseTimeMs || 0) + pauseDuration;
+        user.lastPauseStartTime = null;
+      }
+      // Yangi session boshlash
       user.sessionStartTime = new Date();
     }
     await user.save({ validateBeforeSave: false });
@@ -368,13 +376,28 @@ export const logout = async (req, res) => {
       });
     }
 
+    // Student uchun pause vaqtini to'xtatish va saqlash
+    if (user.role === 'student') {
+      // Agar hozirgi vaqtda pause davom etmoqda bo'lsa (lastPauseStartTime mavjud bo'lsa)
+      if (user.lastPauseStartTime) {
+        const now = new Date();
+        const pauseDuration = now.getTime() - new Date(user.lastPauseStartTime).getTime();
+        user.totalPauseTimeMs = (user.totalPauseTimeMs || 0) + pauseDuration;
+        user.lastPauseStartTime = null;
+      }
+      
+      // SessionStartTime ni null qilish (keyingi login'da yangi session boshlanadi)
+      user.sessionStartTime = null;
+    }
+
     // Student uchun device ma'lumotlarini tozalash
     if (user.role === 'student') {
       user.deviceId = null;
       user.deviceInfo = undefined;
       user.lastDeviceLogin = null;
-      await user.save({ validateBeforeSave: false });
     }
+
+    await user.save({ validateBeforeSave: false });
 
     res.json({
       success: true,

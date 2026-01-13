@@ -306,9 +306,10 @@ class ApiService {
     });
   }
 
-  async logout() {
+  async logout(pauseTimeMs?: number) {
     return this.request('/auth/logout', {
       method: 'POST',
+      body: JSON.stringify({ pauseTimeMs: pauseTimeMs || 0 }),
     });
   }
 
@@ -408,6 +409,20 @@ class ApiService {
     return this.request<{ totalOnlineTimeSeconds: number }>('/auth/me/update-online-time', {
       method: 'PUT',
       body: JSON.stringify({ totalSeconds }),
+    });
+  }
+
+  // Pause start (offline bo'lganda)
+  async pauseStart() {
+    return this.request('/auth/me/pause-start', {
+      method: 'POST',
+    });
+  }
+
+  // Pause end (online bo'lganda)
+  async pauseEnd() {
+    return this.request('/auth/me/pause-end', {
+      method: 'POST',
     });
   }
 

@@ -163,6 +163,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       // Backend'ga logout so'rov yuborish (device ma'lumotlarini tozalash uchun)
       if (user?.role === 'student') {
+        // Agar pause davom etmoqda bo'lsa, uni to'xtatish
+        try {
+          await apiService.pauseEnd();
+        } catch (error) {
+          // Xatolik bo'lsa ham logout qilishni davom ettiramiz
+          console.error('Pause end error:', error);
+        }
         await apiService.logout();
       }
     } catch (error) {

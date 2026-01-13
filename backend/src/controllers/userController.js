@@ -36,6 +36,7 @@ export const getStudents = async (req, res) => {
 
     const students = await User.find(query)
       .select('-password')
+      .select('sessionStartTime totalPauseTimeMs lastPauseStartTime')
       .sort({ createdAt: -1 })
       .lean();
 
@@ -94,17 +95,36 @@ export const getStudents = async (req, res) => {
       if (aiChats >= 10) achievements++; // AI suhbatchi
       if (openedLessons >= 7) achievements++; // Izchil o'quvchi
 
-      // Real-time onlayn vaqtni hisoblash (sessionStartTime dan boshlab)
-      let onlineTimeFormatted = '00:00:00';
+      // Real-time onlayn vaqtni hisoblash (sessionStartTime dan boshlab, pause vaqtini hisobga olgan holda)
+      let onlineTimeFormatted = '0:00:00';
       if (student.sessionStartTime) {
         const now = new Date();
-        const diffMs = now.getTime() - new Date(student.sessionStartTime).getTime();
+        let diffMs = now.getTime() - new Date(student.sessionStartTime).getTime();
+        
+        // Pause vaqtini ayirish
+        const totalPauseTimeMs = student.totalPauseTimeMs || 0;
+        
+        // Agar hozirgi vaqtda pause davom etmoqda bo'lsa (lastPauseStartTime mavjud bo'lsa)
+        let currentPauseTime = 0;
+        if (student.lastPauseStartTime) {
+          currentPauseTime = now.getTime() - new Date(student.lastPauseStartTime).getTime();
+        }
+        
+        // Jami pause vaqti
+        const totalPause = totalPauseTimeMs + currentPauseTime;
+        
+        // Faqat online bo'lgan vaqtni hisoblash
+        diffMs = Math.max(0, diffMs - totalPause);
+        
         const totalSeconds = Math.floor(diffMs / 1000);
         const hours = Math.floor(totalSeconds / 3600);
         const minutes = Math.floor((totalSeconds % 3600) / 60);
         const seconds = totalSeconds % 60;
         onlineTimeFormatted = `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
       }
+      
+      // sessionStartTime va pause ma'lumotlarini qaytarish (frontend'da real-time timer uchun)
+      student.sessionStartTime = student.sessionStartTime ? new Date(student.sessionStartTime).toISOString() : null;
 
       student.stats = {
         completedLessons,
@@ -332,7 +352,7 @@ export const getMyStats = async (req, res) => {
     const totalLessons = 7; // Doimiy 7 ta dars
 
     // Statistikalar bazada saqlangan bo'lsa, ularni olamiz
-    const user = await User.findById(studentId).select('stats sessionStartTime').lean();
+    const user = await User.findById(studentId).select('stats sessionStartTime totalPauseTimeMs lastPauseStartTime').lean();
     let stats = user?.stats || {};
     const sessionStartTime = user?.sessionStartTime || null;
 
@@ -419,11 +439,27 @@ export const getMyStats = async (req, res) => {
     const timeSpentMins = timeSpentMinutes % 60;
     const timeSpentFormatted = `${timeSpentHours}:${timeSpentMins.toString().padStart(2, '0')}`;
 
-    // Real-time onlayn vaqtni hisoblash (sessionStartTime dan boshlab)
+    // Real-time onlayn vaqtni hisoblash (sessionStartTime dan boshlab, pause vaqtini hisobga olgan holda)
     let onlineTimeFormatted = '0:00:00';
     if (sessionStartTime) {
       const now = new Date();
-      const diffMs = now.getTime() - new Date(sessionStartTime).getTime();
+      let diffMs = now.getTime() - new Date(sessionStartTime).getTime();
+      
+      // Pause vaqtini ayirish
+      const totalPauseTimeMs = user?.totalPauseTimeMs || 0;
+      
+      // Agar hozirgi vaqtda pause davom etmoqda bo'lsa (lastPauseStartTime mavjud bo'lsa)
+      let currentPauseTime = 0;
+      if (user?.lastPauseStartTime) {
+        currentPauseTime = now.getTime() - new Date(user.lastPauseStartTime).getTime();
+      }
+      
+      // Jami pause vaqti
+      const totalPause = totalPauseTimeMs + currentPauseTime;
+      
+      // Faqat online bo'lgan vaqtni hisoblash
+      diffMs = Math.max(0, diffMs - totalPause);
+      
       const totalSeconds = Math.floor(diffMs / 1000);
       const hours = Math.floor(totalSeconds / 3600);
       const minutes = Math.floor((totalSeconds % 3600) / 60);
@@ -523,6 +559,94 @@ export const updateOnlineTime = async (req, res) => {
       data: {
         totalOnlineTimeSeconds: totalSeconds,
       },
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Server xatosi',
+    });
+  }
+};
+
+/**
+ * @desc    Pause vaqtini boshlash (Student offline bo'lganda)
+ * @route   POST /api/auth/me/pause-start
+ * @access  Private (Student)
+ */
+export const pauseStart = async (req, res) => {
+  try {
+    if (req.user.role !== 'student') {
+      return res.status(403).json({
+        success: false,
+        message: 'Faqat o\'quvchilar pause vaqtini boshlashi mumkin',
+      });
+    }
+
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'Foydalanuvchi topilmadi',
+      });
+    }
+
+    // Agar oldingi pause davom etmoqda bo'lsa, uni hisoblab qo'shish
+    if (user.lastPauseStartTime) {
+      const now = new Date();
+      const pauseDuration = now.getTime() - new Date(user.lastPauseStartTime).getTime();
+      user.totalPauseTimeMs = (user.totalPauseTimeMs || 0) + pauseDuration;
+    }
+
+    // Yangi pause boshlash
+    user.lastPauseStartTime = new Date();
+    await user.save({ validateBeforeSave: false });
+
+    res.json({
+      success: true,
+      message: 'Pause vaqti boshlandi',
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Server xatosi',
+    });
+  }
+};
+
+/**
+ * @desc    Pause vaqtini to'xtatish (Student online bo'lganda)
+ * @route   POST /api/auth/me/pause-end
+ * @access  Private (Student)
+ */
+export const pauseEnd = async (req, res) => {
+  try {
+    if (req.user.role !== 'student') {
+      return res.status(403).json({
+        success: false,
+        message: 'Faqat o\'quvchilar pause vaqtini to\'xtatishi mumkin',
+      });
+    }
+
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'Foydalanuvchi topilmadi',
+      });
+    }
+
+    // Agar pause davom etmoqda bo'lsa, uni hisoblab qo'shish
+    if (user.lastPauseStartTime) {
+      const now = new Date();
+      const pauseDuration = now.getTime() - new Date(user.lastPauseStartTime).getTime();
+      user.totalPauseTimeMs = (user.totalPauseTimeMs || 0) + pauseDuration;
+      user.lastPauseStartTime = null;
+      await user.save({ validateBeforeSave: false });
+    }
+
+    res.json({
+      success: true,
+      message: 'Pause vaqti to\'xtatildi',
     });
   } catch (error) {
     res.status(500).json({
