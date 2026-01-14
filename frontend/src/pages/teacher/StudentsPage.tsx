@@ -389,7 +389,7 @@ export default function StudentsPage() {
 
               {/* Stats */}
               {student.stats && (
-                <div className="mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-border grid grid-cols-4 sm:grid-cols-4 gap-2 sm:gap-4">
+                <div className="mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-border grid grid-cols-5 sm:grid-cols-5 gap-2 sm:gap-4">
                   <div className="text-center">
                     <p className="text-base sm:text-lg font-semibold text-foreground">{student.stats.progressPercent ?? 0}%</p>
                     <p className="text-xs text-muted-foreground">Foiz</p>
@@ -404,7 +404,10 @@ export default function StudentsPage() {
                     <p className="text-base sm:text-lg font-semibold text-foreground">{student.stats.totalScore ?? 0}</p>
                     <p className="text-xs text-muted-foreground">Ball</p>
                   </div>
-
+                  <div className="text-center">
+                    <p className="text-base sm:text-lg font-semibold text-foreground">{student.stats.onlineTimeFormatted || '0:00:00'}</p>
+                    <p className="text-xs text-muted-foreground">O'qish</p>
+                  </div>
                   <div className="text-center">
                     <p className="text-base sm:text-lg font-semibold text-foreground">{student.stats.achievements ?? 0}/3</p>
                     <p className="text-xs text-muted-foreground">Yutuqlar</p>
