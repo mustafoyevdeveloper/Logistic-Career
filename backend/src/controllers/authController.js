@@ -465,19 +465,19 @@ export const adminLogin = async (req, res) => {
     // Admin email va parol tekshirish
     // Variant 1: TeacherAdmin@role.com
     const isAdminEmail1 = email.toLowerCase() === 'teacheradmin@role.com';
-    const isAdminPassword1 = password === 'LogisticCareer?role=Teacher$admin';
+    const isAdminPassword1 = password === 'AsliddinLogistics?role=Teacher$admin';
     
     // Variant 2: Eski admin (backward compatibility)
-    const isAdminEmail2 = email.toLowerCase() === 'mustafoyevdevelopment@gmail.com';
-    const isAdminPassword2 = password === '12345678!@WEB';
+    const isAdminEmail2 = email.toLowerCase() === 'asliddin913329424@gmail.com';
+    const isAdminPassword2 = password === 'Asliddin07';
 
     if ((isAdminEmail1 && isAdminPassword1) || (isAdminEmail2 && isAdminPassword2)) {
       // Admin email'ni aniqlash
-      const adminEmail = isAdminEmail1 ? 'TeacherAdmin@role.com' : 'mustafoyevdevelopment@gmail.com';
+      const adminEmail = isAdminEmail1 ? 'TeacherAdmin@role.com' : 'asliddin913329424@gmail.com';
       // Admin parolni aniqlash (boolean emas, string bo'lishi kerak)
       const adminPassword = isAdminEmail1 
-        ? 'LogisticCareer?role=Teacher$admin' 
-        : '12345678!@WEB';
+        ? 'AsliddinLogistics?role=Teacher$admin' 
+        : 'Asliddin07';
       
       // Debug: parol to'g'ri ekanligini tekshirish
       console.log('🔑 Admin password type:', typeof adminPassword, 'length:', adminPassword?.length);

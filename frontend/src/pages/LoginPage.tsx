@@ -87,7 +87,7 @@ export default function LoginPage() {
         <div className="relative z-10 flex flex-col justify-center p-12 xl:p-16">
           <div className="mb-8">
             <Logo variant="icon" size="lg" className="mb-4" />
-            <span className="text-2xl font-bold text-primary-foreground">Logistic Carrier</span>
+            <span className="text-2xl font-bold text-primary-foreground">Asliddin Logistics</span>
           </div>
           
           <h1 className="text-4xl xl:text-5xl font-bold text-primary-foreground mb-6 leading-tight">
@@ -127,7 +127,7 @@ export default function LoginPage() {
           {/* Mobile logo */}
           <div className="flex lg:hidden items-center gap-3 mb-8">
             <Logo variant="icon" size="md" />
-            <span className="text-xl font-bold text-foreground">Logistic Carrier</span>
+            <span className="text-xl font-bold text-foreground">Asliddin Logistics</span>
           </div>
 
           {searchParams.get('role') === 'admin' ? (

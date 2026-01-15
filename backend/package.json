@@ -1,7 +1,7 @@
 {
-  "name": "logistic-career-backend",
+  "name": "asliddin-logistics-backend",
   "version": "1.0.0",
-  "description": "Logistika o'quv markazi uchun AI-asosli ta'lim platformasi backend",
+  "description": "Asliddin Logistics o'quv markazi uchun AI-asosli ta'lim platformasi backend",
   "main": "src/server.js",
   "type": "module",
   "scripts": {
