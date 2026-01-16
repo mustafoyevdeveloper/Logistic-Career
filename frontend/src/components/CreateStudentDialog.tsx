@@ -39,6 +39,23 @@ export default function CreateStudentDialog({ onSuccess }: CreateStudentDialogPr
     loadGroups();
   }, []);
 
+  // Dialog ochilganda formani tozalash
+  useEffect(() => {
+    if (open) {
+      // Dialog ochilganda formani tozalash
+      setFormData({
+        email: '',
+        firstName: '',
+        lastName: '',
+        groupId: '',
+        password: '',
+      });
+      setCreatedPassword(null);
+      setPasswordCopied(false);
+      setShowPassword(false);
+    }
+  }, [open]);
+
   const loadGroups = async () => {
     try {
       const response = await apiService.getGroups();
@@ -162,7 +179,7 @@ export default function CreateStudentDialog({ onSuccess }: CreateStudentDialogPr
             </Button>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4" autoComplete="off">
             <div className="space-y-2">
               <Label htmlFor="email">Email *</Label>
               <Input
@@ -171,6 +188,7 @@ export default function CreateStudentDialog({ onSuccess }: CreateStudentDialogPr
                 placeholder="student@example.uz"
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                autoComplete="off"
                 required
               />
             </div>
@@ -222,6 +240,7 @@ export default function CreateStudentDialog({ onSuccess }: CreateStudentDialogPr
                   placeholder="Agar bo'sh qoldirsangiz, avtomatik yaratiladi"
                   value={formData.password}
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                  autoComplete="off"
                   className="pr-10"
                 />
                 <button

@@ -8,6 +8,7 @@
     "dev": "node --watch src/server.js",
     "start": "node src/server.js",
     "seed": "node src/scripts/seedData.js",
+    "seed:assignments": "node src/scripts/seedAssignments.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [

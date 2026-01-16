@@ -227,9 +227,9 @@ export default function StudentProfilePage() {
 
     // Darhol yangilash (faqat online bo'lganda)
     if (isActiveRef.current) {
-      updateTime();
+    updateTime();
       // Har sekundda yangilash (faqat online bo'lganda)
-      intervalRef.current = setInterval(updateTime, 1000);
+    intervalRef.current = setInterval(updateTime, 1000);
     }
 
     return () => {

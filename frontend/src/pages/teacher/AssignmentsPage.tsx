@@ -20,7 +20,7 @@ interface Submission {
   studentAvatar: string;
   assignmentTitle: string;
   submittedAt: string;
-  status: 'pending' | 'reviewed' | 'graded';
+  status: 'pending' | 'submitted' | 'graded';
   aiScore?: number | null;
   teacherScore?: number | null;
   feedback?: string | null;
@@ -87,8 +87,8 @@ export default function TeacherAssignmentsPage() {
     }
   };
 
-  const pendingCount = submissions.filter(s => s.status === 'pending').length;
-  const reviewedCount = submissions.filter(s => s.status === 'reviewed' || s.status === 'graded').length;
+  const pendingCount = submissions.filter(s => s.status === 'pending' || s.status === 'submitted').length;
+  const reviewedCount = submissions.filter(s => s.status === 'graded').length;
 
   if (isLoading) {
     return (
@@ -185,14 +185,14 @@ export default function TeacherAssignmentsPage() {
               <div className="flex items-center gap-3">
                 <span className={cn(
                   "px-3 py-1 rounded-full text-sm font-medium",
-                  submission.status === 'pending'
+                  (submission.status === 'pending' || submission.status === 'submitted')
                     ? "bg-warning/10 text-warning"
                     : "bg-success/10 text-success"
                 )}>
-                  {submission.status === 'pending' ? 'Kutilmoqda' : 'Tekshirilgan'}
+                  {(submission.status === 'pending' || submission.status === 'submitted') ? 'Kutilmoqda' : 'Tekshirilgan'}
                 </span>
                 
-                {submission.status === 'pending' && (
+                {(submission.status === 'pending' || submission.status === 'submitted') && (
                   <Button 
                     variant="gradient" 
                     size="sm"
@@ -201,7 +201,7 @@ export default function TeacherAssignmentsPage() {
                     Tekshirish
                   </Button>
                 )}
-                {submission.status === 'reviewed' && (
+                {submission.status === 'graded' && (
                   <Button 
                     variant="outline" 
                     size="sm"
@@ -224,7 +224,7 @@ export default function TeacherAssignmentsPage() {
                   </div>
                 </div>
 
-                {submission.status === 'pending' ? (
+                {(submission.status === 'pending' || submission.status === 'submitted') ? (
                   <>
                     {/* Score Input */}
                     <div>
