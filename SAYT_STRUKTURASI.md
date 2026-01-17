@@ -1,8 +1,8 @@
-# Asliddin Logistics - Veb Sayt Strukturasi
+# Asliddin Logistic - Veb Sayt Strukturasi
 
 ## Umumiy Ma'lumot
 
-**Asliddin Logistics** - bu logistika sohasidagi o'quv markazi uchun yaratilgan AI-asosli ta'lim platformasi. Sayt **full-stack** dastur bo'lib, ikki qismdan iborat:
+**Asliddin Logistic** - bu logistika sohasidagi o'quv markazi uchun yaratilgan AI-asosli ta'lim platformasi. Sayt **full-stack** dastur bo'lib, ikki qismdan iborat:
 - **Backend** (Server qismi) - Node.js + Express + MongoDB
 - **Frontend** (Foydalanuvchi interfeysi) - React + TypeScript + Vite
 
@@ -11,7 +11,7 @@
 ## 📁 Loyiha Strukturasi
 
 ```
-Asliddin Logistics/
+Asliddin Logistic/
 ├── backend/          # Server qismi (Node.js)
 ├── frontend/         # Foydalanuvchi interfeysi (React)
 └── README.md         # Asosiy loyiha hujjati

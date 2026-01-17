@@ -1,6 +1,6 @@
 # Logo Fayllari
 
-Bu papkada Asliddin Logistics platformasi uchun logo fayli mavjud.
+Bu papkada Asliddin Logistic platformasi uchun logo fayli mavjud.
 
 ## Logo Fayli
 

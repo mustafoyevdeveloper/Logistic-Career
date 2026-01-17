@@ -1,7 +1,7 @@
 {
   "name": "asliddin-logistics-backend",
   "version": "1.0.0",
-  "description": "Asliddin Logistics o'quv markazi uchun AI-asosli ta'lim platformasi backend",
+  "description": "Asliddin Logistic o'quv markazi uchun AI-asosli ta'lim platformasi backend",
   "main": "src/server.js",
   "type": "module",
   "scripts": {

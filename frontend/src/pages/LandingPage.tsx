@@ -22,7 +22,7 @@ export default function LandingPage() {
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-3">
               <Logo variant="icon" size="md" />
-              <span className="text-xl font-bold text-foreground">Asliddin Logistics</span>
+              <span className="text-xl font-bold text-foreground">Asliddin Logistic</span>
             </div>
             <Link to="/login?role=student">
               <Button variant="gradient" size="sm">
@@ -219,7 +219,7 @@ export default function LandingPage() {
               <span className="text-lg font-bold text-foreground">Asliddin Logistics</span>
             </div>
             <p className="text-sm text-muted-foreground text-center sm:text-right">
-              © 2025 Asliddin Logistics. Barcha huquqlar himoyalangan.
+              © 2025 Asliddin Logistic. Barcha huquqlar himoyalangan.
             </p>
           </div>
         </div>
