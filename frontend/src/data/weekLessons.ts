@@ -295,6 +295,9 @@ export const weekLessons: Record<number, WeekLesson> = {
             <li>Sanoat va ishlab chiqarishda</li>
             <li>Yirik sanoat yoki qishloq xo'jaligi yuklarini tashishda</li>
           </ul>
+          <div class="my-6">
+            <img src="/images/Plashadka.jpg" alt="Ploshadka fura" class="w-full max-w-2xl mx-auto rounded-lg shadow-lg" />
+          </div>
         `,
         videos: []
       }
@@ -657,6 +660,9 @@ export const weekLessons: Record<number, WeekLesson> = {
             <li>Sanoat va ishlab chiqarishda</li>
             <li>Yirik sanoat yoki qishloq xo'jaligi yuklarini tashishda</li>
           </ul>
+          <div class="my-6">
+            <img src="/images/Plashadka.jpg" alt="Ploshadka fura" class="w-full max-w-2xl mx-auto rounded-lg shadow-lg" />
+          </div>
         `,
         videos: []
       }
