@@ -392,63 +392,63 @@ export default function AssignmentsPage() {
           {assignments.map((assignment) => (
             <div
               key={assignment._id}
-              className="bg-card rounded-xl p-5 border border-border shadow-card hover:shadow-card-hover transition-shadow"
-            >
-              <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-                {/* Icon */}
-                <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-                  <ClipboardList className="w-6 h-6 text-primary" />
-                </div>
+            className="bg-card rounded-xl p-5 border border-border shadow-card hover:shadow-card-hover transition-shadow"
+          >
+            <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+              {/* Icon */}
+              <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                <ClipboardList className="w-6 h-6 text-primary" />
+              </div>
 
-                {/* Info */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex flex-wrap items-center gap-2 mb-1">
-                    <h3 className="font-semibold text-foreground">{assignment.title}</h3>
-                    <span className="px-2 py-0.5 bg-muted rounded-full text-xs text-muted-foreground">
-                      {getTypeLabel(assignment.type)}
-                    </span>
-                    <span className={cn(
-                      "px-2 py-0.5 rounded-full text-xs font-medium",
-                      getStatusColor(assignment.status)
-                    )}>
-                      {getStatusLabel(assignment.status)}
-                    </span>
-                  </div>
-                  <p className="text-sm text-muted-foreground mb-2">{assignment.description}</p>
-                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                    <span className="flex items-center gap-1">
-                      <Clock className="w-4 h-4" />
-                      {new Date(assignment.dueDate).toLocaleDateString('uz-UZ')}
-                    </span>
-                    {assignment.score !== undefined && (
-                      <span className="flex items-center gap-1 text-success font-medium">
-                        <Trophy className="w-4 h-4" />
-                        {assignment.score}/{assignment.maxScore} ball
-                      </span>
-                    )}
-                  </div>
+              {/* Info */}
+              <div className="flex-1 min-w-0">
+                <div className="flex flex-wrap items-center gap-2 mb-1">
+                  <h3 className="font-semibold text-foreground">{assignment.title}</h3>
+                  <span className="px-2 py-0.5 bg-muted rounded-full text-xs text-muted-foreground">
+                    {getTypeLabel(assignment.type)}
+                  </span>
+                  <span className={cn(
+                    "px-2 py-0.5 rounded-full text-xs font-medium",
+                    getStatusColor(assignment.status)
+                  )}>
+                    {getStatusLabel(assignment.status)}
+                  </span>
                 </div>
+                <p className="text-sm text-muted-foreground mb-2">{assignment.description}</p>
+                <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                  <span className="flex items-center gap-1">
+                    <Clock className="w-4 h-4" />
+                    {new Date(assignment.dueDate).toLocaleDateString('uz-UZ')}
+                  </span>
+                  {assignment.score !== undefined && (
+                    <span className="flex items-center gap-1 text-success font-medium">
+                      <Trophy className="w-4 h-4" />
+                      {assignment.score}/{assignment.maxScore} ball
+                    </span>
+                  )}
+                </div>
+              </div>
 
-                {/* Action */}
-                <Button 
-                  variant={assignment.status === 'pending' ? 'gradient' : 'outline'}
-                  className="shrink-0"
+              {/* Action */}
+              <Button 
+                variant={assignment.status === 'pending' ? 'gradient' : 'outline'}
+                className="shrink-0"
                   onClick={() => handleOpenAssignment(assignment)}
-                >
-                  {assignment.status === 'pending' ? (
-                    <>
-                      Boshlash
+              >
+                {assignment.status === 'pending' ? (
+                  <>
+                    Boshlash
                       <ArrowRight className="w-4 h-4 ml-2" />
-                    </>
-                  ) : assignment.status === 'graded' ? (
+                  </>
+                ) : assignment.status === 'graded' ? (
                     'Natijani ko\'rish'
                   ) : (
-                    'Ko\'rish'
-                  )}
-                </Button>
-              </div>
+                  'Ko\'rish'
+                )}
+              </Button>
             </div>
-          ))}
+          </div>
+        ))}
         </div>
       )}
     </div>

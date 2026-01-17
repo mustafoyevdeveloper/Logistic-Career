@@ -295,9 +295,6 @@ export const weekLessons: Record<number, WeekLesson> = {
             <li>Sanoat va ishlab chiqarishda</li>
             <li>Yirik sanoat yoki qishloq xo'jaligi yuklarini tashishda</li>
           </ul>
-          <div class="my-6">
-            <img src="/images/" alt="Ploshadka fura" class="w-full max-w-2xl mx-auto rounded-lg shadow-lg" />
-          </div>
         `,
         videos: []
       }
@@ -670,14 +667,308 @@ export const weekLessons: Record<number, WeekLesson> = {
     title: "Hujjatlar",
     description: "CMR (SMR), TIR CARNET, DAZVOL hujjatlari va ularning maqsadlari.",
     duration: "",
-    topics: {}
+    topics: {
+      "SMR (CMR) nima?": {
+        title: "SMR (CMR) nima?",
+        content: `
+          <h2 class="text-2xl font-bold mb-4">SMR NIMA?</h2>
+          <p class="mb-4">Logistikada SMR deb aytilayotgani ko'pincha CMR (СMR) hujjati nazarda tutiladi. Odamlar talaffuzda SMR deb yuborishadi.</p>
+          
+          <h3 class="text-xl font-semibold mb-3 mt-6">CMR (SMR) qanday hujjat?</h3>
+          <p class="mb-4">CMR — bu xalqaro avtomobil yuk tashish yuk xati (transport hujjati).</p>
+
+          <h3 class="text-xl font-semibold mb-3 mt-6">Qachon kerak bo'ladi?</h3>
+          <ul class="list-disc list-inside mb-4 space-y-2">
+            <li>Yuk bir davlatdan boshqa davlatga avtomobil orqali olib o'tilsa</li>
+            <li>Haydovchi, ekspeditor va bojxona uchun majburiy hujjat</li>
+          </ul>
+
+          <h3 class="text-xl font-semibold mb-3 mt-6">CMR (SMR) da nimalar yoziladi?</h3>
+          <ul class="list-disc list-inside mb-4 space-y-2">
+            <li>🚚 Yuboruvchi (Sender)</li>
+            <li>📦 Qabul qiluvchi (Consignee)</li>
+            <li>🏭 Yuk nomi va miqdori</li>
+            <li>⚖️ Og'irligi</li>
+            <li>🌍 Yuklash va tushirish manzili</li>
+            <li>🚛 Mashina va haydovchi ma'lumoti</li>
+            <li>✍️ Tomonlarning imzolari</li>
+          </ul>
+
+          <h3 class="text-xl font-semibold mb-3 mt-6">Kimlar uchun muhim?</h3>
+          <ul class="list-disc list-inside mb-4 space-y-2">
+            <li>Logist</li>
+            <li>Haydovchi</li>
+            <li>Ekspeditor</li>
+            <li>Bojxona organlari</li>
+          </ul>
+          <div class="my-6">
+            <img src="/images/SMR Dokument.jpg" alt="CMR (SMR) hujjati" class="w-full max-w-2xl mx-auto rounded-lg shadow-lg" />
+          </div>
+        `,
+        videos: []
+      },
+      "TIR CARNET nima?": {
+        title: "TIR CARNET nima?",
+        content: `
+          <h2 class="text-2xl font-bold mb-4">🚛 TIR Carnet nima?</h2>
+          <p class="mb-4">TIR Carnet — bu xalqaro tranzit bojxona hujjati, yuk mashinasi bir nechta davlat orqali bojxona to'lovisiz o'tishi uchun ishlatiladi.</p>
+          
+          <h3 class="text-xl font-semibold mb-3 mt-6">🔑 Oddiy qilib aytganda:</h3>
+          <p class="mb-4">TIR Carnet bo'lsa 👉 yuk har bir chegarada ochilmaydi, bojxona faqat plomba va hujjatni tekshiradi.</p>
+
+          <h3 class="text-xl font-semibold mb-3 mt-6">📌 Qachon kerak bo'ladi?</h3>
+          <ul class="list-disc list-inside mb-4 space-y-2">
+            <li>Yuk 2 yoki undan ko'p davlatdan o'tsa</li>
+            <li>Avtomobil transportida</li>
+            <li>Yopiq kuzov / plombalanadigan mashinada</li>
+          </ul>
+
+          <h3 class="text-xl font-semibold mb-3 mt-6">📄 TIR Carnet ichida nima bo'ladi?</h3>
+          <ul class="list-disc list-inside mb-4 space-y-2">
+            <li>Yuboruvchi va qabul qiluvchi</li>
+            <li>Yuk tavsifi</li>
+            <li>Marshrut (qaysi davlatlardan o'tadi)</li>
+            <li>Bojxona muhrlari (plomba)</li>
+          </ul>
+
+          <h3 class="text-xl font-semibold mb-3 mt-6">👤 Kim foydalanadi?</h3>
+          <ul class="list-disc list-inside mb-4 space-y-2">
+            <li>Xalqaro haydovchi</li>
+            <li>Transport kompaniya</li>
+            <li>Logist</li>
+            <li>Ekspeditor</li>
+          </ul>
+
+          <h3 class="text-xl font-semibold mb-3 mt-6">✅ Afzalliklari:</h3>
+          <ul class="list-disc list-inside mb-4 space-y-2">
+            <li>⏱ Chegarada tez o'tadi</li>
+            <li>💰 Garov yoki boj to'lovi yo'q</li>
+            <li>📉 Xarajat kamroq</li>
+          </ul>
+
+          <h3 class="text-xl font-semibold mb-3 mt-6">❌ Qachon ishlatilmaydi?</h3>
+          <ul class="list-disc list-inside mb-4 space-y-2">
+            <li>Ichki (bir davlat ichida) yuklarda</li>
+            <li>Temiryo'l yoki avia yukda</li>
+            <li>Ochiq kuzovda (plomba bo'lmasa)</li>
+          </ul>
+          <div class="my-6">
+            <img src="/images/Tir Carnet Foto.jpg" alt="TIR CARNET hujjati" class="w-full max-w-2xl mx-auto rounded-lg shadow-lg" />
+          </div>
+        `,
+        videos: []
+      },
+      "DAZVOL (Dozvol) nima?": {
+        title: "DAZVOL (Dozvol) nima?",
+        content: `
+          <h2 class="text-2xl font-bold mb-4">DAZVOL NIMA?</h2>
+          <p class="mb-4">Dazvol (to'g'risi: Dozvol / Permit) — bu yuk mashinasiga beriladigan ruxsatnoma, ya'ni chet davlat hududiga kirish va u yerda yuk tashish uchun hujjat.</p>
+          
+          <h3 class="text-xl font-semibold mb-3 mt-6">📌 Oddiy qilib aytganda:</h3>
+          <p class="mb-4">Dazvol bo'lmasa 👉 yuk mashinasi chet davlatga kira olmaydi yoki u yerda yuk tashiy olmaydi.</p>
+
+          <h3 class="text-xl font-semibold mb-3 mt-6">🧾 Dozvol (Dazvol) nimalarni o'z ichiga oladi?</h3>
+          <ul class="list-disc list-inside mb-4 space-y-2">
+            <li>Qaysi davlat uchun berilgani</li>
+            <li>Bir martalik yoki ko'p martalik</li>
+            <li>Mashina raqami</li>
+            <li>Yuk turi</li>
+            <li>Amal qilish muddati</li>
+          </ul>
+
+          <h3 class="text-xl font-semibold mb-3 mt-6">🌍 Qaysi hollarda kerak bo'ladi?</h3>
+          <ul class="list-disc list-inside mb-4 space-y-2">
+            <li>Xalqaro avtomobil yuk tashishda</li>
+            <li>Tranzit yoki ikki tomonlama tashishda</li>
+            <li>O'zbekiston ↔ boshqa davlatlar o'rtasida</li>
+          </ul>
+
+          <h3 class="text-xl font-semibold mb-3 mt-6">❌ Qachon kerak emas?</h3>
+          <ul class="list-disc list-inside mb-4 space-y-2">
+            <li>TIR Carnet o'rnini bosa olmaydi</li>
+            <li>Ichki (O'zbekiston ichida) tashishda</li>
+            <li>Ba'zi kvotasiz davlatlarda (kam hollarda)</li>
+          </ul>
+          <div class="my-6">
+            <img src="/images/Dazvol Dokument.jpg" alt="DAZVOL hujjati" class="w-full max-w-2xl mx-auto rounded-lg shadow-lg" />
+          </div>
+        `,
+        videos: []
+      },
+      "Hujjatlar jadvali": {
+        title: "Hujjatlar jadvali",
+        content: `
+          <h2 class="text-2xl font-bold mb-4">📋 Xalqaro logistika hujjatlari (sodda jadval)</h2>
+          <div class="overflow-x-auto mb-4">
+            <table class="min-w-full border-collapse border border-gray-300">
+              <thead>
+                <tr class="bg-gray-100">
+                  <th class="border border-gray-300 px-4 py-2 text-left">Hujjat nomi</th>
+                  <th class="border border-gray-300 px-4 py-2 text-left">Nima uchun kerak</th>
+                  <th class="border border-gray-300 px-4 py-2 text-left">Qachon ishlatiladi</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="border border-gray-300 px-4 py-2"><strong>CMR (SMR)</strong></td>
+                  <td class="border border-gray-300 px-4 py-2">Yuk tashish hujjati (kimdan → kimga)</td>
+                  <td class="border border-gray-300 px-4 py-2">Xalqaro avtomobil yukida</td>
+                </tr>
+                <tr>
+                  <td class="border border-gray-300 px-4 py-2"><strong>TIR Carnet</strong></td>
+                  <td class="border border-gray-300 px-4 py-2">Bojxona chegaralaridan tez o'tish</td>
+                  <td class="border border-gray-300 px-4 py-2">Bir nechta davlatdan o'tganda</td>
+                </tr>
+                <tr>
+                  <td class="border border-gray-300 px-4 py-2"><strong>Dazvol (Dozvol)</strong></td>
+                  <td class="border border-gray-300 px-4 py-2">Davlatga kirish uchun ruxsat</td>
+                  <td class="border border-gray-300 px-4 py-2">Chet davlat hududida yuk tashishda</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h3 class="text-xl font-semibold mb-3 mt-6">🔑 Juda qisqa eslab qolish uchun:</h3>
+          <ul class="list-disc list-inside mb-4 space-y-2">
+            <li><strong>CMR</strong> — yukning pasporti 📄</li>
+            <li><strong>TIR</strong> — bojxona uchun qulaylik 🛃</li>
+            <li><strong>Dazvol</strong> — yo'lga ruxsat 🚦</li>
+          </ul>
+
+          <h3 class="text-xl font-semibold mb-3 mt-6">📸 Hujjatlar rasmlari:</h3>
+          
+          <div class="my-6">
+            <h4 class="text-lg font-semibold mb-2">CMR (SMR) — yukning pasporti 📄</h4>
+            <img src="/images/SMR Dokument.jpg" alt="CMR (SMR) hujjati" class="w-full max-w-2xl mx-auto rounded-lg shadow-lg" />
+          </div>
+
+          <div class="my-6">
+            <h4 class="text-lg font-semibold mb-2">TIR CARNET — bojxona uchun qulaylik 🛃</h4>
+            <img src="/images/Tir Carnet Foto.jpg" alt="TIR CARNET hujjati" class="w-full max-w-2xl mx-auto rounded-lg shadow-lg" />
+          </div>
+
+          <div class="my-6">
+            <h4 class="text-lg font-semibold mb-2">DAZVOL — yo'lga ruxsat 🚦</h4>
+            <img src="/images/Dazvol Dokument.jpg" alt="DAZVOL hujjati" class="w-full max-w-2xl mx-auto rounded-lg shadow-lg" />
+          </div>
+        `,
+        videos: []
+      }
+    }
   },
   4: {
     day: 4,
     title: "Dispecherlik va Telegram gruppalar",
     description: "Xalqaro logistika sohasida dispecher bo'lib ishlash, Telegram gruppalariga a'zo bo'lish, yuk ma'lumotlarini olish va shablonlar.",
     duration: "",
-    topics: {}
+    topics: {
+      "Dispecherlik nima?": {
+        title: "Dispecherlik nima?",
+        content: `
+          <h2 class="text-2xl font-bold mb-4">XALQARO LOGISTIKA sohasida biz dispecher bo'lib o'z ish faoliyatimizni yuritamiz</h2>
+          <p class="mb-4">Dispecher — bu logistika kompaniyasida yuk tashish jarayonlarini boshqaruvchi, haydovchilar va mijozlar o'rtasida aloqadorlikni ta'minlovchi mutaxassis.</p>
+          <p class="mb-4">Dispecherning asosiy vazifalari:</p>
+          <ul class="list-disc list-inside mb-4 space-y-2">
+            <li>Yuklarni topish va tashlashni tashkil etish</li>
+            <li>Haydovchilar bilan aloqa o'rnatish</li>
+            <li>Marshrutlarni rejalashtirish</li>
+            <li>Yuk tashish jarayonini kuzatish va nazorat qilish</li>
+            <li>Mijozlar bilan muloqot qilish</li>
+          </ul>
+        `,
+        videos: []
+      },
+      "Telegram gruppalar": {
+        title: "Telegram gruppalar",
+        content: `
+          <h2 class="text-2xl font-bold mb-4">Telegram gruppalarga a'zo bo'ling:</h2>
+          <p class="mb-4">Quyidagi Telegram gruppalarga a'zo bo'ling va yuklar haqida ma'lumot oling:</p>
+          <ul class="list-disc list-inside mb-4 space-y-2">
+            <li><strong>Logistica 1:</strong> <a href="https://t.me/addlist/tzmLfyj7VCliOTdi" target="_blank" class="text-blue-600 hover:underline">https://t.me/addlist/tzmLfyj7VCliOTdi</a></li>
+            <li><strong>Logistica 2:</strong> <a href="https://t.me/addlist/l36MEtBdB7k4NWJi" target="_blank" class="text-blue-600 hover:underline">https://t.me/addlist/l36MEtBdB7k4NWJi</a></li>
+            <li><strong>Logistica 3:</strong> <a href="https://t.me/addlist/GlMyk38n8Z5iMTEy" target="_blank" class="text-blue-600 hover:underline">https://t.me/addlist/GlMyk38n8Z5iMTEy</a></li>
+            <li><strong>Logistica 4:</strong> <a href="https://t.me/addlist/MObaLmaV4H1jYmIy" target="_blank" class="text-blue-600 hover:underline">https://t.me/addlist/MObaLmaV4H1jYmIy</a></li>
+          </ul>
+        `,
+        videos: []
+      },
+      "Telegram gruppalarda ishlash": {
+        title: "Telegram gruppalarda ishlash",
+        content: `
+          <h2 class="text-2xl font-bold mb-4">Telegram gruppalarda qanday ishlash kerak?</h2>
+          <p class="mb-4"><strong>Muhim:</strong> Siz obuna bo'lgan telegram gruppalarga faqat yuk tashlanadi menda mashina bor deb emas, ya'ni A nuqtadan B nuqtada biror bir mahsulot yoki yuk bor deb.</p>
+          
+          <h3 class="text-xl font-semibold mb-3 mt-6">Bu gruppalar ichida kimlar bor?</h3>
+          <ul class="list-disc list-inside mb-4 space-y-2">
+            <li>Logistlar</li>
+            <li>Dispecherlar</li>
+            <li>Mashinalar bor (haydovchilar)</li>
+          </ul>
+
+          <h3 class="text-xl font-semibold mb-3 mt-6">Qanday ishlaymiz?</h3>
+          <p class="mb-4">Biz shu gruppalardan yuklar gaplashib olamiz va shu gruppalardan olgan yuklarimizni shablon ko'rinishiga keltirib tarqatamiz.</p>
+        `,
+        videos: []
+      },
+      "Yuk ma'lumotlarini olish shablon": {
+        title: "Yuk ma'lumotlarini olish shablon",
+        content: `
+          <h2 class="text-2xl font-bold mb-4">Yukni ma'lumotlarini olish uchun shablon:</h2>
+          <p class="mb-4">Yuk haqida ma'lumot olish uchun quyidagi ma'lumotlarni so'rash kerak:</p>
+          <ol class="list-decimal list-inside mb-4 space-y-2">
+            <li><strong>Qayerdan qayerga</strong> — yuklash va tushirish manzillari</li>
+            <li><strong>Yukning nimaligi</strong> — yukning nomi va tavsifi</li>
+            <li><strong>Yukning tonnasi (og'irligi)</strong> — yukning vazni</li>
+            <li><strong>Yukning narxi</strong> — to'lov shakli (Перечисление, Наличи, Комбо)</li>
+            <li><strong>Qanday mashina kerak ekanligi</strong> — Tent, REF, Paravoz, Ploshadka</li>
+            <li><strong>Qachon yuklanishi</strong> — yuklash sanasi</li>
+            <li><strong>Затаможка ва растаможка жойлари</strong> — bojxona joylari</li>
+            <li><strong>Dakumentlari</strong> — SMR, TIR CARNET, DAZVOL</li>
+          </ol>
+
+          <h3 class="text-xl font-semibold mb-3 mt-6">📋 To'lov shakllari:</h3>
+          <ul class="list-disc list-inside mb-4 space-y-2">
+            <li><strong>Перечисление</strong> — Avtomashina bank shotiga pul ko'chirib berish</li>
+            <li><strong>Наличи</strong> — Pulni naxt ko'rinishda berish</li>
+            <li><strong>Комбо</strong> — Pulning qanchadir qismi narx, qanchadir qismi esa bank shotiga pul ko'chirib berish (Перечисление)</li>
+          </ul>
+        `,
+        videos: []
+      },
+      "Yuk shablon misoli": {
+        title: "Yuk shablon misoli",
+        content: `
+          <h2 class="text-2xl font-bold mb-4">Yuk shablon misoli:</h2>
+          <div class="bg-gray-100 p-6 rounded-lg mb-4">
+            <p class="mb-2"><strong>🇷🇺 Саратов, Россия → 🇺🇿 Ташкент, Узбекистан</strong></p>
+            <p class="mb-2"><strong>🚚 Тент</strong></p>
+            <p class="mb-2"><strong>⚖️ Вес:</strong> 22 Т</p>
+            <p class="mb-2"><strong>📦 Груз:</strong> Гранула</p>
+            <p class="mb-2"><strong>🗓 Дата:</strong> Груз готов</p>
+            <p class="mb-2"><strong>☎️ Телефон:</strong> 974009279</p>
+          </div>
+
+          <h3 class="text-xl font-semibold mb-3 mt-6">Yana bir misol:</h3>
+          <div class="bg-gray-100 p-6 rounded-lg mb-4">
+            <p class="mb-2"><strong>(🇺🇿) Ангрен - Пятигорск (🇷🇺)</strong></p>
+            <p class="mb-2"><strong>Растаможка:</strong> Астрахань</p>
+            <p class="mb-2"><strong>🚚 ТЕНТ 1</strong></p>
+          </div>
+
+          <h3 class="text-xl font-semibold mb-3 mt-6">Yana bir misol:</h3>
+          <div class="bg-gray-100 p-6 rounded-lg mb-4">
+            <p class="mb-2"><strong>📦 Товар:</strong> кафель</p>
+            <p class="mb-2"><strong>⚖️ Тоннаж:</strong> 22 тонна</p>
+            <p class="mb-2"><strong>💵 Оплата:</strong> 🔥</p>
+            <p class="mb-2"><strong>⏰ Груз готов</strong></p>
+            <p class="mb-2"><strong>☎️ 974009279</strong></p>
+          </div>
+
+          <p class="mb-4"><strong>Eslatma:</strong> Bu yozib olingan shablonga qarab yukning barcha ma'lumotlari olinadi.</p>
+        `,
+        videos: []
+      }
+    }
   },
   5: {
     day: 5,
