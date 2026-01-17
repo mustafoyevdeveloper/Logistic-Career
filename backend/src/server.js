@@ -34,6 +34,8 @@ const defaultOrigins = [
   'https://logistic-career.vercel.app',
   'https://logistic-career-git-main.vercel.app',
   'https://logistic-career-*.vercel.app', // Vercel preview URLs
+  'https://www.asliddin-logistic.online',
+  'https://asliddin-logistic.online',
 ];
 
 const allowedOrigins = process.env.FRONTEND_URL 
