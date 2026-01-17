@@ -345,7 +345,7 @@ export default function TeacherDashboard() {
           </div>
         </Link>
 
-        <Link to="/teacher/lesson" className="group">
+        <Link to="/teacher/lessons" className="group">
           <div className="bg-card rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-border shadow-card hover:shadow-card-hover hover:border-primary/50 transition-all duration-200">
             <div className="flex items-center gap-3 sm:gap-4">
               <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl bg-warning/10 flex items-center justify-center shrink-0">
