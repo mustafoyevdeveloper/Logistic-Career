@@ -14,7 +14,9 @@ import {
   ArrowRight,
   Trophy,
   Send,
-  X
+  X,
+  Check,
+  XCircle
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -81,6 +83,7 @@ export default function AssignmentsPage() {
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [answeredQuestions, setAnsweredQuestions] = useState<Record<string, boolean>>({}); // To'g'ri yoki xato
 
   useEffect(() => {
     loadAssignments();
@@ -136,11 +139,46 @@ export default function AssignmentsPage() {
     }
   };
 
-  const handleAnswerChange = (questionId: string, answer: string) => {
+  const handleAnswerChange = (questionId: string, answer: string, correctAnswer?: any) => {
     setAnswers(prev => ({
       ...prev,
       [questionId]: answer
     }));
+
+    // Real-time natija tekshirish (faqat test topshiriqlari uchun)
+    if (selectedAssignment?.type === 'quiz' && correctAnswer !== undefined) {
+      const isCorrect = answer === correctAnswer;
+      setAnsweredQuestions(prev => ({
+        ...prev,
+        [questionId]: isCorrect
+      }));
+
+      // Toast xabari
+      if (isCorrect) {
+        toast.success('✅ To\'g\'ri javob!', { duration: 1500 });
+      } else {
+        toast.error('❌ Noto\'g\'ri javob', { duration: 1500 });
+      }
+    }
+  };
+
+  // Umumiy ball hisoblash
+  const calculateScore = () => {
+    if (!selectedAssignment) return 0;
+    let totalScore = 0;
+    selectedAssignment.questions.forEach((question) => {
+      const questionId = question._id?.toString() || '';
+      const userAnswer = answers[questionId];
+      if (userAnswer && question.correctAnswer && userAnswer === question.correctAnswer) {
+        totalScore += question.points || 1;
+      }
+    });
+    return totalScore;
+  };
+
+  // Javob berilgan savollar soni
+  const getAnsweredCount = () => {
+    return Object.keys(answers).filter(key => answers[key] && answers[key].trim() !== '').length;
   };
 
   const handleSubmit = async () => {
@@ -194,9 +232,9 @@ export default function AssignmentsPage() {
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
       <div>
-        <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">Topshiriqlar</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">Testlar</h1>
         <p className="text-muted-foreground">
-          Vazifalarni bajaring va o'z bilimingizni sinab ko'ring
+          Testlarni yeching va o'z bilimingizni sinab ko'ring
         </p>
       </div>
 
@@ -246,7 +284,7 @@ export default function AssignmentsPage() {
             <div className="p-6">
               {/* Header */}
               <div className="flex items-center justify-between mb-6">
-                <div>
+                <div className="flex-1">
                   <h2 className="text-2xl font-bold text-foreground">{selectedAssignment.title}</h2>
                   <p className="text-muted-foreground mt-1">{selectedAssignment.description}</p>
                 </div>
@@ -256,42 +294,118 @@ export default function AssignmentsPage() {
                   onClick={() => {
                     setSelectedAssignment(null);
                     setAnswers({});
+                    setAnsweredQuestions({});
                   }}
                 >
                   <X className="w-5 h-5" />
                 </Button>
               </div>
 
+              {/* Real-time Score Display */}
+              {selectedAssignment.type === 'quiz' && selectedAssignment.status === 'pending' && (
+                <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/20 dark:to-purple-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-6">
+                      <div>
+                        <p className="text-sm text-muted-foreground">Javob berilgan</p>
+                        <p className="text-2xl font-bold text-foreground">
+                          {getAnsweredCount()}/{selectedAssignment.questions.length}
+                        </p>
+                      </div>
+                      <div className="h-12 w-px bg-border" />
+                      <div>
+                        <p className="text-sm text-muted-foreground">Joriy ball</p>
+                        <p className="text-2xl font-bold text-success">
+                          {calculateScore()}/{selectedAssignment.maxScore}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm text-muted-foreground">Foiz</p>
+                      <p className="text-2xl font-bold text-primary">
+                        {selectedAssignment.maxScore > 0 
+                          ? Math.round((calculateScore() / selectedAssignment.maxScore) * 100) 
+                          : 0}%
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Questions */}
               <div className="space-y-6">
                 {selectedAssignment.questions.map((question, index) => {
                   const questionId = question._id?.toString() || index.toString();
                   const currentAnswer = answers[questionId] || '';
+                  const isAnswered = currentAnswer !== '';
+                  const isCorrect = answeredQuestions[questionId];
+                  const showResult = selectedAssignment.type === 'quiz' && isAnswered && 
+                                    (selectedAssignment.status === 'pending' || selectedAssignment.status === 'graded');
 
                   return (
-                    <div key={questionId} className="border border-border rounded-lg p-4">
+                    <div 
+                      key={questionId} 
+                      className={cn(
+                        "border rounded-lg p-4 transition-all duration-200",
+                        showResult && isCorrect === true 
+                          ? "border-success/50 bg-success/5" 
+                          : showResult && isCorrect === false 
+                          ? "border-error/50 bg-error/5" 
+                          : "border-border"
+                      )}
+                    >
                       <div className="mb-4">
                         <div className="flex items-start gap-2 mb-2">
                           <span className="font-semibold text-foreground">{index + 1}.</span>
                           <p className="font-medium text-foreground flex-1">{question.question}</p>
-                          <span className="text-sm text-muted-foreground">({question.points} ball)</span>
+                          <div className="flex items-center gap-2">
+                            {showResult && (
+                              isCorrect ? (
+                                <Check className="w-5 h-5 text-success" />
+                              ) : (
+                                <XCircle className="w-5 h-5 text-error" />
+                              )
+                            )}
+                            <span className="text-sm text-muted-foreground">({question.points} ball)</span>
+                          </div>
                         </div>
                       </div>
 
                       {question.type === 'multiple-choice' && question.options ? (
                         <RadioGroup
                           value={currentAnswer}
-                          onValueChange={(value) => handleAnswerChange(questionId, value)}
+                          onValueChange={(value) => handleAnswerChange(questionId, value, question.correctAnswer)}
                           disabled={selectedAssignment.status === 'graded' || selectedAssignment.status === 'submitted'}
                         >
-                          {question.options.map((option, optIndex) => (
-                            <div key={optIndex} className="flex items-center space-x-2 py-2">
-                              <RadioGroupItem value={option} id={`${questionId}-${optIndex}`} />
-                              <Label htmlFor={`${questionId}-${optIndex}`} className="cursor-pointer flex-1">
-                                {option}
-                              </Label>
-                            </div>
-                          ))}
+                          {question.options.map((option, optIndex) => {
+                            const isSelected = currentAnswer === option;
+                            const isCorrectOption = option === question.correctAnswer;
+                            const showOptionResult = showResult && isSelected;
+
+                            return (
+                              <div 
+                                key={optIndex} 
+                                className={cn(
+                                  "flex items-center space-x-2 py-2 px-3 rounded-lg transition-colors",
+                                  showOptionResult && isCorrect 
+                                    ? "bg-success/10" 
+                                    : showOptionResult && !isCorrect 
+                                    ? "bg-error/10" 
+                                    : showResult && isCorrectOption && !isSelected
+                                    ? "bg-success/5 border border-success/20"
+                                    : ""
+                                )}
+                              >
+                                <RadioGroupItem value={option} id={`${questionId}-${optIndex}`} />
+                                <Label htmlFor={`${questionId}-${optIndex}`} className="cursor-pointer flex-1 flex items-center gap-2">
+                                  {option}
+                                  {showResult && isCorrectOption && (
+                                    <span className="text-xs text-success font-medium">(To'g'ri javob)</span>
+                                  )}
+                                </Label>
+                              </div>
+                            );
+                          })}
                         </RadioGroup>
                       ) : (
                         <Textarea
@@ -304,8 +418,34 @@ export default function AssignmentsPage() {
                         />
                       )}
 
+                      {/* Result message */}
+                      {showResult && (
+                        <div className={cn(
+                          "mt-3 p-3 rounded-lg flex items-center gap-2",
+                          isCorrect 
+                            ? "bg-success/10 border border-success/20" 
+                            : "bg-error/10 border border-error/20"
+                        )}>
+                          {isCorrect ? (
+                            <>
+                              <Check className="w-5 h-5 text-success" />
+                              <p className="text-sm font-medium text-success">
+                                To'g'ri javob! +{question.points} ball
+                              </p>
+                            </>
+                          ) : (
+                            <>
+                              <XCircle className="w-5 h-5 text-error" />
+                              <p className="text-sm font-medium text-error">
+                                Noto'g'ri javob. To'g'ri javob: {question.correctAnswer}
+                              </p>
+                            </>
+                          )}
+                        </div>
+                      )}
+
                       {/* Correct answer (if graded) */}
-                      {selectedAssignment.status === 'graded' && question.correctAnswer && question.type === 'multiple-choice' && (
+                      {selectedAssignment.status === 'graded' && question.correctAnswer && question.type === 'multiple-choice' && !showResult && (
                         <div className="mt-3 p-3 bg-success/10 border border-success/20 rounded-lg">
                           <p className="text-sm font-medium text-success">To'g'ri javob: {question.correctAnswer}</p>
                         </div>
@@ -345,6 +485,28 @@ export default function AssignmentsPage() {
                 </div>
               )}
 
+              {/* Final Score Summary (before submit) */}
+              {selectedAssignment.status === 'pending' && selectedAssignment.type === 'quiz' && getAnsweredCount() > 0 && (
+                <div className="mt-6 p-6 bg-gradient-to-br from-primary/10 to-purple-500/10 rounded-xl border-2 border-primary/20">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-muted-foreground mb-1">Umumiy natija</p>
+                      <p className="text-3xl font-bold text-foreground">
+                        {calculateScore()}/{selectedAssignment.maxScore} ball
+                      </p>
+                      <p className="text-lg text-muted-foreground mt-1">
+                        ({Math.round((calculateScore() / selectedAssignment.maxScore) * 100)}%)
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <div className="w-20 h-20 rounded-full bg-primary/20 flex items-center justify-center">
+                        <Trophy className="w-10 h-10 text-primary" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Actions */}
               {selectedAssignment.status === 'pending' && (
                 <div className="mt-6 flex gap-3 justify-end">
@@ -353,6 +515,7 @@ export default function AssignmentsPage() {
                     onClick={() => {
                       setSelectedAssignment(null);
                       setAnswers({});
+                      setAnsweredQuestions({});
                     }}
                   >
                     Bekor qilish
@@ -370,7 +533,7 @@ export default function AssignmentsPage() {
                     ) : (
                       <>
                         <Send className="w-4 h-4 mr-2" />
-                        Yuborish
+                        Yuborish ({calculateScore()}/{selectedAssignment.maxScore} ball)
                       </>
                     )}
                   </Button>

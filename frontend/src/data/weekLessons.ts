@@ -794,6 +794,204 @@ export const weekLessons: Record<number, WeekLesson> = {
     title: "Logistika tizimlari va texnologiyalar",
     description: "Zamonaviy logistika tizimlari, TMS (Transport Management System), GPS kuzatuv, raqamli logistika va avtomatlashtirish.",
     duration: "",
-    topics: {}
+    topics: {
+      "Foydali resurslar va aloqa kanallari": {
+        title: "Foydali resurslar va aloqa kanallari",
+        content: `
+          <h2 class="text-3xl font-bold mb-6 text-center bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">📱 Telegram Kanallari va Telefon Raqamlari</h2>
+          <p class="text-lg mb-8 text-center text-gray-700">Logistika sohasida ishlash uchun foydali Telegram kanallari va aloqa raqamlari</p>
+          
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+            <!-- Telegram Channel 1 -->
+            <div class="bg-gradient-to-br from-blue-50 to-blue-100 border-2 border-blue-300 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
+              <div class="flex items-center mb-4">
+                <div class="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center mr-3">
+                  <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.562 8.161c-.18 1.897-.962 6.502-1.359 8.627-.168.9-.599 1.201-.984 1.23-.419.029-1.139-.211-1.599-.411-.621-.266-1.17-.411-1.893-.656-.798-.293-1.25-.456-2.016-.734-1.03-.375-1.816-.58-1.765-1.225.03-.344.45-.697 1.239-1.055 4.782-2.241 7.968-3.323 9.516-3.99 1.56-.68 3.003-.999 4.356-.999.45 0 .9.03 1.35.09l.36.03c.39.06.75.15 1.11.24.36.09.72.21 1.05.36.33.15.63.33.9.54.27.21.51.45.72.72.21.27.39.57.54.9.15.33.27.69.36 1.05.09.36.18.72.24 1.11.06.39.09.78.09 1.17 0 .39-.03.78-.09 1.17-.06.39-.15.75-.24 1.11-.09.36-.21.72-.36 1.05-.15.33-.33.63-.54.9-.21.27-.45.51-.72.72-.27.21-.57.39-.9.54-.33.15-.69.27-1.05.36-.36.09-.72.18-1.11.24-.39.06-.78.09-1.17.09-.39 0-.78-.03-1.17-.09-.39-.06-.75-.15-1.11-.24-.36-.09-.72-.21-1.05-.36-.33-.15-.63-.33-.9-.54-.27-.21-.51-.45-.72-.72-.21-.27-.39-.57-.54-.9-.15-.33-.27-.69-.36-1.05-.09-.36-.18-.72-.24-1.11-.06-.39-.09-.78-.09-1.17z"/>
+                  </svg>
+                </div>
+                <h3 class="text-lg font-bold text-gray-800">Sarbontrak Gruz</h3>
+              </div>
+              <a href="https://t.me/sarbontrakgruz" target="_blank" class="block w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 px-4 rounded-lg text-center transition-colors duration-200">
+                📲 Kanalga o'tish
+              </a>
+            </div>
+
+            <!-- Telegram Channel 2 -->
+            <div class="bg-gradient-to-br from-purple-50 to-purple-100 border-2 border-purple-300 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
+              <div class="flex items-center mb-4">
+                <div class="w-12 h-12 bg-purple-500 rounded-full flex items-center justify-center mr-3">
+                  <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.562 8.161c-.18 1.897-.962 6.502-1.359 8.627-.168.9-.599 1.201-.984 1.23-.419.029-1.139-.211-1.599-.411-.621-.266-1.17-.411-1.893-.656-.798-.293-1.25-.456-2.016-.734-1.03-.375-1.816-.58-1.765-1.225.03-.344.45-.697 1.239-1.055 4.782-2.241 7.968-3.323 9.516-3.99 1.56-.68 3.003-.999 4.356-.999.45 0 .9.03 1.35.09l.36.03c.39.06.75.15 1.11.24.36.09.72.21 1.05.36.33.15.63.33.9.54.27.21.51.45.72.72.21.27.39.57.54.9.15.33.27.69.36 1.05.09.36.18.72.24 1.11.06.39.09.78.09 1.17 0 .39-.03.78-.09 1.17-.06.39-.15.75-.24 1.11-.09.36-.21.72-.36 1.05-.15.33-.33.63-.54.9-.21.27-.45.51-.72.72-.27.21-.57.39-.9.54-.33.15-.69.27-1.05.36-.36.09-.72.18-1.11.24-.39.06-.78.09-1.17.09-.39 0-.78-.03-1.17-.09-.39-.06-.75-.15-1.11-.24-.36-.09-.72-.21-1.05-.36-.33-.15-.63-.33-.9-.54-.27-.21-.51-.45-.72-.72-.21-.27-.39-.57-.54-.9-.15-.33-.27-.69-.36-1.05-.09-.36-.18-.72-.24-1.11-.06-.39-.09-.78-.09-1.17z"/>
+                  </svg>
+                </div>
+                <h3 class="text-lg font-bold text-gray-800">Lorry Yuk Markazi</h3>
+              </div>
+              <a href="https://t.me/lorry_yuk_markazi" target="_blank" class="block w-full bg-purple-500 hover:bg-purple-600 text-white font-semibold py-3 px-4 rounded-lg text-center transition-colors duration-200">
+                📲 Kanalga o'tish
+              </a>
+            </div>
+
+            <!-- Telegram Channel 3 -->
+            <div class="bg-gradient-to-br from-green-50 to-green-100 border-2 border-green-300 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
+              <div class="flex items-center mb-4">
+                <div class="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center mr-3">
+                  <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.562 8.161c-.18 1.897-.962 6.502-1.359 8.627-.168.9-.599 1.201-.984 1.23-.419.029-1.139-.211-1.599-.411-.621-.266-1.17-.411-1.893-.656-.798-.293-1.25-.456-2.016-.734-1.03-.375-1.816-.58-1.765-1.225.03-.344.45-.697 1.239-1.055 4.782-2.241 7.968-3.323 9.516-3.99 1.56-.68 3.003-.999 4.356-.999.45 0 .9.03 1.35.09l.36.03c.39.06.75.15 1.11.24.36.09.72.21 1.05.36.33.15.63.33.9.54.27.21.51.45.72.72.21.27.39.57.54.9.15.33.27.69.36 1.05.09.36.18.72.24 1.11.06.39.09.78.09 1.17 0 .39-.03.78-.09 1.17-.06.39-.15.75-.24 1.11-.09.36-.21.72-.36 1.05-.15.33-.33.63-.54.9-.21.27-.45.51-.72.72-.27.21-.57.39-.9.54-.33.15-.69.27-1.05.36-.36.09-.72.18-1.11.24-.39.06-.78.09-1.17.09-.39 0-.78-.03-1.17-.09-.39-.06-.75-.15-1.11-.24-.36-.09-.72-.21-1.05-.36-.33-.15-.63-.33-.9-.54-.27-.21-.51-.45-.72-.72-.21-.27-.39-.57-.54-.9-.15-.33-.27-.69-.36-1.05-.09-.36-.18-.72-.24-1.11-.06-.39-.09-.78-.09-1.17z"/>
+                  </svg>
+                </div>
+                <h3 class="text-lg font-bold text-gray-800">BW Trade Group</h3>
+              </div>
+              <a href="https://t.me/bwtradegroup" target="_blank" class="block w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-3 px-4 rounded-lg text-center transition-colors duration-200">
+                📲 Kanalga o'tish
+              </a>
+            </div>
+
+            <!-- Telegram Channel 4 -->
+            <div class="bg-gradient-to-br from-orange-50 to-orange-100 border-2 border-orange-300 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
+              <div class="flex items-center mb-4">
+                <div class="w-12 h-12 bg-orange-500 rounded-full flex items-center justify-center mr-3">
+                  <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.562 8.161c-.18 1.897-.962 6.502-1.359 8.627-.168.9-.599 1.201-.984 1.23-.419.029-1.139-.211-1.599-.411-.621-.266-1.17-.411-1.893-.656-.798-.293-1.25-.456-2.016-.734-1.03-.375-1.816-.58-1.765-1.225.03-.344.45-.697 1.239-1.055 4.782-2.241 7.968-3.323 9.516-3.99 1.56-.68 3.003-.999 4.356-.999.45 0 .9.03 1.35.09l.36.03c.39.06.75.15 1.11.24.36.09.72.21 1.05.36.33.15.63.33.9.54.27.21.51.45.72.72.21.27.39.57.54.9.15.33.27.69.36 1.05.09.36.18.72.24 1.11.06.39.09.78.09 1.17 0 .39-.03.78-.09 1.17-.06.39-.15.75-.24 1.11-.09.36-.21.72-.36 1.05-.15.33-.33.63-.54.9-.21.27-.45.51-.72.72-.27.21-.57.39-.9.54-.33.15-.69.27-1.05.36-.36.09-.72.18-1.11.24-.39.06-.78.09-1.17.09-.39 0-.78-.03-1.17-.09-.39-.06-.75-.15-1.11-.24-.36-.09-.72-.21-1.05-.36-.33-.15-.63-.33-.9-.54-.27-.21-.51-.45-.72-.72-.21-.27-.39-.57-.54-.9-.15-.33-.27-.69-.36-1.05-.09-.36-.18-.72-.24-1.11-.06-.39-.09-.78-.09-1.17z"/>
+                  </svg>
+                </div>
+                <h3 class="text-lg font-bold text-gray-800">Adi Trans</h3>
+              </div>
+              <a href="https://t.me/adi_trans" target="_blank" class="block w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 px-4 rounded-lg text-center transition-colors duration-200">
+                📲 Kanalga o'tish
+              </a>
+            </div>
+
+            <!-- Telegram Channel 5 -->
+            <div class="bg-gradient-to-br from-red-50 to-red-100 border-2 border-red-300 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
+              <div class="flex items-center mb-4">
+                <div class="w-12 h-12 bg-red-500 rounded-full flex items-center justify-center mr-3">
+                  <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.562 8.161c-.18 1.897-.962 6.502-1.359 8.627-.168.9-.599 1.201-.984 1.23-.419.029-1.139-.211-1.599-.411-.621-.266-1.17-.411-1.893-.656-.798-.293-1.25-.456-2.016-.734-1.03-.375-1.816-.58-1.765-1.225.03-.344.45-.697 1.239-1.055 4.782-2.241 7.968-3.323 9.516-3.99 1.56-.68 3.003-.999 4.356-.999.45 0 .9.03 1.35.09l.36.03c.39.06.75.15 1.11.24.36.09.72.21 1.05.36.33.15.63.33.9.54.27.21.51.45.72.72.21.27.39.57.54.9.15.33.27.69.36 1.05.09.36.18.72.24 1.11.06.39.09.78.09 1.17 0 .39-.03.78-.09 1.17-.06.39-.15.75-.24 1.11-.09.36-.21.72-.36 1.05-.15.33-.33.63-.54.9-.21.27-.45.51-.72.72-.27.21-.57.39-.9.54-.33.15-.69.27-1.05.36-.36.09-.72.18-1.11.24-.39.06-.78.09-1.17.09-.39 0-.78-.03-1.17-.09-.39-.06-.75-.15-1.11-.24-.36-.09-.72-.21-1.05-.36-.33-.15-.63-.33-.9-.54-.27-.21-.51-.45-.72-.72-.21-.27-.39-.57-.54-.9-.15-.33-.27-.69-.36-1.05-.09-.36-.18-.72-.24-1.11-.06-.39-.09-.78-.09-1.17z"/>
+                  </svg>
+                </div>
+                <h3 class="text-lg font-bold text-gray-800">Dilyautl</h3>
+              </div>
+              <a href="https://t.me/dilyautl" target="_blank" class="block w-full bg-red-500 hover:bg-red-600 text-white font-semibold py-3 px-4 rounded-lg text-center transition-colors duration-200">
+                📲 Kanalga o'tish
+              </a>
+            </div>
+
+            <!-- Telegram Channel 6 -->
+            <div class="bg-gradient-to-br from-indigo-50 to-indigo-100 border-2 border-indigo-300 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
+              <div class="flex items-center mb-4">
+                <div class="w-12 h-12 bg-indigo-500 rounded-full flex items-center justify-center mr-3">
+                  <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.562 8.161c-.18 1.897-.962 6.502-1.359 8.627-.168.9-.599 1.201-.984 1.23-.419.029-1.139-.211-1.599-.411-.621-.266-1.17-.411-1.893-.656-.798-.293-1.25-.456-2.016-.734-1.03-.375-1.816-.58-1.765-1.225.03-.344.45-.697 1.239-1.055 4.782-2.241 7.968-3.323 9.516-3.99 1.56-.68 3.003-.999 4.356-.999.45 0 .9.03 1.35.09l.36.03c.39.06.75.15 1.11.24.36.09.72.21 1.05.36.33.15.63.33.9.54.27.21.51.45.72.72.21.27.39.57.54.9.15.33.27.69.36 1.05.09.36.18.72.24 1.11.06.39.09.78.09 1.17 0 .39-.03.78-.09 1.17-.06.39-.15.75-.24 1.11-.09.36-.21.72-.36 1.05-.15.33-.33.63-.54.9-.21.27-.45.51-.72.72-.27.21-.57.39-.9.54-.33.15-.69.27-1.05.36-.36.09-.72.18-1.11.24-.39.06-.78.09-1.17.09-.39 0-.78-.03-1.17-.09-.39-.06-.75-.15-1.11-.24-.36-.09-.72-.21-1.05-.36-.33-.15-.63-.33-.9-.54-.27-.21-.51-.45-.72-.72-.21-.27-.39-.57-.54-.9-.15-.33-.27-.69-.36-1.05-.09-.36-.18-.72-.24-1.11-.06-.39-.09-.78-.09-1.17z"/>
+                  </svg>
+                </div>
+                <h3 class="text-lg font-bold text-gray-800">Pepsi Logistika</h3>
+              </div>
+              <a href="https://t.me/pepsi_logistika" target="_blank" class="block w-full bg-indigo-500 hover:bg-indigo-600 text-white font-semibold py-3 px-4 rounded-lg text-center transition-colors duration-200">
+                📲 Kanalga o'tish
+              </a>
+            </div>
+
+            <!-- Telegram Channel 7 -->
+            <div class="bg-gradient-to-br from-pink-50 to-pink-100 border-2 border-pink-300 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
+              <div class="flex items-center mb-4">
+                <div class="w-12 h-12 bg-pink-500 rounded-full flex items-center justify-center mr-3">
+                  <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.562 8.161c-.18 1.897-.962 6.502-1.359 8.627-.168.9-.599 1.201-.984 1.23-.419.029-1.139-.211-1.599-.411-.621-.266-1.17-.411-1.893-.656-.798-.293-1.25-.456-2.016-.734-1.03-.375-1.816-.58-1.765-1.225.03-.344.45-.697 1.239-1.055 4.782-2.241 7.968-3.323 9.516-3.99 1.56-.68 3.003-.999 4.356-.999.45 0 .9.03 1.35.09l.36.03c.39.06.75.15 1.11.24.36.09.72.21 1.05.36.33.15.63.33.9.54.27.21.51.45.72.72.21.27.39.57.54.9.15.33.27.69.36 1.05.09.36.18.72.24 1.11.06.39.09.78.09 1.17 0 .39-.03.78-.09 1.17-.06.39-.15.75-.24 1.11-.09.36-.21.72-.36 1.05-.15.33-.33.63-.54.9-.21.27-.45.51-.72.72-.27.21-.57.39-.9.54-.33.15-.69.27-1.05.36-.36.09-.72.18-1.11.24-.39.06-.78.09-1.17.09-.39 0-.78-.03-1.17-.09-.39-.06-.75-.15-1.11-.24-.36-.09-.72-.21-1.05-.36-.33-.15-.63-.33-.9-.54-.27-.21-.51-.45-.72-.72-.21-.27-.39-.57-.54-.9-.15-.33-.27-.69-.36-1.05-.09-.36-.18-.72-.24-1.11-.06-.39-.09-.78-.09-1.17z"/>
+                  </svg>
+                </div>
+                <h3 class="text-lg font-bold text-gray-800">Pepsi Co</h3>
+              </div>
+              <a href="https://t.me/Pepsi_cooo" target="_blank" class="block w-full bg-pink-500 hover:bg-pink-600 text-white font-semibold py-3 px-4 rounded-lg text-center transition-colors duration-200">
+                📲 Kanalga o'tish
+              </a>
+            </div>
+
+            <!-- Telegram Channel 8 -->
+            <div class="bg-gradient-to-br from-teal-50 to-teal-100 border-2 border-teal-300 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
+              <div class="flex items-center mb-4">
+                <div class="w-12 h-12 bg-teal-500 rounded-full flex items-center justify-center mr-3">
+                  <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.562 8.161c-.18 1.897-.962 6.502-1.359 8.627-.168.9-.599 1.201-.984 1.23-.419.029-1.139-.211-1.599-.411-.621-.266-1.17-.411-1.893-.656-.798-.293-1.25-.456-2.016-.734-1.03-.375-1.816-.58-1.765-1.225.03-.344.45-.697 1.239-1.055 4.782-2.241 7.968-3.323 9.516-3.99 1.56-.68 3.003-.999 4.356-.999.45 0 .9.03 1.35.09l.36.03c.39.06.75.15 1.11.24.36.09.72.21 1.05.36.33.15.63.33.9.54.27.21.51.45.72.72.21.27.39.57.54.9.15.33.27.69.36 1.05.09.36.18.72.24 1.11.06.39.09.78.09 1.17 0 .39-.03.78-.09 1.17-.06.39-.15.75-.24 1.11-.09.36-.21.72-.36 1.05-.15.33-.33.63-.54.9-.21.27-.45.51-.72.72-.27.21-.57.39-.9.54-.33.15-.69.27-1.05.36-.36.09-.72.18-1.11.24-.39.06-.78.09-1.17.09-.39 0-.78-.03-1.17-.09-.39-.06-.75-.15-1.11-.24-.36-.09-.72-.21-1.05-.36-.33-.15-.63-.33-.9-.54-.27-.21-.51-.45-.72-.72-.21-.27-.39-.57-.54-.9-.15-.33-.27-.69-.36-1.05-.09-.36-.18-.72-.24-1.11-.06-.39-.09-.78-.09-1.17z"/>
+                  </svg>
+                </div>
+                <h3 class="text-lg font-bold text-gray-800">Loyal Freight</h3>
+              </div>
+              <a href="https://t.me/loyalfreight" target="_blank" class="block w-full bg-teal-500 hover:bg-teal-600 text-white font-semibold py-3 px-4 rounded-lg text-center transition-colors duration-200">
+                📲 Kanalga o'tish
+              </a>
+            </div>
+
+            <!-- Telegram Channel 9 -->
+            <div class="bg-gradient-to-br from-cyan-50 to-cyan-100 border-2 border-cyan-300 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
+              <div class="flex items-center mb-4">
+                <div class="w-12 h-12 bg-cyan-500 rounded-full flex items-center justify-center mr-3">
+                  <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.562 8.161c-.18 1.897-.962 6.502-1.359 8.627-.168.9-.599 1.201-.984 1.23-.419.029-1.139-.211-1.599-.411-.621-.266-1.17-.411-1.893-.656-.798-.293-1.25-.456-2.016-.734-1.03-.375-1.816-.58-1.765-1.225.03-.344.45-.697 1.239-1.055 4.782-2.241 7.968-3.323 9.516-3.99 1.56-.68 3.003-.999 4.356-.999.45 0 .9.03 1.35.09l.36.03c.39.06.75.15 1.11.24.36.09.72.21 1.05.36.33.15.63.33.9.54.27.21.51.45.72.72.21.27.39.57.54.9.15.33.27.69.36 1.05.09.36.18.72.24 1.11.06.39.09.78.09 1.17 0 .39-.03.78-.09 1.17-.06.39-.15.75-.24 1.11-.09.36-.21.72-.36 1.05-.15.33-.33.63-.54.9-.21.27-.45.51-.72.72-.27.21-.57.39-.9.54-.33.15-.69.27-1.05.36-.36.09-.72.18-1.11.24-.39.06-.78.09-1.17.09-.39 0-.78-.03-1.17-.09-.39-.06-.75-.15-1.11-.24-.36-.09-.72-.21-1.05-.36-.33-.15-.63-.33-.9-.54-.27-.21-.51-.45-.72-.72-.21-.27-.39-.57-.54-.9-.15-.33-.27-.69-.36-1.05-.09-.36-.18-.72-.24-1.11-.06-.39-.09-.78-.09-1.17z"/>
+                  </svg>
+                </div>
+                <h3 class="text-lg font-bold text-gray-800">Telegram Guruh</h3>
+              </div>
+              <a href="https://t.me/+U9Myk-mKr3ZmZGQy" target="_blank" class="block w-full bg-cyan-500 hover:bg-cyan-600 text-white font-semibold py-3 px-4 rounded-lg text-center transition-colors duration-200">
+                📲 Guruhga o'tish
+              </a>
+            </div>
+          </div>
+
+          <!-- Telefon Raqamlari -->
+          <div class="mt-12 mb-8">
+            <h3 class="text-2xl font-bold mb-6 text-center text-gray-800 flex items-center justify-center">
+              <span class="mr-3">📞</span>
+              Telefon Raqamlari
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-2xl mx-auto">
+              <div class="bg-gradient-to-br from-emerald-50 to-emerald-100 border-2 border-emerald-300 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center">
+                    <div class="w-14 h-14 bg-emerald-500 rounded-full flex items-center justify-center mr-4">
+                      <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
+                      </svg>
+                    </div>
+                    <div>
+                      <p class="text-sm text-gray-600 mb-1">Telefon</p>
+                      <a href="tel:+998331422221" class="text-xl font-bold text-gray-800 hover:text-emerald-600 transition-colors">
+                        +998 33 142 22 21
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="bg-gradient-to-br from-amber-50 to-amber-100 border-2 border-amber-300 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center">
+                    <div class="w-14 h-14 bg-amber-500 rounded-full flex items-center justify-center mr-4">
+                      <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
+                      </svg>
+                    </div>
+                    <div>
+                      <p class="text-sm text-gray-600 mb-1">Telefon</p>
+                      <a href="tel:+998881474100" class="text-xl font-bold text-gray-800 hover:text-amber-600 transition-colors">
+                        +998 88 147 41 00
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-blue-50 border-l-4 border-blue-500 p-6 rounded-lg mt-8">
+            <p class="text-gray-700 leading-relaxed">
+              <strong class="text-blue-700">💡 Eslatma:</strong> Yuqoridagi barcha kanallar va telefon raqamlari logistika sohasida ishlash uchun foydali resurslar hisoblanadi. 
+              Ular orqali yuklar, transportlar va boshqa muhim ma'lumotlar bilan tanishishingiz mumkin.
+            </p>
+          </div>
+        `,
+        videos: []
+      }
+    }
   }
 };
