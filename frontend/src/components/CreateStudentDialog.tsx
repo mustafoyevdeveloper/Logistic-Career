@@ -39,10 +39,10 @@ export default function CreateStudentDialog({ onSuccess }: CreateStudentDialogPr
     loadGroups();
   }, []);
 
-  // Dialog ochilganda formani tozalash
+  // Dialog ochilganda formani tozala
   useEffect(() => {
     if (open) {
-      // Dialog ochilganda formani tozalash
+      // Dialog ochilganda formani tozala
       setFormData({
         email: '',
         firstName: '',
