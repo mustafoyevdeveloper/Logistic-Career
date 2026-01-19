@@ -1,0 +1,325 @@
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
+import { Button } from '@/components/ui/button';
+import Logo from '@/components/Logo';
+import StudentBlockedMessage from '@/components/StudentBlockedMessage';
+import {
+  LayoutDashboard,
+  BookOpen,
+  MessageSquare,
+  ClipboardList,
+  User,
+  Users,
+  LogOut,
+  Menu,
+  X,
+  ChevronRight,
+  Settings,
+} from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { cn } from '@/lib/utils';
+
+// Ovoz ijro etish funksiyasi
+const playClickSound = () => {
+  try {
+    // localStorage'dan ovoz holatini o'qish
+    const soundEnabled = localStorage.getItem('buttonSoundEnabled');
+    if (soundEnabled === 'false') {
+      return; // Ovoz o'chirilgan bo'lsa, ovoz chiqarmaslik
+    }
+    
+    const audio = new Audio('/voice/click.wav');
+    audio.volume = 0.5; // Ovoz balandligi
+    audio.play().catch(() => {
+      // Agar ovoz ijro etilmasa, xatolikni e'tiborsiz qoldirish
+    });
+  } catch (error) {
+    // Xatolikni e'tiborsiz qoldirish
+  }
+};
+
+interface NavItem {
+  icon: React.ElementType;
+  label: string;
+  href: string;
+}
+
+const studentNavItems: NavItem[] = [
+  { icon: LayoutDashboard, label: 'Bosh sahifa', href: '/student' },
+  { icon: BookOpen, label: 'Darsliklar', href: '/student/lessons' },
+  { icon: MessageSquare, label: 'AI Yordamchi', href: '/student/ai-chat' },
+  { icon: ClipboardList, label: 'Topshiriqlar', href: '/student/assignments' },
+  { icon: User, label: 'Profil', href: '/student/profile' },
+];
+
+const teacherNavItems: NavItem[] = [
+  { icon: LayoutDashboard, label: 'Bosh sahifa', href: '/teacher' },
+  { icon: BookOpen, label: 'Darsliklar', href: '/teacher/lessons' },
+  { icon: Users, label: 'Guruhlar', href: '/teacher/groups' },
+  { icon: Users, label: 'O\'quvchilar', href: '/teacher/students' },
+  { icon: ClipboardList, label: 'Topshiriqlar', href: '/teacher/assignments' },
+  { icon: User, label: 'Profil', href: '/teacher/profile' },
+];
+
+interface DashboardLayoutProps {
+  children: React.ReactNode;
+}
+
+export default function DashboardLayout({ children }: DashboardLayoutProps) {
+  const { user, logout } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const touchStartX = useRef<number | null>(null);
+  const touchStartY = useRef<number | null>(null);
+
+  // Student blocked tekshirish
+  useEffect(() => {
+    if (user?.role === 'student' && user?.isSuspended) {
+      // Muzlatilgan o'quvchi - logout qilish
+      setTimeout(() => {
+        logout();
+        navigate('?role=student');
+      }, 100);
+    }
+    
+    if (user?.role === 'student' && !user?.isActive) {
+      // O'chirilgan o'quvchi - logout qilish
+      logout();
+      navigate('/login?role=student');
+    }
+  }, [user, logout, navigate]);
+
+  // Agar student blocked bo'lsa, bloklama xabarini ko'rsatish
+  if (user?.role === 'student' && (user?.isSuspended || !user?.isActive)) {
+    return <StudentBlockedMessage />;
+  }
+
+  const navItems = user?.role === 'teacher' || user?.role === 'admin' ? teacherNavItems : studentNavItems;
+
+  const handleLogout = async () => {
+    // Logout jarayoni to'liq tugaguncha kutish
+    await logout();
+    // Faqat logout tugagandan keyin redirect qilish
+    navigate('/login?role=student');
+  };
+
+  // Asosiy sahifalarni tekshirish (navItems dagi sahifalar)
+  const isMainPage = () => {
+    const path = location.pathname;
+    return navItems.some(item => item.href === path);
+  };
+
+  // Parent route ni topish (masalan /student/lessons/2 -> /student/lessons)
+  const getParentRoute = () => {
+    const path = location.pathname;
+    const parts = path.split('/').filter(Boolean);
+    
+    // Agar path 3 qismdan iborat bo'lsa (masalan /student/lessons/2)
+    if (parts.length >= 3) {
+      return '/' + parts.slice(0, 2).join('/');
+    }
+    
+    return null;
+  };
+
+  // Swipe gesture handler (chapdan o'nga surish)
+  const touchEndX = useRef<number | null>(null);
+  const touchEndY = useRef<number | null>(null);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+    touchStartY.current = e.touches[0].clientY;
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (touchStartX.current === null || touchStartY.current === null) return;
+    touchEndX.current = e.touches[0].clientX;
+    touchEndY.current = e.touches[0].clientY;
+  };
+
+  const handleTouchEnd = () => {
+    if (touchStartX.current === null || touchStartY.current === null || 
+        touchEndX.current === null || touchEndY.current === null) {
+      touchStartX.current = null;
+      touchStartY.current = null;
+      touchEndX.current = null;
+      touchEndY.current = null;
+      return;
+    }
+
+    const diffX = touchEndX.current - touchStartX.current;
+    const diffY = touchEndY.current - touchStartY.current;
+
+    // Faqat gorizontal harakat bo'lsa va chapdan o'nga surilsa (minimum 80px)
+    if (Math.abs(diffX) > Math.abs(diffY) && diffX > 80) {
+      if (isMainPage()) {
+        // Asosiy sahifada bo'lsa, hamburger menuni ochish
+        if (!isMobileMenuOpen) {
+          playClickSound();
+          setIsMobileMenuOpen(true);
+        }
+      } else {
+        // Sahifa ichida bo'lsa, parent route ga qaytish
+        const parentRoute = getParentRoute();
+        if (parentRoute) {
+          playClickSound();
+          navigate(parentRoute);
+        }
+      }
+    }
+
+    touchStartX.current = null;
+    touchStartY.current = null;
+    touchEndX.current = null;
+    touchEndY.current = null;
+  };
+
+  return (
+    <div className="min-h-screen bg-background">
+      {/* Mobile Header */}
+      <header className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-card border-b border-border z-50 flex items-center justify-between px-4">
+        <button
+          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          className="p-2 hover:bg-muted rounded-lg transition-colors"
+        >
+          {isMobileMenuOpen ? (
+            <X className="w-6 h-6 text-foreground" />
+          ) : (
+            <Menu className="w-6 h-6 text-foreground" />
+          )}
+        </button>
+        
+        <Logo variant="icon" size="sm" />
+      </header>
+
+      {/* Mobile Menu Overlay */}
+      {isMobileMenuOpen && (
+        <div 
+          className="lg:hidden fixed inset-0 bg-foreground/20 backdrop-blur-sm z-40"
+          onClick={() => setIsMobileMenuOpen(false)}
+        />
+      )}
+
+      {/* Mobile Sidebar */}
+      <aside
+        className={cn(
+          "lg:hidden fixed top-16 left-0 bottom-0 w-72 bg-card border-r border-border z-50 transform transition-transform duration-300",
+          isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"
+        )}
+      >
+        <nav className="p-4 space-y-2">
+          {navItems.map((item) => {
+            const isActive = location.pathname === item.href;
+            return (
+              <Link
+                key={item.href}
+                to={item.href}
+                onClick={() => {
+                  playClickSound();
+                  setIsMobileMenuOpen(false);
+                }}
+                className={cn(
+                  "flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200",
+                  isActive
+                    ? "bg-primary text-primary-foreground shadow-md"
+                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                )}
+              >
+                <item.icon className="w-5 h-5" />
+                <span className="font-medium">{item.label}</span>
+                {isActive && <ChevronRight className="w-4 h-4 ml-auto" />}
+              </Link>
+            );
+          })}
+        </nav>
+
+        <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-border">
+          <div className="flex items-center gap-3 mb-4 px-2">
+            <div className="w-10 h-10 rounded-full gradient-primary flex items-center justify-center text-primary-foreground font-semibold">
+              {user?.firstName?.charAt(0)}{user?.lastName?.charAt(0)}
+            </div>
+            <div>
+              <p className="font-medium text-foreground text-sm">{user?.firstName} {user?.lastName}</p>
+              <p className="text-xs text-muted-foreground capitalize">{user?.role === 'student' ? 'O\'quvchi' : 'O\'qituvchi'}</p>
+            </div>
+          </div>
+          <Button 
+            variant="outline" 
+            className="w-full" 
+            onClick={handleLogout}
+          >
+            <LogOut className="w-4 h-4 mr-2" />
+            Chiqish
+          </Button>
+        </div>
+      </aside>
+
+      {/* Desktop Sidebar */}
+      <aside className="hidden lg:flex lg:w-64 xl:w-72 fixed top-0 left-0 bottom-0 flex-col bg-card border-r border-border">
+        {/* Logo */}
+        <div className="h-16 flex items-center px-6 border-b border-border">
+          <Logo variant="icon" size="md" />
+          <span className="ml-3 text-xl font-bold text-foreground">Asliddin Logistic</span>
+        </div>
+
+        {/* Navigation */}
+        <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
+          {navItems.map((item) => {
+            const isActive = location.pathname === item.href;
+            return (
+              <Link
+                key={item.href}
+                to={item.href}
+                onClick={playClickSound}
+                className={cn(
+                  "flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200",
+                  isActive
+                    ? "bg-primary text-primary-foreground shadow-md"
+                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                )}
+              >
+                <item.icon className="w-5 h-5" />
+                <span className="font-medium">{item.label}</span>
+                {isActive && <ChevronRight className="w-4 h-4 ml-auto" />}
+              </Link>
+            );
+          })}
+        </nav>
+
+        {/* User Section */}
+        <div className="p-4 border-t border-border">
+          <div className="flex items-center gap-3 mb-4 px-2">
+            <div className="w-10 h-10 rounded-full gradient-primary flex items-center justify-center text-primary-foreground font-semibold">
+              {user?.firstName?.charAt(0)}{user?.lastName?.charAt(0)}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="font-medium text-foreground text-sm truncate">{user?.firstName} {user?.lastName}</p>
+              <p className="text-xs text-muted-foreground capitalize">{user?.role === 'student' ? 'O\'quvchi' : 'O\'qituvchi'}</p>
+            </div>
+          </div>
+          <Button 
+            variant="outline" 
+            className="w-full" 
+            onClick={handleLogout}
+          >
+            <LogOut className="w-4 h-4 mr-2" />
+            Chiqish
+          </Button>
+        </div>
+      </aside>
+
+      {/* Main Content */}
+      <main 
+        className="lg:ml-64 xl:ml-72 pt-16 lg:pt-0 min-h-screen"
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+      >
+        <div className="p-3 sm:p-4 md:p-6 lg:p-8">
+          {children}
+        </div>
+      </main>
+    </div>
+  );
+}

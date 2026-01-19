@@ -1,0 +1,479 @@
+import { useState, useEffect, useRef } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
+import { Progress } from '@/components/ui/progress';
+import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { apiService } from '@/services/api';
+import { 
+  User, 
+  Mail, 
+  Users, 
+  BookOpen, 
+  Trophy,
+  Clock,
+  Edit2,
+  Award,
+  Settings,
+  Volume2
+} from 'lucide-react';
+import { toast } from 'sonner';
+
+export default function StudentProfilePage() {
+  const { user } = useAuth();
+  const [stats, setStats] = useState({
+    completedLessons: 0,
+    openedLessons: 0,
+    totalLessons: 0,
+    timeSpent: 0,
+    timeSpentFormatted: '0:00',
+    onlineTimeFormatted: '0:00:00',
+    totalScore: 0,
+    maxScore: 0,
+    avgScore: 0,
+    progressPercent: 0,
+    achievementsCount: 0,
+    totalAchievements: 3,
+  });
+  const [achievements, setAchievements] = useState({
+    firstLesson: false,
+    aiChatter: false,
+    consistentLearner: false,
+  });
+  const [sessionStartTime, setSessionStartTime] = useState<string | null>(null);
+  const [onlineTime, setOnlineTime] = useState('0:00:00');
+  const [isLoading, setIsLoading] = useState(true);
+  const [buttonSoundEnabled, setButtonSoundEnabled] = useState(true);
+
+  useEffect(() => {
+    loadStats();
+    // localStorage'dan ovoz holatini o'qish
+    const soundEnabled = localStorage.getItem('buttonSoundEnabled');
+    if (soundEnabled !== null) {
+      setButtonSoundEnabled(soundEnabled === 'true');
+    } else {
+      // Default: yoqilgan
+      setButtonSoundEnabled(true);
+      localStorage.setItem('buttonSoundEnabled', 'true');
+    }
+  }, []);
+
+  const handleButtonSoundToggle = (checked: boolean) => {
+    setButtonSoundEnabled(checked);
+    localStorage.setItem('buttonSoundEnabled', checked.toString());
+    // Storage event yuborish barcha tab'larga xabar berish uchun
+    window.dispatchEvent(new Event('storage'));
+  };
+
+  // Real-time timer (har sekundda yangilanadi) va har 5 sekundda MongoDB'ga yangilash
+  const lastUpdateTimeRef = useRef<number>(Date.now());
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const isActiveRef = useRef<boolean>(true);
+  const pauseStartTimeRef = useRef<number | null>(null); // Pause boshlanish vaqti
+
+  useEffect(() => {
+    if (!sessionStartTime) {
+      console.log('⚠️ sessionStartTime yo\'q:', sessionStartTime);
+      setOnlineTime('0:00:00');
+      return;
+    }
+
+    console.log('✅ sessionStartTime mavjud:', sessionStartTime);
+
+    const updateTime = () => {
+      if (!isActiveRef.current) return; // Agar offline bo'lsa, to'xtatish
+
+      const now = new Date();
+      const start = new Date(sessionStartTime);
+      
+      // Debug
+      if (isNaN(start.getTime())) {
+        console.error('❌ sessionStartTime noto\'g\'ri format:', sessionStartTime);
+        return;
+      }
+
+      let diffMs = now.getTime() - start.getTime();
+      
+      // Agar pause vaqti bo'lsa, uni ayirish
+      // Pause vaqti: pauseStartTimeRef.current dan hozirgi vaqtgacha bo'lgan vaqt
+      // Lekin faqat pause davomida bo'lsa (isActiveRef.current === false)
+      // Bu yerda pause vaqtini hisoblamaymiz, chunki updateTime faqat isActiveRef.current === true bo'lganda chaqiriladi
+
+      const totalSeconds = Math.floor(diffMs / 1000);
+      
+      // Agar vaqt manfiy bo'lsa (kelajakda bo'lsa), 0 qaytaramiz
+      if (totalSeconds < 0) {
+        setOnlineTime('0:00:00');
+        return;
+      }
+
+      const hours = Math.floor(totalSeconds / 3600);
+      const minutes = Math.floor((totalSeconds % 3600) / 60);
+      const seconds = totalSeconds % 60;
+      const formatted = `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+      setOnlineTime(formatted);
+
+      // Har 5 sekundda MongoDB'ga yangilash
+      const nowMs = Date.now();
+      if (nowMs - lastUpdateTimeRef.current >= 5000) {
+        lastUpdateTimeRef.current = nowMs;
+        // Backend'ga so'rov yuborish (xatoliklarni ahamiyatsiz qoldirish)
+        apiService.updateOnlineTime(totalSeconds).catch((error) => {
+          console.error('❌ updateOnlineTime xatosi:', error);
+        });
+      }
+    };
+
+    // Page visibility change handler (tab yopilganda/ochilganda)
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        // Tab yopilganda yoki browser yopilganda - to'xtatish
+        if (isActiveRef.current) {
+          isActiveRef.current = false;
+          pauseStartTimeRef.current = Date.now(); // Pause boshlanish vaqtini saqlash
+          
+          // Interval'ni to'xtatish
+          if (intervalRef.current) {
+            clearInterval(intervalRef.current);
+            intervalRef.current = null;
+          }
+          
+          // Backend'ga pause boshlanishini yuborish
+          apiService.pauseStart().catch((error) => {
+            console.error('❌ pauseStart xatosi:', error);
+          });
+          console.log('⏸️ Tab yopildi - vaqt to\'xtatildi');
+        }
+      } else {
+        // Tab ochilganda - davom ettirish
+        if (!isActiveRef.current && pauseStartTimeRef.current) {
+          // Backend'ga pause tugashini yuborish
+          apiService.pauseEnd().catch((error) => {
+            console.error('❌ pauseEnd xatosi:', error);
+          });
+          pauseStartTimeRef.current = null;
+          isActiveRef.current = true;
+          
+          // Interval'ni qayta ishga tushirish
+          if (!intervalRef.current) {
+            updateTime(); // Darhol yangilash
+            intervalRef.current = setInterval(updateTime, 1000);
+          }
+          
+          console.log('▶️ Tab ochildi - vaqt davom etmoqda');
+        }
+      }
+    };
+
+    // Before unload handler (browser yopilganda)
+    const handleBeforeUnload = () => {
+      // Browser yopilganda interval'ni to'xtatish
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+      // Agar pause davom etmoqda bo'lsa, backend'ga pause tugashini yuborish
+      if (!isActiveRef.current && pauseStartTimeRef.current) {
+        // Synchronous request (fetch with keepalive) - logout funksiyasida ham pause tugashini yuboramiz
+        apiService.pauseEnd().catch(() => {
+          // Xatolik bo'lsa ham, logout funksiyasida pause tugashini yuboramiz
+        });
+      }
+    };
+
+    // Focus/blur handlers (sayt fokusda bo'lganda/yuqoridan chiqqanda)
+    const handleFocus = () => {
+      if (!isActiveRef.current && pauseStartTimeRef.current) {
+        // Backend'ga pause tugashini yuborish
+        apiService.pauseEnd().catch((error) => {
+          console.error('❌ pauseEnd xatosi:', error);
+        });
+        pauseStartTimeRef.current = null;
+        isActiveRef.current = true;
+        
+        // Interval'ni qayta ishga tushirish
+        if (!intervalRef.current) {
+          updateTime(); // Darhol yangilash
+          intervalRef.current = setInterval(updateTime, 1000);
+        }
+        
+        console.log('▶️ Sayt fokusda - vaqt davom etmoqda');
+      }
+    };
+
+    const handleBlur = () => {
+      if (isActiveRef.current) {
+        isActiveRef.current = false;
+        pauseStartTimeRef.current = Date.now(); // Pause boshlanish vaqtini saqlash
+        
+        // Interval'ni to'xtatish
+        if (intervalRef.current) {
+          clearInterval(intervalRef.current);
+          intervalRef.current = null;
+        }
+        
+        // Backend'ga pause boshlanishini yuborish
+        apiService.pauseStart().catch((error) => {
+          console.error('❌ pauseStart xatosi:', error);
+        });
+        console.log('⏸️ Sayt fokusdan chiqdi - vaqt to\'xtatildi');
+      }
+    };
+
+    // Event listener'larni qo'shish
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    window.addEventListener('focus', handleFocus);
+    window.addEventListener('blur', handleBlur);
+
+    // Darhol yangilash (faqat online bo'lganda)
+    if (isActiveRef.current) {
+    updateTime();
+      // Har sekundda yangilash (faqat online bo'lganda)
+    intervalRef.current = setInterval(updateTime, 1000);
+    }
+
+    return () => {
+      // Cleanup
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      window.removeEventListener('focus', handleFocus);
+      window.removeEventListener('blur', handleBlur);
+    };
+  }, [sessionStartTime]);
+
+  const loadStats = async () => {
+    try {
+      setIsLoading(true);
+      const response = await apiService.request<{
+        stats: {
+          completedLessons: number;
+          openedLessons: number;
+          totalLessons: number;
+          timeSpent: number;
+          timeSpentFormatted: string;
+          onlineTimeFormatted?: string;
+          totalScore: number;
+          maxScore: number;
+          avgScore: number;
+          progressPercent: number;
+          achievementsCount: number;
+          totalAchievements: number;
+        };
+        achievements: {
+          firstLesson: boolean;
+          aiChatter: boolean;
+          consistentLearner: boolean;
+        };
+        sessionStartTime?: string | null;
+      }>('/auth/me/stats');
+      
+      if (response.success && response.data) {
+        setStats(response.data.stats);
+        setAchievements(response.data.achievements);
+        console.log('📥 Backend\'dan kelgan sessionStartTime:', response.data.sessionStartTime);
+        if (response.data.sessionStartTime) {
+          setSessionStartTime(response.data.sessionStartTime);
+          console.log('✅ sessionStartTime o\'rnatildi:', response.data.sessionStartTime);
+        } else {
+          console.warn('⚠️ sessionStartTime backend\'dan kelmadi yoki null');
+        }
+      }
+    } catch (error: any) {
+      toast.error(error.message || 'Statistikani yuklashda xatolik');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const achievementsList = [
+    { icon: BookOpen, title: 'Birinchi dars', description: 'Birinchi darsni ochdingiz', unlocked: achievements.firstLesson },
+    { icon: Award, title: 'AI suhbatchi', description: '10 ta AI suhbat olib boring', unlocked: achievements.aiChatter },
+    { icon: Clock, title: 'Izchil o\'quvchi', description: '7 ta dars ochdingiz', unlocked: achievements.consistentLearner },
+  ];
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6 animate-fade-in">
+        <div className="text-center py-12">
+          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-muted-foreground">Yuklanmoqda...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6 animate-fade-in">
+      {/* Profile Card */}
+      <div className="bg-card rounded-2xl p-6 border border-border shadow-card">
+        <div className="flex flex-col sm:flex-row items-center gap-6">
+          {/* Avatar */}
+          <div className="w-24 h-24 rounded-2xl gradient-primary flex items-center justify-center text-primary-foreground text-3xl font-bold">
+            {user?.firstName?.charAt(0)}{user?.lastName?.charAt(0)}
+          </div>
+
+          {/* Info */}
+          <div className="flex-1 text-center sm:text-left">
+            <h2 className="text-2xl font-bold text-foreground mb-1">
+              {user?.firstName} {user?.lastName}
+            </h2>
+            <p className="text-muted-foreground mb-4">O'quvchi • {user?.group || 'Guruh topilmadi'}</p>
+            
+            <div className="flex flex-wrap justify-center sm:justify-start gap-4 text-sm">
+              <span className="flex items-center gap-2 text-muted-foreground">
+                <Mail className="w-4 h-4" />
+                {user?.email}
+              </span>
+              {user?.group && (
+                <span className="flex items-center gap-2 text-muted-foreground">
+                  <Users className="w-4 h-4" />
+                  {user.group}
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* Progress Circle */}
+          <div className="text-center">
+            <div className="relative w-24 h-24">
+              <svg className="w-24 h-24 transform -rotate-90">
+                <circle
+                  cx="48"
+                  cy="48"
+                  r="40"
+                  stroke="currentColor"
+                  strokeWidth="8"
+                  fill="none"
+                  className="text-muted"
+                />
+                <circle
+                  cx="48"
+                  cy="48"
+                  r="40"
+                  stroke="currentColor"
+                  strokeWidth="8"
+                  fill="none"
+                  strokeDasharray={`${stats.progressPercent * 2.51} 251`}
+                  className="text-primary"
+                />
+              </svg>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <span className="text-2xl font-bold text-foreground">{stats.progressPercent}%</span>
+              </div>
+            </div>
+            <p className="text-sm text-muted-foreground mt-2">Umumiy progress</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Stats */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="bg-card rounded-xl p-4 border border-border shadow-card">
+          <BookOpen className="w-5 h-5 text-primary mb-2" />
+          <p className="text-2xl font-bold text-foreground">{stats.openedLessons || stats.completedLessons}/{stats.totalLessons}</p>
+          <p className="text-sm text-muted-foreground">Darslar</p>
+          <Progress value={stats.progressPercent} className="h-2 mt-2" />
+          <p className="text-xs text-muted-foreground mt-1">{stats.progressPercent}%</p>
+        </div>
+        <div className="bg-card rounded-xl p-4 border border-border shadow-card">
+          <Trophy className="w-5 h-5 text-warning mb-2" />
+          <p className="text-2xl font-bold text-foreground">{stats.totalScore}/{stats.maxScore}</p>
+          <p className="text-sm text-muted-foreground">Ball</p>
+        </div>
+        <div className="bg-card rounded-xl p-4 border border-border shadow-card">
+          <Clock className="w-5 h-5 text-success mb-2" />
+          <p className="text-2xl font-bold text-foreground">{onlineTime || stats.onlineTimeFormatted || '0:00:00'}</p>
+          <p className="text-sm text-muted-foreground">O'qish</p>
+        </div>
+        <div className="bg-card rounded-xl p-4 border border-border shadow-card">
+          <Award className="w-5 h-5 text-accent mb-2" />
+          <p className="text-2xl font-bold text-foreground">{stats.achievementsCount}/{stats.totalAchievements}</p>
+          <p className="text-sm text-muted-foreground">Yutuqlar</p>
+        </div>
+      </div>
+
+      {/* Current Level */}
+      <div className="bg-card rounded-2xl p-6 border border-border shadow-card">
+        <h3 className="font-semibold text-foreground mb-4">Joriy daraja</h3>
+        <div className="space-y-4">
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-muted-foreground">Boshlang'ich</span>
+            <span className="text-primary font-medium">
+              {stats.progressPercent < 50 
+                ? `O'rta darajaga ${50 - stats.progressPercent}% qoldi`
+                : stats.progressPercent < 80
+                ? `Yuqori darajaga ${80 - stats.progressPercent}% qoldi`
+                : 'Yuqori daraja'}
+            </span>
+          </div>
+          <Progress value={stats.progressPercent} className="h-3" />
+          <p className="text-sm text-muted-foreground">
+            Keyingi daraja: <span className="text-foreground font-medium">
+              {stats.progressPercent < 50 
+                ? "O'rta daraja (Intermediate)"
+                : stats.progressPercent < 80
+                ? "Yuqori daraja (Advanced)"
+                : 'Professional'}
+            </span>
+          </p>
+        </div>
+      </div>
+
+      {/* Achievements */}
+      <div className="bg-card rounded-2xl p-6 border border-border shadow-card">
+        <h3 className="font-semibold text-foreground mb-4">Yutuqlar</h3>
+        <div className="grid sm:grid-cols-2 gap-4">
+          {achievementsList.map((achievement, index) => (
+            <div 
+              key={index}
+              className={`flex items-center gap-4 p-4 rounded-xl border ${
+                achievement.unlocked 
+                  ? 'border-primary/30 bg-primary/5' 
+                  : 'border-border opacity-50'
+              }`}
+            >
+              <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
+                achievement.unlocked ? 'gradient-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
+              }`}>
+                <achievement.icon className="w-6 h-6" />
+              </div>
+              <div>
+                <p className="font-medium text-foreground">{achievement.title}</p>
+                <p className="text-sm text-muted-foreground">{achievement.description}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Settings */}
+      <div className="bg-card rounded-2xl p-6 border border-border shadow-card">
+        <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
+          <Settings className="w-5 h-5" />
+          Sozlamalar
+        </h3>
+        <div className="space-y-3">
+          <div className="flex items-center justify-between p-4 bg-muted/50 rounded-xl">
+            <div className="flex items-center gap-3">
+              <Volume2 className="w-5 h-5 text-muted-foreground" />
+              <div>
+                <Label htmlFor="button-sound" className="font-medium text-foreground cursor-pointer">
+                  Tugmalar ovozi
+                </Label>
+                <p className="text-sm text-muted-foreground">Tugmalar bosilganda ovoz chiqishi</p>
+              </div>
+            </div>
+            <Switch
+              id="button-sound"
+              checked={buttonSoundEnabled}
+              onCheckedChange={handleButtonSoundToggle}
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
