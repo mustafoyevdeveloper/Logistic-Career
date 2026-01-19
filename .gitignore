@@ -37,6 +37,10 @@ build/
 # Temporary files
 *.tmp
 *.temp
+<<<<<<< HEAD
+=======
+command.cmd
+>>>>>>> 01d2bf9176469d99d9fa2ee15c8e8a1125225825
 
 # Vercel
 .vercel
