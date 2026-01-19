@@ -14,11 +14,10 @@ const connectDB = async () => {
   try {
     if (!process.env.MONGODB_URI) {
       console.error('❌ Xatolik: MONGODB_URI topilmadi!');
-<<<<<<< HEAD
+
       console.error('📝 Iltimos, .env faylini yarating va MONGODB_URI ni to\'ldiring.');
-=======
       console.error('📝 Iltimos, backend/.env faylini yarating va MONGODB_URI ni to\'ldiring.');
->>>>>>> 01d2bf9176469d99d9fa2ee15c8e8a1125225825
+
       console.error('📄 Misol: MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/logistic-career');
       // Production'da server'ni yopmaslik, faqat xatolikni log qilish
       if (process.env.NODE_ENV === 'production') {
@@ -28,7 +27,6 @@ const connectDB = async () => {
       process.exit(1);
     }
 
-<<<<<<< HEAD
     console.log('🔄 MongoDB ga ulanishga harakat qilmoqda...');
     console.log(`📡 Connection string: ${process.env.MONGODB_URI.replace(/:[^:@]+@/, ':****@')}`); // Parolni yashirish
 
@@ -48,24 +46,11 @@ const connectDB = async () => {
     // Database connection xatoliklarini handle qilish
     mongoose.connection.on('error', (err) => {
       console.error('❌ MongoDB connection error:', err.message);
-=======
-    const conn = await mongoose.connect(process.env.MONGODB_URI, {
-      serverSelectionTimeoutMS: 5000, // 5 soniya timeout
-      socketTimeoutMS: 45000,
-    });
-
-    console.log(`✅ MongoDB Connected: ${conn.connection.host}`);
-    
-    // Database connection xatoliklarini handle qilish
-    mongoose.connection.on('error', (err) => {
-      console.error('❌ MongoDB connection error:', err);
->>>>>>> 01d2bf9176469d99d9fa2ee15c8e8a1125225825
     });
     
     mongoose.connection.on('disconnected', () => {
       console.warn('⚠️ MongoDB disconnected. Reconnecting...');
     });
-<<<<<<< HEAD
 
     mongoose.connection.on('reconnected', () => {
       console.log('✅ MongoDB reconnected');
@@ -90,11 +75,7 @@ const connectDB = async () => {
       console.error('2. Firewall sozlamalarini tekshiring');
       console.error('3. MongoDB Atlas cluster ishlamoqda ekanligini tekshiring');
     }
-    
-=======
-  } catch (error) {
-    console.error(`❌ MongoDB connection error: ${error.message}`);
->>>>>>> 01d2bf9176469d99d9fa2ee15c8e8a1125225825
+
     // Production'da server'ni yopmaslik, faqat xatolikni log qilish
     if (process.env.NODE_ENV === 'production') {
       console.error('⚠️ Production mode: Server ishga tushmoqda, lekin database ulanmadi');
@@ -105,4 +86,3 @@ const connectDB = async () => {
 };
 
 export default connectDB;
-
