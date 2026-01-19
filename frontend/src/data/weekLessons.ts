@@ -780,14 +780,56 @@ export const weekLessons: Record<number, WeekLesson> = {
     title: "Logistika xarajatlari va narxlash",
     description: "Logistika xarajatlari turlari, narxlash usullari, xarajatlarni hisoblash, rentabellik va foyda koeffitsiyentlari.",
     duration: "",
-    topics: {}
+    topics: {
+      "Video dars": {
+        title: "Video dars",
+        content: `
+          <div class="w-full max-w-4xl mx-auto">
+            <div class="aspect-video bg-black rounded-lg overflow-hidden shadow-2xl">
+              <video 
+                class="w-full h-full" 
+                controls 
+                controlsList="nodownload"
+                poster=""
+                preload="metadata"
+              >
+                <source src="https://pub-e29856519e414c75bfcf296d0dc7f3ad.r2.dev/Kino/1762383597515-Cheksizlik_Sari_1080p.mp4" type="video/mp4" />
+                Sizning brauzeringiz video elementini qo'llab-quvvatlamaydi.
+              </video>
+            </div>
+          </div>
+        `,
+        videos: ["https://pub-e29856519e414c75bfcf296d0dc7f3ad.r2.dev/Kino/1762383597515-Cheksizlik_Sari_1080p.mp4"]
+      }
+    }
   },
   6: {
     day: 6,
     title: "Mijozlar bilan ishlash va muloqot",
     description: "Mijozlar bilan muloqot qilish, shikoyatlar bilan ishlash, xizmat ko'rsatish standartlari, mijozlar bilan munosabatlar.",
     duration: "",
-    topics: {}
+    topics: {
+      "Video dars": {
+        title: "Video dars",
+        content: `
+          <div class="w-full max-w-4xl mx-auto">
+            <div class="aspect-video bg-black rounded-lg overflow-hidden shadow-2xl">
+              <video 
+                class="w-full h-full" 
+                controls 
+                controlsList="nodownload"
+                poster=""
+                preload="metadata"
+              >
+                <source src="https://pub-e29856519e414c75bfcf296d0dc7f3ad.r2.dev/Kino/1764166949478-tor-4-1080p-ozbek-tilida-asilmedia.net.mp4" type="video/mp4" />
+                Sizning brauzeringiz video elementini qo'llab-quvvatlamaydi.
+              </video>
+            </div>
+          </div>
+        `,
+        videos: ["https://pub-e29856519e414c75bfcf296d0dc7f3ad.r2.dev/Kino/1764166949478-tor-4-1080p-ozbek-tilida-asilmedia.net.mp4"]
+      }
+    }
   },
   7: {
     day: 7,

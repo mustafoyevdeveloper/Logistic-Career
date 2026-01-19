@@ -14,6 +14,14 @@ import {
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
+interface QuestionAnswer {
+  questionId: string;
+  answer: string;
+  isCorrect?: boolean;
+  correctAnswer?: string;
+  question?: string;
+}
+
 interface Submission {
   id: string;
   studentName: string;
@@ -27,30 +35,114 @@ interface Submission {
   answer: string;
   assignmentId?: string;
   studentId?: string;
+  answers?: QuestionAnswer[];
+  assignment?: {
+    questions?: Array<{
+      _id?: string;
+      question: string;
+      correctAnswer?: string;
+      points: number;
+    }>;
+    maxScore?: number;
+    type?: string;
+  };
 }
 
 export default function TeacherAssignmentsPage() {
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null);
+  const [selectedAssignmentId, setSelectedAssignmentId] = useState<string | null>(null);
   const [feedback, setFeedback] = useState('');
   const [score, setScore] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const [assignments, setAssignments] = useState<any[]>([]);
 
   useEffect(() => {
+    loadAssignments();
     loadSubmissions();
   }, []);
 
-  const loadSubmissions = async () => {
+  const loadAssignments = async () => {
+    try {
+      const response = await apiService.request<{ assignments: any[] }>('/assignments');
+      if (response.success && response.data) {
+        setAssignments(response.data.assignments || []);
+      }
+    } catch (error: any) {
+      console.error('Assignments yuklashda xatolik:', error);
+    }
+  };
+
+  const loadSubmissions = async (assignmentId?: string) => {
     try {
       setIsLoading(true);
-      const response = await apiService.request<{ submissions: Submission[] }>('/assignments/all-submissions');
+      const url = assignmentId 
+        ? `/assignments/${assignmentId}/submissions`
+        : '/assignments/all-submissions';
+      const response = await apiService.request<{ submissions: Submission[] }>(url);
       if (response.success && response.data) {
-        setSubmissions(response.data.submissions || []);
+        // Agar assignmentId bo'lsa, har bir submissionga assignment ma'lumotlarini qo'shish
+        const submissionsWithDetails = response.data.submissions.map(sub => {
+          const assignment = assignments.find(a => a._id === sub.assignmentId);
+          return {
+            ...sub,
+            assignment: assignment || sub.assignment
+          };
+        });
+        setSubmissions(submissionsWithDetails);
       }
     } catch (error: any) {
       toast.error(error.message || 'Yuborilmalarni yuklashda xatolik');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleSelectAssignment = (assignmentId: string) => {
+    setSelectedAssignmentId(assignmentId);
+    loadSubmissions(assignmentId);
+  };
+
+  const handleViewStudentAnswers = async (submission: Submission) => {
+    try {
+      // Assignment ma'lumotlarini olish
+      const assignmentResponse = await apiService.request<{ assignment: any }>(`/assignments/${submission.assignmentId}`);
+      if (assignmentResponse.success && assignmentResponse.data) {
+        const assignment = assignmentResponse.data.assignment;
+        
+        // Submission ma'lumotlarini formatlash
+        const formattedSubmission: Submission = {
+          ...submission,
+          assignment: assignment,
+          answers: submission.answers || (submission.answer ? [] : [])
+        };
+
+        // Agar answers array bo'lmasa, assignment questions bilan solishtirish
+        if (assignment.questions && assignment.type === 'quiz') {
+          const questionAnswers: QuestionAnswer[] = assignment.questions.map((q: any, index: number) => {
+            const questionId = q._id?.toString() || index.toString();
+            const userAnswer = formattedSubmission.answers?.find((a: any) => 
+              a.questionId?.toString() === questionId
+            )?.answer || '';
+            
+            const isCorrect = userAnswer === q.correctAnswer;
+            
+            return {
+              questionId,
+              answer: userAnswer,
+              isCorrect,
+              correctAnswer: q.correctAnswer,
+              question: q.question
+            };
+          });
+          
+          formattedSubmission.answers = questionAnswers;
+        }
+        
+        setSelectedSubmission(formattedSubmission);
+      }
+    } catch (error: any) {
+      toast.error(error.message || 'Ma\'lumotlarni yuklashda xatolik');
     }
   };
 
@@ -101,15 +193,54 @@ export default function TeacherAssignmentsPage() {
     );
   }
 
+  // Faqat testlar (quiz) uchun statistika
+  const quizSubmissions = submissions.filter(s => s.assignment?.type === 'quiz');
+  const quizAssignments = assignments.filter(a => a.type === 'quiz');
+
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
       <div>
-        <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">Topshiriqlar</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">Testlar</h1>
         <p className="text-muted-foreground">
-          O'quvchilar topshiriqlarini tekshiring va baholang
+          O'quvchilar testlarini tekshiring va baholang
         </p>
       </div>
+
+      {/* Testlar ro'yxati */}
+      {quizAssignments.length > 0 && (
+        <div className="mb-6">
+          <h2 className="text-lg font-semibold mb-3">Testlar ro'yxati</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {quizAssignments.map((assignment) => {
+              const assignmentSubmissions = quizSubmissions.filter(s => s.assignmentId === assignment._id);
+              return (
+                <div
+                  key={assignment._id}
+                  className={cn(
+                    "bg-card rounded-xl p-4 border cursor-pointer transition-all",
+                    selectedAssignmentId === assignment._id
+                      ? "border-primary shadow-lg"
+                      : "border-border hover:border-primary/50"
+                  )}
+                  onClick={() => handleSelectAssignment(assignment._id)}
+                >
+                  <h3 className="font-semibold text-foreground mb-2">{assignment.title}</h3>
+                  <p className="text-sm text-muted-foreground mb-3">{assignment.description}</p>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">
+                      {assignmentSubmissions.length} ta o'quvchi yechgan
+                    </span>
+                    <span className="text-sm font-medium text-primary">
+                      {assignment.questions?.length || 0} ta savol
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Stats */}
       <div className="grid grid-cols-2 gap-4">
@@ -138,10 +269,23 @@ export default function TeacherAssignmentsPage() {
         </div>
       </div>
 
+      {/* O'quvchilar ro'yxati (faqat tanlangan test uchun) */}
+      {selectedAssignmentId && (
+        <div>
+          <h2 className="text-lg font-semibold mb-3">
+            {assignments.find(a => a._id === selectedAssignmentId)?.title || 'Test'} yechgan o'quvchilar
+          </h2>
+        </div>
+      )}
+
       {/* Submissions List */}
-      {submissions.length === 0 ? (
+      {selectedAssignmentId && submissions.length === 0 ? (
         <div className="text-center py-12">
-          <p className="text-muted-foreground">Hozircha yuborilmalar yo'q</p>
+          <p className="text-muted-foreground">Bu testni yechgan o'quvchilar hozircha yo'q</p>
+        </div>
+      ) : !selectedAssignmentId ? (
+        <div className="text-center py-12">
+          <p className="text-muted-foreground">Iltimos, testni tanlang</p>
         </div>
       ) : (
         <div className="space-y-4">
@@ -192,37 +336,87 @@ export default function TeacherAssignmentsPage() {
                   {(submission.status === 'pending' || submission.status === 'submitted') ? 'Kutilmoqda' : 'Tekshirilgan'}
                 </span>
                 
-                {(submission.status === 'pending' || submission.status === 'submitted') && (
-                  <Button 
-                    variant="gradient" 
-                    size="sm"
-                    onClick={() => setSelectedSubmission(submission)}
-                  >
-                    Tekshirish
-                  </Button>
-                )}
-                {submission.status === 'graded' && (
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => setSelectedSubmission(submission)}
-                  >
-                    Ko'rish
-                  </Button>
-                )}
+                <Button 
+                  variant={submission.status === 'graded' ? 'outline' : 'gradient'} 
+                  size="sm"
+                  onClick={() => handleViewStudentAnswers(submission)}
+                >
+                  {submission.status === 'graded' ? 'Ko\'rish' : 'Tekshirish'}
+                </Button>
               </div>
             </div>
 
             {/* Expanded Review Section */}
             {selectedSubmission?.id === submission.id && (
               <div className="mt-6 pt-6 border-t border-border space-y-4">
-                {/* Answer */}
-                <div>
-                  <p className="text-sm font-medium text-foreground mb-2">O'quvchi javobi:</p>
-                  <div className="bg-muted rounded-lg p-4 text-sm text-muted-foreground">
-                    {submission.answer}
+                {/* Test javoblari (quiz uchun) */}
+                {selectedSubmission.assignment?.type === 'quiz' && selectedSubmission.answers && selectedSubmission.answers.length > 0 ? (
+                  <div className="space-y-4">
+                    <h3 className="font-semibold text-foreground mb-4">Savollar va javoblar:</h3>
+                    {selectedSubmission.answers.map((qa: QuestionAnswer, index: number) => (
+                      <div 
+                        key={qa.questionId || index}
+                        className={cn(
+                          "border rounded-lg p-4",
+                          qa.isCorrect 
+                            ? "border-success/50 bg-success/5" 
+                            : "border-error/50 bg-error/5"
+                        )}
+                      >
+                        <div className="flex items-start gap-2 mb-3">
+                          <span className="font-semibold text-foreground">{index + 1}.</span>
+                          <p className="font-medium text-foreground flex-1">{qa.question || 'Savol'}</p>
+                          {qa.isCorrect !== undefined && (
+                            <div className={cn(
+                              "px-2 py-1 rounded-full text-xs font-medium",
+                              qa.isCorrect 
+                                ? "bg-success/20 text-success" 
+                                : "bg-error/20 text-error"
+                            )}>
+                              {qa.isCorrect ? '✅ To\'g\'ri' : '❌ Xato'}
+                            </div>
+                          )}
+                        </div>
+                        <div className="ml-6 space-y-2">
+                          <div>
+                            <p className="text-sm text-muted-foreground mb-1">O'quvchi javobi:</p>
+                            <p className={cn(
+                              "text-sm font-medium",
+                              qa.isCorrect ? "text-success" : "text-error"
+                            )}>
+                              {qa.answer || 'Javob berilmagan'}
+                            </p>
+                          </div>
+                          {qa.correctAnswer && (
+                            <div>
+                              <p className="text-sm text-muted-foreground mb-1">To'g'ri javob:</p>
+                              <p className="text-sm font-medium text-success">{qa.correctAnswer}</p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                    {/* Umumiy natija */}
+                    <div className="mt-4 p-4 bg-primary/10 rounded-lg">
+                      <div className="flex items-center justify-between">
+                        <span className="font-semibold text-foreground">Umumiy natija:</span>
+                        <span className="text-2xl font-bold text-primary">
+                          {selectedSubmission.answers.filter((a: QuestionAnswer) => a.isCorrect).length}/
+                          {selectedSubmission.answers.length} (
+                          {Math.round((selectedSubmission.answers.filter((a: QuestionAnswer) => a.isCorrect).length / selectedSubmission.answers.length) * 100)}%)
+                        </span>
+                      </div>
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  /* Oddiy topshiriq javobi */
+                  <div>
+                    <p className="text-sm font-medium text-foreground mb-2">O'quvchi javobi:</p>
+                    <div className="bg-muted rounded-lg p-4 text-sm text-muted-foreground">
+                      {submission.answer}
+                    </div>
+                  </div>
+                )}
 
                 {(submission.status === 'pending' || submission.status === 'submitted') ? (
                   <>

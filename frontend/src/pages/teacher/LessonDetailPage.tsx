@@ -106,21 +106,52 @@ export default function TeacherLessonDetailPage() {
               background: rgba(148, 163, 184, 0.7);
               background-clip: padding-box;
             }
+            .video-player-container {
+              position: relative;
+              width: 100%;
+              max-width: 4xl;
+              margin: 0 auto;
+            }
+            .video-player-container video {
+              width: 100%;
+              height: auto;
+              border-radius: 0.5rem;
+              background: #000;
+            }
           `}</style>
           <div className="bg-card rounded-xl p-4 sm:p-6 border border-border">
-            <div 
-              className="overflow-y-auto pr-2 custom-scrollbar"
-              style={{
-                scrollbarWidth: 'thin',
-                scrollbarColor: 'rgba(148, 163, 184, 0.5) transparent',
-                maxHeight: 'calc(100vh - 300px)'
-              }}
-            >
-              <div
-                className="prose prose-sm sm:prose-base max-w-none text-foreground"
-                dangerouslySetInnerHTML={{ __html: currentTopic.content }}
-              />
-            </div>
+            {/* Video mavjud bo'lsa, video player ko'rsatish */}
+            {currentTopic.videos && currentTopic.videos.length > 0 ? (
+              <div className="w-full max-w-4xl mx-auto">
+                <div className="aspect-video bg-black rounded-lg overflow-hidden shadow-2xl">
+                  <video 
+                    className="w-full h-full" 
+                    controls 
+                    controlsList="nodownload"
+                    preload="metadata"
+                    style={{ outline: 'none' }}
+                  >
+                    <source src={currentTopic.videos[0]} type="video/mp4" />
+                    Sizning brauzeringiz video elementini qo'llab-quvvatlamaydi.
+                  </video>
+                </div>
+              </div>
+            ) : (
+              /* Oddiy kontent */
+              <div 
+                className="overflow-y-auto pr-2 custom-scrollbar"
+                style={{
+                  scrollbarWidth: 'thin',
+                  scrollbarColor: 'rgba(148, 163, 184, 0.5) transparent',
+                  maxHeight: 'calc(100vh - 300px)'
+                }}
+              >
+                <div
+                  className="prose prose-sm sm:prose-base max-w-none text-foreground"
+                  dangerouslySetInnerHTML={{ __html: currentTopic.content }}
+                />
+              </div>
+            )}
           </div>
         </>
       )}

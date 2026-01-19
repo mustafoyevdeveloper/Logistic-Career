@@ -84,6 +84,7 @@ export default function AssignmentsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [answeredQuestions, setAnsweredQuestions] = useState<Record<string, boolean>>({}); // To'g'ri yoki xato
+  const [lockedQuestions, setLockedQuestions] = useState<Record<string, boolean>>({}); // Javob berilgan savollar (o'zgartirib bo'lmaydi)
 
   useEffect(() => {
     loadAssignments();
@@ -122,6 +123,8 @@ export default function AssignmentsPage() {
         } else {
           // Yangi topshiriq uchun bo'sh javoblar
           setAnswers({});
+          setAnsweredQuestions({});
+          setLockedQuestions({});
         }
       }
     } catch (error: any) {
@@ -140,6 +143,11 @@ export default function AssignmentsPage() {
   };
 
   const handleAnswerChange = (questionId: string, answer: string, correctAnswer?: any) => {
+    // Agar savol allaqachon javob berilgan bo'lsa, o'zgartirib bo'lmaydi
+    if (lockedQuestions[questionId]) {
+      return;
+    }
+
     setAnswers(prev => ({
       ...prev,
       [questionId]: answer
@@ -153,11 +161,17 @@ export default function AssignmentsPage() {
         [questionId]: isCorrect
       }));
 
+      // Savolni qulflash (javob berilganidan keyin o'zgartirib bo'lmaydi)
+      setLockedQuestions(prev => ({
+        ...prev,
+        [questionId]: true
+      }));
+
       // Toast xabari
       if (isCorrect) {
-        toast.success('✅ To\'g\'ri javob!', { duration: 1500 });
+        toast.success('✅ To\'g\'ri javob!', { duration: 2000 });
       } else {
-        toast.error('❌ Noto\'g\'ri javob', { duration: 1500 });
+        toast.error('❌ Noto\'g\'ri javob', { duration: 2000 });
       }
     }
   };
@@ -222,11 +236,16 @@ export default function AssignmentsPage() {
     }
   };
 
-  const completedCount = assignments.filter(a => a.status === 'graded').length;
-  const pendingCount = assignments.filter(a => a.status === 'pending').length;
-  const avgScore = assignments
-    .filter(a => a.score !== undefined)
-    .reduce((acc, a) => acc + (a.score || 0), 0) / completedCount || 0;
+  // Faqat testlar (quiz) uchun statistika
+  const quizAssignments = assignments.filter(a => a.type === 'quiz');
+  const completedCount = quizAssignments.filter(a => a.status === 'graded' || a.status === 'submitted').length;
+  const pendingCount = quizAssignments.filter(a => a.status === 'pending').length;
+  const avgScore = quizAssignments
+    .filter(a => a.score !== undefined && a.maxScore > 0)
+    .reduce((acc, a) => {
+      const percentage = ((a.score || 0) / a.maxScore) * 100;
+      return acc + percentage;
+    }, 0) / quizAssignments.filter(a => a.score !== undefined && a.maxScore > 0).length || 0;
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -295,6 +314,7 @@ export default function AssignmentsPage() {
                     setSelectedAssignment(null);
                     setAnswers({});
                     setAnsweredQuestions({});
+                    setLockedQuestions({});
                   }}
                 >
                   <X className="w-5 h-5" />
@@ -375,12 +395,13 @@ export default function AssignmentsPage() {
                         <RadioGroup
                           value={currentAnswer}
                           onValueChange={(value) => handleAnswerChange(questionId, value, question.correctAnswer)}
-                          disabled={selectedAssignment.status === 'graded' || selectedAssignment.status === 'submitted'}
+                          disabled={selectedAssignment.status === 'graded' || selectedAssignment.status === 'submitted' || lockedQuestions[questionId]}
                         >
                           {question.options.map((option, optIndex) => {
                             const isSelected = currentAnswer === option;
                             const isCorrectOption = option === question.correctAnswer;
                             const showOptionResult = showResult && isSelected;
+                            const isLocked = lockedQuestions[questionId];
 
                             return (
                               <div 
@@ -388,16 +409,28 @@ export default function AssignmentsPage() {
                                 className={cn(
                                   "flex items-center space-x-2 py-2 px-3 rounded-lg transition-colors",
                                   showOptionResult && isCorrect 
-                                    ? "bg-success/10" 
+                                    ? "bg-success/10 border border-success/30" 
                                     : showOptionResult && !isCorrect 
-                                    ? "bg-error/10" 
+                                    ? "bg-error/10 border border-error/30" 
                                     : showResult && isCorrectOption && !isSelected
                                     ? "bg-success/5 border border-success/20"
+                                    : isLocked && !isSelected
+                                    ? "opacity-60"
                                     : ""
                                 )}
                               >
-                                <RadioGroupItem value={option} id={`${questionId}-${optIndex}`} />
-                                <Label htmlFor={`${questionId}-${optIndex}`} className="cursor-pointer flex-1 flex items-center gap-2">
+                                <RadioGroupItem 
+                                  value={option} 
+                                  id={`${questionId}-${optIndex}`}
+                                  disabled={isLocked}
+                                />
+                                <Label 
+                                  htmlFor={`${questionId}-${optIndex}`} 
+                                  className={cn(
+                                    "flex-1 flex items-center gap-2",
+                                    isLocked && !isSelected ? "cursor-not-allowed opacity-60" : "cursor-pointer"
+                                  )}
+                                >
                                   {option}
                                   {showResult && isCorrectOption && (
                                     <span className="text-xs text-success font-medium">(To'g'ri javob)</span>
@@ -516,6 +549,7 @@ export default function AssignmentsPage() {
                       setSelectedAssignment(null);
                       setAnswers({});
                       setAnsweredQuestions({});
+                      setLockedQuestions({});
                     }}
                   >
                     Bekor qilish
@@ -593,22 +627,44 @@ export default function AssignmentsPage() {
               </div>
 
               {/* Action */}
-              <Button 
-                variant={assignment.status === 'pending' ? 'gradient' : 'outline'}
-                className="shrink-0"
+              {assignment.type === 'quiz' ? (
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className="text-2xl font-bold text-primary">{assignment.questions.length}</span>
+                  <span className="text-sm text-muted-foreground">ta savol</span>
+                  <Button 
+                    variant={assignment.status === 'pending' ? 'gradient' : 'outline'}
+                    onClick={() => handleOpenAssignment(assignment)}
+                  >
+                    {assignment.status === 'pending' ? (
+                      <>
+                        Boshlash
+                        <ArrowRight className="w-4 h-4 ml-2" />
+                      </>
+                    ) : assignment.status === 'graded' ? (
+                      'Natijani ko\'rish'
+                    ) : (
+                      'Ko\'rish'
+                    )}
+                  </Button>
+                </div>
+              ) : (
+                <Button 
+                  variant={assignment.status === 'pending' ? 'gradient' : 'outline'}
+                  className="shrink-0"
                   onClick={() => handleOpenAssignment(assignment)}
-              >
-                {assignment.status === 'pending' ? (
-                  <>
-                    Boshlash
+                >
+                  {assignment.status === 'pending' ? (
+                    <>
+                      Boshlash
                       <ArrowRight className="w-4 h-4 ml-2" />
-                  </>
-                ) : assignment.status === 'graded' ? (
+                    </>
+                  ) : assignment.status === 'graded' ? (
                     'Natijani ko\'rish'
                   ) : (
-                  'Ko\'rish'
-                )}
-              </Button>
+                    'Ko\'rish'
+                  )}
+                </Button>
+              )}
             </div>
           </div>
         ))}

@@ -292,10 +292,18 @@ export const getStudentAssignments = async (req, res) => {
  */
 export const getAssignmentSubmissions = async (req, res) => {
   try {
-    if (req.user.role !== 'teacher') {
+    if (req.user.role !== 'teacher' && req.user.role !== 'admin') {
       return res.status(403).json({
         success: false,
         message: 'Faqat o\'qituvchilar yuborilmalarni ko\'ra oladi',
+      });
+    }
+
+    const assignment = await Assignment.findById(req.params.id).lean();
+    if (!assignment) {
+      return res.status(404).json({
+        success: false,
+        message: 'Topshiriq topilmadi',
       });
     }
 
@@ -306,9 +314,42 @@ export const getAssignmentSubmissions = async (req, res) => {
       .sort({ submittedAt: -1 })
       .lean();
 
+    // Format submissions with question details
+    const formattedSubmissions = submissions.map((submission) => {
+      const formattedAnswers = assignment.questions?.map((question, index) => {
+        const questionId = question._id?.toString() || index.toString();
+        const userAnswer = submission.answers?.find((ans, any) => 
+          ans.questionId?.toString() === questionId
+        );
+        
+        const answerText = userAnswer?.answer || '';
+        const isCorrect = assignment.type === 'quiz' && question.correctAnswer 
+          ? answerText === question.correctAnswer 
+          : undefined;
+
+        return {
+          questionId,
+          answer: answerText,
+          isCorrect,
+          correctAnswer: question.correctAnswer,
+          question: question.question,
+          points: question.points || 1
+        };
+      }) || [];
+
+      return {
+        ...submission,
+        answers: formattedAnswers,
+        assignment: {
+          ...assignment,
+          questions: assignment.questions
+        }
+      };
+    });
+
     res.json({
       success: true,
-      data: { submissions },
+      data: { submissions: formattedSubmissions },
     });
   } catch (error) {
     res.status(500).json({

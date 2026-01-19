@@ -201,10 +201,15 @@ export const updateLessonProgressByDay = async (req, res) => {
     
     const lesson = allLessons.find(l => l.order === dayNumber);
 
+    // Agar dars topilmasa, progress'ni yaratmaslik (lekin xatolik qaytarmaslik)
+    // Bu frontend'da xatolik ko'rsatmasligi uchun
     if (!lesson) {
-      return res.status(404).json({
-        success: false,
-        message: `Dars topilmadi (kun: ${dayNumber})`,
+      // Dars topilmadi, lekin xatolik o'rniga muvaffaqiyatli javob qaytaramiz
+      // Frontend'da bu xatolikni e'tiborsiz qoldirish uchun
+      return res.json({
+        success: true,
+        message: `Dars topilmadi (kun: ${dayNumber}), lekin progress saqlanmadi`,
+        data: { progress: null },
       });
     }
 
