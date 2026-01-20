@@ -218,8 +218,8 @@ export default function LessonDetailPage() {
         </div>
       )}
 
-      {/* Content - Bitta ustunli layout */}
-      {currentTopic && (
+      {/* Content - 5-6 darslar uchun topic'larsiz video ko'rsatish */}
+      {(dayNumber === 5 || dayNumber === 6) ? (
         <>
           <style>{`
             .custom-scrollbar {
@@ -258,53 +258,92 @@ export default function LessonDetailPage() {
           `}</style>
           <div className="bg-card rounded-xl p-4 sm:p-6 border border-border">
             {/* 5-6 darslar uchun videolar (backend'dan yoki statik) */}
-            {(dayNumber === 5 || dayNumber === 6) ? (
-              <div className="w-full max-w-4xl mx-auto">
-                {lessonData && lessonData.videos && lessonData.videos.length > 0 ? (
-                  // Backend'dan kelgan videolar
-                  lessonData.videos.map((video) => (
-                    <div key={`${dayNumber}-${video._id}`} className="w-full">
-                      <h3 className="text-lg font-semibold mb-3 text-foreground">{video.title}</h3>
-                      <div className="aspect-video bg-black rounded-lg overflow-hidden shadow-2xl">
-                        <video 
-                          key={`${dayNumber}-${video._id}-player`}
-                          className="w-full h-full" 
-                          controls 
-                          controlsList="nodownload"
-                          preload="metadata"
-                          style={{ outline: 'none' }}
-                        >
-                          <source src={video.url} type="video/mp4" />
-                          Sizning brauzeringiz video elementini qo'llab-quvvatlamaydi.
-                        </video>
-                      </div>
+            <div className="w-full max-w-4xl mx-auto">
+              {lessonData && lessonData.videos && lessonData.videos.length > 0 ? (
+                // Backend'dan kelgan videolar
+                lessonData.videos.map((video) => (
+                  <div key={`${dayNumber}-${video._id}`} className="w-full">
+                    <h3 className="text-lg font-semibold mb-3 text-foreground">{video.title}</h3>
+                    <div className="aspect-video bg-black rounded-lg overflow-hidden shadow-2xl">
+                      <video 
+                        key={`${dayNumber}-${video._id}-player`}
+                        className="w-full h-full" 
+                        controls 
+                        controlsList="nodownload"
+                        preload="metadata"
+                        style={{ outline: 'none' }}
+                      >
+                        <source src={video.url} type="video/mp4" />
+                        Sizning brauzeringiz video elementini qo'llab-quvvatlamaydi.
+                      </video>
                     </div>
-                  ))
-                ) : (
-                  // Statik videolar
-                  <div className="aspect-video bg-black rounded-lg overflow-hidden shadow-2xl">
-                    <video 
-                      key={`static-${dayNumber}-player`}
-                      className="w-full h-full" 
-                      controls 
-                      controlsList="nodownload"
-                      preload="metadata"
-                      style={{ outline: 'none' }}
-                    >
-                      <source 
-                        src={dayNumber === 5 
-                          ? "https://pub-e29856519e414c75bfcf296d0dc7f3ad.r2.dev/Trailer/1768883942399-record-5.mp4"
-                          : "https://pub-033320f904dd42188d7dc224d58a2682.r2.dev/record-6.mp4"
-                        } 
-                        type="video/mp4" 
-                      />
-                      Sizning brauzeringiz video elementini qo'llab-quvvatlamaydi.
-                    </video>
                   </div>
-                )}
-              </div>
-            ) : /* 4-dars uchun audiolar (backend'dan) */
-            dayNumber === 4 && lessonData && lessonData.audios && lessonData.audios.length > 0 ? (
+                ))
+              ) : (
+                // Statik videolar
+                <div className="aspect-video bg-black rounded-lg overflow-hidden shadow-2xl">
+                  <video 
+                    key={`static-${dayNumber}-player`}
+                    className="w-full h-full" 
+                    controls 
+                    controlsList="nodownload"
+                    preload="metadata"
+                    style={{ outline: 'none' }}
+                  >
+                    <source 
+                      src={dayNumber === 5 
+                        ? "https://pub-e29856519e414c75bfcf296d0dc7f3ad.r2.dev/Trailer/1768883942399-record-5.mp4"
+                        : "https://pub-033320f904dd42188d7dc224d58a2682.r2.dev/record-6.mp4"
+                      } 
+                      type="video/mp4" 
+                    />
+                    Sizning brauzeringiz video elementini qo'llab-quvvatlamaydi.
+                  </video>
+                </div>
+              )}
+            </div>
+          </div>
+        </>
+      ) : currentTopic && (
+        <>
+          <style>{`
+            .custom-scrollbar {
+              scrollbar-width: thin;
+              scrollbar-color: rgba(148, 163, 184, 0.5) transparent;
+            }
+            .custom-scrollbar::-webkit-scrollbar {
+              width: 10px;
+            }
+            .custom-scrollbar::-webkit-scrollbar-track {
+              background: transparent;
+              border-radius: 5px;
+            }
+            .custom-scrollbar::-webkit-scrollbar-thumb {
+              background: rgba(148, 163, 184, 0.5);
+              border-radius: 5px;
+              border: 2px solid transparent;
+              background-clip: padding-box;
+            }
+            .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+              background: rgba(148, 163, 184, 0.7);
+              background-clip: padding-box;
+            }
+            .video-player-container {
+              position: relative;
+              width: 100%;
+              max-width: 4xl;
+              margin: 0 auto;
+            }
+            .video-player-container video {
+              width: 100%;
+              height: auto;
+              border-radius: 0.5rem;
+              background: #000;
+            }
+          `}</style>
+          <div className="bg-card rounded-xl p-4 sm:p-6 border border-border">
+            {/* 4-dars uchun audiolar (backend'dan) */}
+            {dayNumber === 4 && lessonData && lessonData.audios && lessonData.audios.length > 0 ? (
               <div className="w-full max-w-4xl mx-auto space-y-6">
                 {lessonData.audios.map((audio) => (
                   <div key={audio._id} className="bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-950/20 dark:to-purple-950/20 rounded-lg p-6 border border-blue-200 dark:border-blue-800">
@@ -327,11 +366,11 @@ export default function LessonDetailPage() {
                 ))}
               </div>
             ) : /* Frontend'dagi statik videolar yoki oddiy kontent */
-            currentTopic.videos && currentTopic.videos.length > 0 ? (
+            currentTopic && currentTopic.videos && currentTopic.videos.length > 0 ? (
               <div className="w-full max-w-4xl mx-auto">
-                <div className="aspect-video bg-black rounded-lg overflow-hidden shadow-2xl video-player-wrapper">
+                <div className="aspect-video bg-black rounded-lg overflow-hidden shadow-2xl">
                   <video 
-                    className="w-full h-full video-player" 
+                    className="w-full h-full" 
                     controls 
                     controlsList="nodownload"
                     preload="metadata"
@@ -342,7 +381,7 @@ export default function LessonDetailPage() {
                   </video>
                 </div>
               </div>
-            ) : (
+            ) : currentTopic ? (
               /* Oddiy kontent */
               <div 
                 className="overflow-y-auto pr-2 custom-scrollbar"
@@ -357,17 +396,17 @@ export default function LessonDetailPage() {
                   dangerouslySetInnerHTML={{ __html: currentTopic.content }}
                 />
               </div>
-            )}
+            ) : null}
           </div>
         </>
       )}
 
-       {/* Agar mavzular bo'sh bo'lsa */}
-       {topicKeys.length === 0 && (
-        <div className="bg-card rounded-xl p-4 sm:p-6 border border-border text-center py-12">
-          <p className="text-muted-foreground">Bu dars uchun mavzular hali qo'shilmagan</p>
-        </div>
-      )}
+       {/* Agar mavzular bo'sh bo'lsa (5-6 darslar uchun ko'rsatilmaydi) */}
+       {dayNumber !== 5 && dayNumber !== 6 && topicKeys.length === 0 && (
+         <div className="bg-card rounded-xl p-4 sm:p-6 border border-border text-center py-12">
+           <p className="text-muted-foreground">Bu dars uchun mavzular hali qo'shilmagan</p>
+         </div>
+       )}
 
       {/* Navigation */}
       <div className="flex items-center justify-between gap-4">
