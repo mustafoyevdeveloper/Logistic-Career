@@ -96,9 +96,12 @@ export default function LessonDetailPage() {
           const lessonStatus = (response.data.lessons as LessonStatus[]).find((l) => l.day === dayNumber);
           if (lessonStatus && lessonStatus.isUnlocked) {
             setHasAccess(true);
-            // Birinchi mavzuni tanlash
-            if (lesson && Object.keys(lesson.topics).length > 0) {
-              setSelectedTopic(Object.keys(lesson.topics)[0]);
+            // Birinchi mavzuni tanlash (faqat selectedTopic null bo'lsa)
+            if (lesson && lesson.topics && Object.keys(lesson.topics).length > 0) {
+              const firstTopic = Object.keys(lesson.topics)[0];
+              if (!selectedTopic || !lesson.topics[selectedTopic]) {
+                setSelectedTopic(firstTopic);
+              }
             }
           } else {
             toast.error('Bu dars hali ochilmagan');
@@ -129,16 +132,27 @@ export default function LessonDetailPage() {
     }
   }, [dayNumber, hasAccess]);
 
-  // Birinchi mavzuni avtomatik tanlash (yangi darsga o'tilganda)
+  // Birinchi mavzuni avtomatik tanlash (faqat yangi darsga o'tilganda)
   useEffect(() => {
-    if (lesson && Object.keys(lesson.topics).length > 0) {
-      // Har doim birinchi mavzuni tanlash (yangi darsga o'tilganda)
-      setSelectedTopic(Object.keys(lesson.topics)[0]);
+    // 5-6 darslar uchun topic tanlash kerak emas
+    if (dayNumber === 5 || dayNumber === 6) {
+      setSelectedTopic(null);
+      return;
+    }
+    
+    // Faqat yangi darsga o'tilganda birinchi mavzuni tanlash
+    // Agar selectedTopic allaqachon o'rnatilgan bo'lsa, uni o'zgartirmaslik
+    if (lesson && lesson.topics && Object.keys(lesson.topics).length > 0) {
+      const firstTopic = Object.keys(lesson.topics)[0];
+      // Faqat selectedTopic null yoki mavjud bo'lmagan topic bo'lsa, o'rnatish
+      if (!selectedTopic || !lesson.topics[selectedTopic]) {
+        setSelectedTopic(firstTopic);
+      }
     } else {
       // Topic'lar bo'lmasa, null qilish
       setSelectedTopic(null);
     }
-  }, [dayNumber, lesson]);
+  }, [dayNumber]); // Faqat dayNumber o'zgarganda ishlatish
 
   if (isCheckingAccess) {
     return (
@@ -168,8 +182,8 @@ export default function LessonDetailPage() {
     );
   }
 
-  const topicKeys = Object.keys(lesson.topics);
-  const currentTopic = selectedTopic && lesson.topics[selectedTopic] 
+  const topicKeys = lesson.topics ? Object.keys(lesson.topics) : [];
+  const currentTopic = selectedTopic && lesson.topics && lesson.topics[selectedTopic] 
     ? lesson.topics[selectedTopic] 
     : null;
 
@@ -342,8 +356,8 @@ export default function LessonDetailPage() {
             }
           `}</style>
           <div className="bg-card rounded-xl p-4 sm:p-6 border border-border">
-            {/* 4-dars uchun audiolar (backend'dan) */}
-            {dayNumber === 4 && lessonData && lessonData.audios && lessonData.audios.length > 0 ? (
+            {/* 4-dars uchun audiolar (backend'dan) - faqat "Yuk ma'lumotlarini olish shablon" topic'i uchun */}
+            {dayNumber === 4 && lessonData && lessonData.audios && lessonData.audios.length > 0 && selectedTopic === "Yuk ma'lumotlarini olish shablon" ? (
               <div className="w-full max-w-4xl mx-auto space-y-6">
                 {lessonData.audios.map((audio) => (
                   <div key={audio._id} className="bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-950/20 dark:to-purple-950/20 rounded-lg p-6 border border-blue-200 dark:border-blue-800">
@@ -364,9 +378,25 @@ export default function LessonDetailPage() {
                     </audio>
                   </div>
                 ))}
+                {/* Topic kontentini ham ko'rsatish */}
+                {currentTopic && (
+                  <div 
+                    className="overflow-y-auto pr-2 custom-scrollbar mt-6"
+                    style={{
+                      scrollbarWidth: 'thin',
+                      scrollbarColor: 'rgba(148, 163, 184, 0.5) transparent',
+                      maxHeight: 'calc(100vh - 300px)'
+                    }}
+                  >
+                    <div
+                      className="prose prose-sm sm:prose-base max-w-none text-foreground"
+                      dangerouslySetInnerHTML={{ __html: currentTopic.content }}
+                    />
+                  </div>
+                )}
               </div>
-            ) : /* Frontend'dagi statik videolar yoki oddiy kontent */
-            currentTopic && currentTopic.videos && currentTopic.videos.length > 0 ? (
+            ) : currentTopic && currentTopic.videos && currentTopic.videos.length > 0 ? (
+              /* Frontend'dagi statik videolar */
               <div className="w-full max-w-4xl mx-auto">
                 <div className="aspect-video bg-black rounded-lg overflow-hidden shadow-2xl">
                   <video 

@@ -5,8 +5,6 @@ import { ArrowLeft } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { weekLessons } from '@/data/weekLessons';
 import { apiService } from '@/services/api';
-import MediaManager from '@/components/MediaManager';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface LessonData {
   _id: string;
@@ -77,29 +75,27 @@ export default function TeacherLessonDetailPage() {
     loadLessonData();
   }, [dayNumber]);
 
-  const handleMediaUpdate = async () => {
-    if (!dayNumber) return;
-    
-    try {
-      const response = await apiService.request<{ lesson: LessonData }>(`/lessons/day/${dayNumber}`);
-      if (response.success && response.data) {
-        setLessonData(response.data.lesson);
-      }
-    } catch (error: any) {
-      console.error('Lesson yangilashda xatolik:', error);
-    }
-  };
-
-  // Birinchi mavzuni avtomatik tanlash (yangi darsga o'tilganda)
+  // Birinchi mavzuni avtomatik tanlash (faqat yangi darsga o'tilganda)
   useEffect(() => {
-    if (lesson && topicKeys.length > 0) {
-      // Har doim birinchi mavzuni tanlash (yangi darsga o'tilganda)
-      setSelectedTopic(topicKeys[0]);
+    // 5-6 darslar uchun topic tanlash kerak emas
+    if (dayNumber === 5 || dayNumber === 6) {
+      setSelectedTopic(null);
+      return;
+    }
+    
+    // Faqat yangi darsga o'tilganda birinchi mavzuni tanlash
+    // Agar selectedTopic allaqachon o'rnatilgan bo'lsa, uni o'zgartirmaslik
+    if (lesson && lesson.topics && Object.keys(lesson.topics).length > 0) {
+      const firstTopic = Object.keys(lesson.topics)[0];
+      // Faqat selectedTopic null yoki mavjud bo'lmagan topic bo'lsa, o'rnatish
+      if (!selectedTopic || !lesson.topics[selectedTopic]) {
+        setSelectedTopic(firstTopic);
+      }
     } else {
       // Topic'lar bo'lmasa, null qilish
       setSelectedTopic(null);
     }
-  }, [dayNumber, lesson, topicKeys]);
+  }, [dayNumber]); // Faqat dayNumber o'zgarganda ishlatish
 
   if (!lesson) {
     return (
@@ -328,43 +324,6 @@ export default function TeacherLessonDetailPage() {
         </div>
       )}
 
-      {/* Media Management (5-6 darslar uchun video, 4-dars uchun audio) */}
-      {dayNumber && (dayNumber === 4 || dayNumber === 5 || dayNumber === 6) && lessonData && (
-        <div className="bg-card rounded-xl p-6 border border-border">
-          <Tabs defaultValue={dayNumber === 4 ? 'audio' : 'video'} className="w-full">
-            <TabsList className="mb-6">
-              {dayNumber === 5 || dayNumber === 6 ? (
-                <TabsTrigger value="video">Videolar</TabsTrigger>
-              ) : null}
-              {dayNumber === 4 && (
-                <TabsTrigger value="audio">Audiolar</TabsTrigger>
-              )}
-            </TabsList>
-            
-            {(dayNumber === 5 || dayNumber === 6) && (
-              <TabsContent value="video">
-                <MediaManager
-                  lessonId={lessonData._id}
-                  type="video"
-                  mediaItems={lessonData.videos || []}
-                  onUpdate={handleMediaUpdate}
-                />
-              </TabsContent>
-            )}
-            
-            {dayNumber === 4 && (
-              <TabsContent value="audio">
-                <MediaManager
-                  lessonId={lessonData._id}
-                  type="audio"
-                  mediaItems={lessonData.audios || []}
-                  onUpdate={handleMediaUpdate}
-                />
-              </TabsContent>
-            )}
-          </Tabs>
-        </div>
-      )}
 
       {/* Navigation */}
       <div className="flex items-center justify-between gap-4">

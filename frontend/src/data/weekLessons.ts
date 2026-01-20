@@ -719,8 +719,8 @@ export const weekLessons: Record<number, WeekLesson> = {
         title: "Yuk ma'lumotlarini olish shablon",
         content: `
           <h2 class="text-2xl font-bold mb-4">Yukni ma'lumotlarini olish uchun shablon:</h2>
-                    <div class="w-full max-w-6xl p-2 mx-auto mt-6">
-            <div class="">
+          <div class="w-full max-w-6xl mx-auto mb-6">
+            <div>
               <audio 
                 controls 
                 controlsList="nodownload"
@@ -728,6 +728,8 @@ export const weekLessons: Record<number, WeekLesson> = {
                 style="outline: none;"
               >
                 <source src="/dars-3.ogg" type="audio/ogg" />
+                <source src="/dars-3.ogg" type="audio/mpeg" />
+                <source src="/dars-3.ogg" type="audio/wav" />
                 Sizning brauzeringiz audio elementini qo'llab-quvvatlamaydi.
               </audio>
             </div>
