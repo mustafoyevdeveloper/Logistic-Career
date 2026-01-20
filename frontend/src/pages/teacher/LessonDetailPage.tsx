@@ -4,22 +4,102 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { weekLessons } from '@/data/weekLessons';
+import { apiService } from '@/services/api';
+import MediaManager from '@/components/MediaManager';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+
+interface LessonData {
+  _id: string;
+  title: string;
+  description: string;
+  order: number;
+  videos: Array<{
+    _id: string;
+    url: string;
+    title: string;
+    uploadedAt: string;
+  }>;
+  audios: Array<{
+    _id: string;
+    url: string;
+    title: string;
+    uploadedAt: string;
+  }>;
+}
 
 export default function TeacherLessonDetailPage() {
   const { day } = useParams<{ day: string }>();
   const navigate = useNavigate();
   const [selectedTopic, setSelectedTopic] = useState<string | null>(null);
+  const [lessonData, setLessonData] = useState<LessonData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   
   const dayNumber = day ? parseInt(day, 10) : null;
   const lesson = dayNumber && weekLessons[dayNumber];
   const topicKeys = lesson ? Object.keys(lesson.topics || {}) : [];
 
-  // Birinchi mavzuni avtomatik tanlash
+  // Backend'dan lesson ma'lumotlarini olish
   useEffect(() => {
-    if (lesson && topicKeys.length > 0 && !selectedTopic) {
-      setSelectedTopic(topicKeys[0]);
+    const loadLessonData = async () => {
+      if (!dayNumber) {
+        setIsLoading(false);
+        return;
+      }
+      
+      // Faqat 4, 5, 6 darslar uchun backend'dan ma'lumot olish
+      if (dayNumber !== 4 && dayNumber !== 5 && dayNumber !== 6) {
+        setIsLoading(false);
+        return;
+      }
+      
+      try {
+        setIsLoading(true);
+        // lessonData'ni avval tozalash - yangi darsga o'tilganda eski ma'lumotlar ko'rsatilmasligi uchun
+        setLessonData(null);
+        
+        const response = await apiService.request<{ lesson: LessonData }>(`/lessons/day/${dayNumber}`);
+        // 404 xatolikni tekshirish
+        if (response.status === 404 || !response.success) {
+          // 404 yoki muvaffaqiyatsiz javob - statik ma'lumotlar ishlatiladi
+          return;
+        }
+        if (response.success && response.data) {
+          setLessonData(response.data.lesson);
+        }
+      } catch (error: any) {
+        // Xatolikni e'tiborsiz qoldirish (backend'da route topilmasa ham muammo emas)
+        // Statik ma'lumotlar ishlatiladi
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadLessonData();
+  }, [dayNumber]);
+
+  const handleMediaUpdate = async () => {
+    if (!dayNumber) return;
+    
+    try {
+      const response = await apiService.request<{ lesson: LessonData }>(`/lessons/day/${dayNumber}`);
+      if (response.success && response.data) {
+        setLessonData(response.data.lesson);
+      }
+    } catch (error: any) {
+      console.error('Lesson yangilashda xatolik:', error);
     }
-  }, [lesson, topicKeys, selectedTopic]);
+  };
+
+  // Birinchi mavzuni avtomatik tanlash (yangi darsga o'tilganda)
+  useEffect(() => {
+    if (lesson && topicKeys.length > 0) {
+      // Har doim birinchi mavzuni tanlash (yangi darsga o'tilganda)
+      setSelectedTopic(topicKeys[0]);
+    } else {
+      // Topic'lar bo'lmasa, null qilish
+      setSelectedTopic(null);
+    }
+  }, [dayNumber, lesson, topicKeys]);
 
   if (!lesson) {
     return (
@@ -58,8 +138,8 @@ export default function TeacherLessonDetailPage() {
         </div>
       </div>
 
-      {/* Topics */}
-      {topicKeys.length > 0 && (
+      {/* Topics - 5-6 darslar uchun ko'rsatilmaydi */}
+      {dayNumber !== 5 && dayNumber !== 6 && topicKeys.length > 0 && (
         <div className="bg-card rounded-xl p-4 sm:p-6 border border-border">
           <h2 className="text-lg font-semibold text-foreground mb-3">Dars mavzulari:</h2>
           <div className="flex flex-wrap gap-2">
@@ -81,8 +161,93 @@ export default function TeacherLessonDetailPage() {
         </div>
       )}
 
-      {/* Content - Bitta ustunli layout */}
-      {currentTopic && (
+      {/* Content - 5-6 darslar uchun topic'larsiz video ko'rsatish */}
+      {(dayNumber === 5 || dayNumber === 6) ? (
+        <>
+          <style>{`
+            .custom-scrollbar {
+              scrollbar-width: thin;
+              scrollbar-color: rgba(148, 163, 184, 0.5) transparent;
+            }
+            .custom-scrollbar::-webkit-scrollbar {
+              width: 10px;
+            }
+            .custom-scrollbar::-webkit-scrollbar-track {
+              background: transparent;
+              border-radius: 5px;
+            }
+            .custom-scrollbar::-webkit-scrollbar-thumb {
+              background: rgba(148, 163, 184, 0.5);
+              border-radius: 5px;
+              border: 2px solid transparent;
+              background-clip: padding-box;
+            }
+            .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+              background: rgba(148, 163, 184, 0.7);
+              background-clip: padding-box;
+            }
+            .video-player-container {
+              position: relative;
+              width: 100%;
+              max-width: 4xl;
+              margin: 0 auto;
+            }
+            .video-player-container video {
+              width: 100%;
+              height: auto;
+              border-radius: 0.5rem;
+              background: #000;
+            }
+          `}</style>
+          <div className="bg-card rounded-xl p-4 sm:p-6 border border-border">
+            {/* 5-6 darslar uchun videolar (backend'dan yoki statik) */}
+            <div className="w-full max-w-4xl mx-auto">
+              {lessonData && lessonData.videos && lessonData.videos.length > 0 ? (
+                // Backend'dan kelgan videolar
+                lessonData.videos.map((video) => (
+                  <div key={`${dayNumber}-${video._id}`} className="w-full">
+                    <h3 className="text-lg font-semibold mb-3 text-foreground">{video.title}</h3>
+                    <div className="aspect-video bg-black rounded-lg overflow-hidden shadow-2xl">
+                      <video 
+                        key={`${dayNumber}-${video._id}-player`}
+                        className="w-full h-full" 
+                        controls 
+                        controlsList="nodownload"
+                        preload="metadata"
+                        style={{ outline: 'none' }}
+                      >
+                        <source src={video.url} type="video/mp4" />
+                        Sizning brauzeringiz video elementini qo'llab-quvvatlamaydi.
+                      </video>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                // Statik videolar
+                <div className="aspect-video bg-black rounded-lg overflow-hidden shadow-2xl">
+                  <video 
+                    key={`static-${dayNumber}-player`}
+                    className="w-full h-full" 
+                    controls 
+                    controlsList="nodownload"
+                    preload="metadata"
+                    style={{ outline: 'none' }}
+                  >
+                    <source 
+                      src={dayNumber === 5 
+                        ? "https://pub-e29856519e414c75bfcf296d0dc7f3ad.r2.dev/Trailer/1768883942399-record-5.mp4"
+                        : "https://pub-033320f904dd42188d7dc224d58a2682.r2.dev/record-6.mp4"
+                      } 
+                      type="video/mp4" 
+                    />
+                    Sizning brauzeringiz video elementini qo'llab-quvvatlamaydi.
+                  </video>
+                </div>
+              )}
+            </div>
+          </div>
+        </>
+      ) : currentTopic && (
         <>
           <style>{`
             .custom-scrollbar {
@@ -156,10 +321,48 @@ export default function TeacherLessonDetailPage() {
         </>
       )}
 
-      {/* Agar mavzular bo'sh bo'lsa */}
-      {topicKeys.length === 0 && (
+      {/* Agar mavzular bo'sh bo'lsa (5-6 darslar uchun ko'rsatilmaydi) */}
+      {dayNumber !== 5 && dayNumber !== 6 && topicKeys.length === 0 && (
         <div className="bg-card rounded-xl p-4 sm:p-6 border border-border text-center py-12">
           <p className="text-muted-foreground">Bu dars uchun mavzular hali qo'shilmagan</p>
+        </div>
+      )}
+
+      {/* Media Management (5-6 darslar uchun video, 4-dars uchun audio) */}
+      {dayNumber && (dayNumber === 4 || dayNumber === 5 || dayNumber === 6) && lessonData && (
+        <div className="bg-card rounded-xl p-6 border border-border">
+          <Tabs defaultValue={dayNumber === 4 ? 'audio' : 'video'} className="w-full">
+            <TabsList className="mb-6">
+              {dayNumber === 5 || dayNumber === 6 ? (
+                <TabsTrigger value="video">Videolar</TabsTrigger>
+              ) : null}
+              {dayNumber === 4 && (
+                <TabsTrigger value="audio">Audiolar</TabsTrigger>
+              )}
+            </TabsList>
+            
+            {(dayNumber === 5 || dayNumber === 6) && (
+              <TabsContent value="video">
+                <MediaManager
+                  lessonId={lessonData._id}
+                  type="video"
+                  mediaItems={lessonData.videos || []}
+                  onUpdate={handleMediaUpdate}
+                />
+              </TabsContent>
+            )}
+            
+            {dayNumber === 4 && (
+              <TabsContent value="audio">
+                <MediaManager
+                  lessonId={lessonData._id}
+                  type="audio"
+                  mediaItems={lessonData.audios || []}
+                  onUpdate={handleMediaUpdate}
+                />
+              </TabsContent>
+            )}
+          </Tabs>
         </div>
       )}
 

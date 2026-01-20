@@ -72,6 +72,57 @@ export const getModules = async (req, res) => {
 };
 
 /**
+ * @desc    Day bo'yicha darsni olish
+ * @route   GET /api/lessons/day/:day
+ * @access  Private (All authenticated users)
+ */
+export const getLessonByDay = async (req, res) => {
+  try {
+    const { day } = req.params;
+    const dayNumber = parseInt(day);
+
+    console.log(`[getLessonByDay] Day: ${day}, DayNumber: ${dayNumber}, User: ${req.user?.role}`);
+
+    if (isNaN(dayNumber) || dayNumber < 1 || dayNumber > 7) {
+      return res.status(400).json({
+        success: false,
+        message: 'Noto\'g\'ri dars raqami',
+      });
+    }
+
+    // Darsni topish (order bo'yicha)
+    const allLessons = await Lesson.find({ isActive: true })
+      .sort({ order: 1 })
+      .lean();
+    
+    console.log(`[getLessonByDay] Found ${allLessons.length} lessons`);
+    
+    const lesson = allLessons.find(l => l.order === dayNumber);
+
+    if (!lesson) {
+      console.log(`[getLessonByDay] Lesson not found for day ${dayNumber}`);
+      return res.status(404).json({
+        success: false,
+        message: `Dars topilmadi (kun: ${dayNumber})`,
+      });
+    }
+
+    console.log(`[getLessonByDay] Lesson found: ${lesson._id}, videos: ${lesson.videos?.length || 0}, audios: ${lesson.audios?.length || 0}`);
+
+    res.json({
+      success: true,
+      data: { lesson },
+    });
+  } catch (error) {
+    console.error('[getLessonByDay] Error:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Server xatosi',
+    });
+  }
+};
+
+/**
  * @desc    Bitta darsni olish
  * @route   GET /api/lessons/:id
  * @access  Private

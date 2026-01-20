@@ -135,12 +135,25 @@ class ApiService {
     endpoint: string,
     options: RequestInit = {}
   ): Promise<ApiResponse<T>> {
+    // FormData bo'lsa, Content-Type o'rnatilmaydi (browser o'zi o'rnatadi)
+    const isFormData = options.body instanceof FormData;
+    
+    const token = localStorage.getItem('auth_token');
+    const deviceId = getDeviceId();
+    
     const config: RequestInit = {
       ...options,
-      headers: {
-        ...this.getHeaders(),
-        ...options.headers,
-      },
+      headers: isFormData
+        ? {
+            // FormData uchun faqat Authorization va Device-ID header'lar
+            ...(token && { Authorization: `Bearer ${token}` }),
+            ...(deviceId && { 'X-Device-ID': deviceId }),
+            ...options.headers,
+          }
+        : {
+            ...this.getHeaders(),
+            ...options.headers,
+          },
     };
 
     // Avval joriy URL'ni sinab ko'rish va tozalash
@@ -161,12 +174,23 @@ class ApiService {
         return data;
       }
 
+      // 404 xatolikni alohida handle qilish - xatolikni throw qilmaslik va console'da ko'rsatmaslik
+      if (response.status === 404) {
+        // 404 xatolikni silent qilish - frontend'da handle qilinadi
+        // Console'da ko'rsatmaslik
+        return {
+          success: false,
+          message: 'Route topilmadi',
+          status: 404,
+        } as ApiResponse<T>;
+      }
+
       // Agar 500+ xatolik bo'lsa, backend ishlamayotgan bo'lishi mumkin
       if (response.status >= 500) {
         throw new Error(`Backend xatosi: ${response.status}`);
       }
 
-      // Boshqa xatoliklar (400, 401, 403, 404) - bu backend ishlayapti, lekin so'rov noto'g'ri
+      // Boshqa xatoliklar (400, 401, 403) - bu backend ishlayapti, lekin so'rov noto'g'ri
       let errorMessage = 'Xatolik yuz berdi';
       try {
         const data = await response.json();
@@ -178,6 +202,7 @@ class ApiService {
         });
       } catch (parseError) {
         errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+        console.error('❌ Backend xatolik:', errorMessage);
       }
       throw new Error(errorMessage);
     } catch (error: any) {

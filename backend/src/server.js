@@ -13,6 +13,7 @@ import userRoutes from './routes/userRoutes.js';
 import studentRoutes from './routes/studentRoutes.js';
 import groupRoutes from './routes/groupRoutes.js';
 import notificationRoutes from './routes/notificationRoutes.js';
+import mediaRoutes from './routes/mediaRoutes.js';
 
 // Load env vars
 dotenv.config();
@@ -108,6 +109,12 @@ app.use('/api/users', userRoutes);
 app.use('/api/students', studentRoutes);
 app.use('/api/groups', groupRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/media', mediaRoutes);
+
+// Debug: Route'larni tekshirish
+console.log('✅ Routes loaded:');
+console.log('  - /api/lessons/day/:day (GET)');
+console.log('  - /api/lessons/:id (GET)');
 
 // 404 handler
 app.use((req, res) => {

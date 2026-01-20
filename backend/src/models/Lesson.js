@@ -42,6 +42,39 @@ const lessonSchema = new mongoose.Schema(
       type: String,
       default: '',
     },
+    // Video va audio URL'lari (Cloudflare R2'da saqlanadi)
+    videos: [
+      {
+        url: {
+          type: String,
+          required: true,
+        },
+        title: {
+          type: String,
+          default: '',
+        },
+        uploadedAt: {
+          type: Date,
+          default: Date.now,
+        },
+      },
+    ],
+    audios: [
+      {
+        url: {
+          type: String,
+          required: true,
+        },
+        title: {
+          type: String,
+          default: '',
+        },
+        uploadedAt: {
+          type: Date,
+          default: Date.now,
+        },
+      },
+    ],
     isActive: {
       type: Boolean,
       default: true,

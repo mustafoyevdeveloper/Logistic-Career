@@ -719,6 +719,19 @@ export const weekLessons: Record<number, WeekLesson> = {
         title: "Yuk ma'lumotlarini olish shablon",
         content: `
           <h2 class="text-2xl font-bold mb-4">Yukni ma'lumotlarini olish uchun shablon:</h2>
+                    <div class="w-full max-w-6xl p-2 mx-auto mt-6">
+            <div class="">
+              <audio 
+                controls 
+                controlsList="nodownload"
+                class="w-full"
+                style="outline: none;"
+              >
+                <source src="/dars-3.ogg" type="audio/ogg" />
+                Sizning brauzeringiz audio elementini qo'llab-quvvatlamaydi.
+              </audio>
+            </div>
+          </div>
           <p class="mb-4">Yuk haqida ma'lumot olish uchun quyidagi ma'lumotlarni so'rash kerak:</p>
           <ol class="list-decimal list-inside mb-4 space-y-2">
             <li><strong>Qayerdan qayerga</strong> — yuklash va tushirish manzillari</li>
@@ -780,56 +793,14 @@ export const weekLessons: Record<number, WeekLesson> = {
     title: "Logistika xarajatlari va narxlash",
     description: "Logistika xarajatlari turlari, narxlash usullari, xarajatlarni hisoblash, rentabellik va foyda koeffitsiyentlari.",
     duration: "",
-    topics: {
-      "Video dars": {
-        title: "Video dars",
-        content: `
-          <div class="w-full max-w-4xl mx-auto">
-            <div class="aspect-video bg-black rounded-lg overflow-hidden shadow-2xl">
-              <video 
-                class="w-full h-full" 
-                controls 
-                controlsList="nodownload"
-                poster=""
-                preload="metadata"
-              >
-                <source src="https://pub-e29856519e414c75bfcf296d0dc7f3ad.r2.dev/Kino/1762383597515-Cheksizlik_Sari_1080p.mp4" type="video/mp4" />
-                Sizning brauzeringiz video elementini qo'llab-quvvatlamaydi.
-              </video>
-            </div>
-          </div>
-        `,
-        videos: ["https://pub-e29856519e414c75bfcf296d0dc7f3ad.r2.dev/Kino/1762383597515-Cheksizlik_Sari_1080p.mp4"]
-      }
-    }
+    topics: {}
   },
   6: {
     day: 6,
     title: "Mijozlar bilan ishlash va muloqot",
     description: "Mijozlar bilan muloqot qilish, shikoyatlar bilan ishlash, xizmat ko'rsatish standartlari, mijozlar bilan munosabatlar.",
     duration: "",
-    topics: {
-      "Video dars": {
-        title: "Video dars",
-        content: `
-          <div class="w-full max-w-4xl mx-auto">
-            <div class="aspect-video bg-black rounded-lg overflow-hidden shadow-2xl">
-              <video 
-                class="w-full h-full" 
-                controls 
-                controlsList="nodownload"
-                poster=""
-                preload="metadata"
-              >
-                <source src="https://pub-e29856519e414c75bfcf296d0dc7f3ad.r2.dev/Kino/1764166949478-tor-4-1080p-ozbek-tilida-asilmedia.net.mp4" type="video/mp4" />
-                Sizning brauzeringiz video elementini qo'llab-quvvatlamaydi.
-              </video>
-            </div>
-          </div>
-        `,
-        videos: ["https://pub-e29856519e414c75bfcf296d0dc7f3ad.r2.dev/Kino/1764166949478-tor-4-1080p-ozbek-tilida-asilmedia.net.mp4"]
-      }
-    }
+    topics: {}
   },
   7: {
     day: 7,

@@ -7,15 +7,65 @@ import { apiService } from '@/services/api';
 import { toast } from 'sonner';
 import { weekLessons } from '@/data/weekLessons';
 
+interface LessonData {
+  _id: string;
+  videos: Array<{
+    _id: string;
+    url: string;
+    title: string;
+  }>;
+  audios: Array<{
+    _id: string;
+    url: string;
+    title: string;
+  }>;
+}
+
 export default function LessonDetailPage() {
   const { day } = useParams<{ day: string }>();
   const navigate = useNavigate();
   const [isCheckingAccess, setIsCheckingAccess] = useState(true);
   const [hasAccess, setHasAccess] = useState(false);
   const [selectedTopic, setSelectedTopic] = useState<string | null>(null);
+  const [lessonData, setLessonData] = useState<LessonData | null>(null);
   
   const dayNumber = day ? parseInt(day, 10) : null;
   const lesson = dayNumber && weekLessons[dayNumber];
+
+  // Backend'dan lesson ma'lumotlarini olish (video/audio uchun)
+  useEffect(() => {
+    const loadLessonData = async () => {
+      if (!dayNumber || !hasAccess) return;
+      
+      // Faqat 4, 5, 6 darslar uchun backend'dan ma'lumot olish
+      if (dayNumber !== 4 && dayNumber !== 5 && dayNumber !== 6) {
+        setLessonData(null);
+        return;
+      }
+      
+      // lessonData'ni avval tozalash - yangi darsga o'tilganda eski ma'lumotlar ko'rsatilmasligi uchun
+      setLessonData(null);
+      
+      try {
+        const response = await apiService.request<{ lesson: LessonData }>(`/lessons/day/${dayNumber}`);
+        // 404 xatolikni tekshirish
+        if (response.status === 404 || !response.success) {
+          // 404 yoki muvaffaqiyatsiz javob - statik ma'lumotlar ishlatiladi
+          return;
+        }
+        if (response.success && response.data) {
+          setLessonData(response.data.lesson);
+        }
+      } catch (error: any) {
+        // Xatolikni e'tiborsiz qoldirish (backend'da route topilmasa ham muammo emas)
+        // Statik ma'lumotlar ishlatiladi
+      }
+    };
+
+    if (hasAccess) {
+      loadLessonData();
+    }
+  }, [dayNumber, hasAccess]);
 
   // Dars holatini tekshirish
   useEffect(() => {
@@ -79,12 +129,16 @@ export default function LessonDetailPage() {
     }
   }, [dayNumber, hasAccess]);
 
-  // Birinchi mavzuni avtomatik tanlash
+  // Birinchi mavzuni avtomatik tanlash (yangi darsga o'tilganda)
   useEffect(() => {
-    if (lesson && Object.keys(lesson.topics).length > 0 && !selectedTopic) {
+    if (lesson && Object.keys(lesson.topics).length > 0) {
+      // Har doim birinchi mavzuni tanlash (yangi darsga o'tilganda)
       setSelectedTopic(Object.keys(lesson.topics)[0]);
+    } else {
+      // Topic'lar bo'lmasa, null qilish
+      setSelectedTopic(null);
     }
-  }, [lesson, selectedTopic]);
+  }, [dayNumber, lesson]);
 
   if (isCheckingAccess) {
     return (
@@ -119,6 +173,9 @@ export default function LessonDetailPage() {
     ? lesson.topics[selectedTopic] 
     : null;
 
+  // 5-6 darslar uchun topic'larni ko'rsatmaslik
+  const showTopics = dayNumber !== 5 && dayNumber !== 6;
+
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
@@ -138,8 +195,8 @@ export default function LessonDetailPage() {
         </div>
       </div>
 
-      {/* Topics */}
-      {topicKeys.length > 0 && (
+      {/* Topics - 5-6 darslar uchun ko'rsatilmaydi */}
+      {showTopics && topicKeys.length > 0 && (
         <div className="bg-card rounded-xl p-4 sm:p-6 border border-border">
           <h2 className="text-lg font-semibold text-foreground mb-3">Dars mavzulari:</h2>
           <div className="flex flex-wrap gap-2">
@@ -200,12 +257,81 @@ export default function LessonDetailPage() {
             }
           `}</style>
           <div className="bg-card rounded-xl p-4 sm:p-6 border border-border">
-            {/* Video mavjud bo'lsa, video player ko'rsatish */}
-            {currentTopic.videos && currentTopic.videos.length > 0 ? (
+            {/* 5-6 darslar uchun videolar (backend'dan yoki statik) */}
+            {(dayNumber === 5 || dayNumber === 6) ? (
               <div className="w-full max-w-4xl mx-auto">
-                <div className="aspect-video bg-black rounded-lg overflow-hidden shadow-2xl">
+                {lessonData && lessonData.videos && lessonData.videos.length > 0 ? (
+                  // Backend'dan kelgan videolar
+                  lessonData.videos.map((video) => (
+                    <div key={`${dayNumber}-${video._id}`} className="w-full">
+                      <h3 className="text-lg font-semibold mb-3 text-foreground">{video.title}</h3>
+                      <div className="aspect-video bg-black rounded-lg overflow-hidden shadow-2xl">
+                        <video 
+                          key={`${dayNumber}-${video._id}-player`}
+                          className="w-full h-full" 
+                          controls 
+                          controlsList="nodownload"
+                          preload="metadata"
+                          style={{ outline: 'none' }}
+                        >
+                          <source src={video.url} type="video/mp4" />
+                          Sizning brauzeringiz video elementini qo'llab-quvvatlamaydi.
+                        </video>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  // Statik videolar
+                  <div className="aspect-video bg-black rounded-lg overflow-hidden shadow-2xl">
+                    <video 
+                      key={`static-${dayNumber}-player`}
+                      className="w-full h-full" 
+                      controls 
+                      controlsList="nodownload"
+                      preload="metadata"
+                      style={{ outline: 'none' }}
+                    >
+                      <source 
+                        src={dayNumber === 5 
+                          ? "https://pub-e29856519e414c75bfcf296d0dc7f3ad.r2.dev/Trailer/1768883942399-record-5.mp4"
+                          : "https://pub-033320f904dd42188d7dc224d58a2682.r2.dev/record-6.mp4"
+                        } 
+                        type="video/mp4" 
+                      />
+                      Sizning brauzeringiz video elementini qo'llab-quvvatlamaydi.
+                    </video>
+                  </div>
+                )}
+              </div>
+            ) : /* 4-dars uchun audiolar (backend'dan) */
+            dayNumber === 4 && lessonData && lessonData.audios && lessonData.audios.length > 0 ? (
+              <div className="w-full max-w-4xl mx-auto space-y-6">
+                {lessonData.audios.map((audio) => (
+                  <div key={audio._id} className="bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-950/20 dark:to-purple-950/20 rounded-lg p-6 border border-blue-200 dark:border-blue-800">
+                    <h3 className="text-lg font-semibold mb-4 text-foreground flex items-center gap-2">
+                      <span>🎵</span>
+                      {audio.title}
+                    </h3>
+                    <audio 
+                      controls 
+                      controlsList="nodownload"
+                      className="w-full"
+                      style={{ outline: 'none' }}
+                    >
+                      <source src={audio.url} type="audio/mpeg" />
+                      <source src={audio.url} type="audio/wav" />
+                      <source src={audio.url} type="audio/ogg" />
+                      Sizning brauzeringiz audio elementini qo'llab-quvvatlamaydi.
+                    </audio>
+                  </div>
+                ))}
+              </div>
+            ) : /* Frontend'dagi statik videolar yoki oddiy kontent */
+            currentTopic.videos && currentTopic.videos.length > 0 ? (
+              <div className="w-full max-w-4xl mx-auto">
+                <div className="aspect-video bg-black rounded-lg overflow-hidden shadow-2xl video-player-wrapper">
                   <video 
-                    className="w-full h-full" 
+                    className="w-full h-full video-player" 
                     controls 
                     controlsList="nodownload"
                     preload="metadata"
