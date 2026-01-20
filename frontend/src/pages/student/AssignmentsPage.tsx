@@ -1,23 +1,9 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { Input } from '@/components/ui/input';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { apiService } from '@/services/api';
-import { 
-  ClipboardList, 
-  Clock, 
-  CheckCircle2, 
-  AlertCircle,
-  ArrowRight,
-  Trophy,
-  Send,
-  X,
-  Check,
-  XCircle
-} from 'lucide-react';
+import { Trophy, Check, XCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
@@ -43,43 +29,9 @@ interface Assignment {
   submission?: any;
 }
 
-const getStatusColor = (status: Assignment['status']) => {
-  switch (status) {
-    case 'graded':
-      return 'bg-success/10 text-success';
-    case 'submitted':
-      return 'bg-info/10 text-info';
-    case 'pending':
-      return 'bg-warning/10 text-warning';
-  }
-};
-
-const getStatusLabel = (status: Assignment['status']) => {
-  switch (status) {
-    case 'graded':
-      return 'Baholangan';
-    case 'submitted':
-      return 'Yuborilgan';
-    case 'pending':
-      return 'Kutilmoqda';
-  }
-};
-
-const getTypeLabel = (type: Assignment['type']) => {
-  switch (type) {
-    case 'quiz':
-      return 'Test';
-    case 'practical':
-      return 'Amaliy';
-    case 'scenario':
-      return 'Senariy';
-  }
-};
-
 export default function AssignmentsPage() {
-  const navigate = useNavigate();
   const [assignments, setAssignments] = useState<Assignment[]>([]);
-  const [selectedAssignment, setSelectedAssignment] = useState<Assignment | null>(null);
+  const [selectedAssignment, setSelectedAssignment] = useState<Assignment | null>(null); // faqat quiz
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -95,7 +47,18 @@ export default function AssignmentsPage() {
       setIsLoading(true);
       const response = await apiService.request<{ assignments: Assignment[] }>('/assignments');
       if (response.success && response.data) {
-        setAssignments(response.data.assignments || []);
+        const list = response.data.assignments || [];
+        setAssignments(list);
+
+        // Testlar sahifasi: faqat 40 savol testning o'zi
+        const quiz =
+          list.find((a) => a.type === 'quiz' && a.questions?.length === 40) ||
+          list.find((a) => a.type === 'quiz') ||
+          null;
+
+        if (quiz) {
+          await loadAssignmentDetails(quiz._id);
+        }
       }
     } catch (error: any) {
       toast.error(error.message || 'Topshiriqlarni yuklashda xatolik');
@@ -120,6 +83,22 @@ export default function AssignmentsPage() {
             }
           });
           setAnswers(submissionAnswers);
+
+          // Quiz uchun oldingi javoblarni lock qilib, correctness'ni hisoblaymiz
+          if (assignment.type === 'quiz') {
+            const locked: Record<string, boolean> = {};
+            const results: Record<string, boolean> = {};
+            assignment.questions.forEach((q, idx) => {
+              const qid = q._id?.toString() || idx.toString();
+              const ua = submissionAnswers[qid];
+              if (ua !== undefined && ua !== '') {
+                locked[qid] = true;
+                if (q.correctAnswer !== undefined) results[qid] = ua === q.correctAnswer;
+              }
+            });
+            setLockedQuestions(locked);
+            setAnsweredQuestions(results);
+          }
         } else {
           // Yangi topshiriq uchun bo'sh javoblar
           setAnswers({});
@@ -129,16 +108,6 @@ export default function AssignmentsPage() {
       }
     } catch (error: any) {
       toast.error(error.message || 'Topshiriq ma\'lumotlarini yuklashda xatolik');
-    }
-  };
-
-  const handleOpenAssignment = (assignment: Assignment) => {
-    if (assignment.status === 'graded' || assignment.status === 'submitted') {
-      // Baholangan yoki yuborilgan topshiriqni ko'rish
-      loadAssignmentDetails(assignment._id);
-    } else {
-      // Yangi topshiriqni ochish
-      loadAssignmentDetails(assignment._id);
     }
   };
 
@@ -167,12 +136,9 @@ export default function AssignmentsPage() {
         [questionId]: true
       }));
 
-      // Toast xabari
-      if (isCorrect) {
-        toast.success('✅ To\'g\'ri javob!', { duration: 2000 });
-      } else {
-        toast.error('❌ Noto\'g\'ri javob', { duration: 2000 });
-      }
+      // Telegram quiz kabi darhol feedback
+      if (isCorrect) toast.success("To'g'ri", { duration: 1200 });
+      else toast.error("Xato", { duration: 1200 });
     }
   };
 
@@ -194,6 +160,11 @@ export default function AssignmentsPage() {
   const getAnsweredCount = () => {
     return Object.keys(answers).filter(key => answers[key] && answers[key].trim() !== '').length;
   };
+
+  const isAllAnswered = useMemo(() => {
+    if (!selectedAssignment) return false;
+    return getAnsweredCount() === selectedAssignment.questions.length;
+  }, [selectedAssignment, answers]);
 
   const handleSubmit = async () => {
     if (!selectedAssignment) return;
@@ -224,10 +195,8 @@ export default function AssignmentsPage() {
       });
 
       if (response.success) {
-        toast.success('Topshiriq muvaffaqiyatli yuborildi!');
-        setSelectedAssignment(null);
-        setAnswers({});
-        loadAssignments(); // Ro'yxatni yangilash
+        toast.success('Natija MongoDBga saqlandi!');
+        await loadAssignmentDetails(selectedAssignment._id);
       }
     } catch (error: any) {
       toast.error(error.message || 'Topshiriqni yuborishda xatolik');
@@ -236,438 +205,156 @@ export default function AssignmentsPage() {
     }
   };
 
-  // Faqat testlar (quiz) uchun statistika
-  const quizAssignments = assignments.filter(a => a.type === 'quiz');
-  const completedCount = quizAssignments.filter(a => a.status === 'graded' || a.status === 'submitted').length;
-  const pendingCount = quizAssignments.filter(a => a.status === 'pending').length;
-  const avgScore = quizAssignments
-    .filter(a => a.score !== undefined && a.maxScore > 0)
-    .reduce((acc, a) => {
-      const percentage = ((a.score || 0) / a.maxScore) * 100;
-      return acc + percentage;
-    }, 0) / quizAssignments.filter(a => a.score !== undefined && a.maxScore > 0).length || 0;
-
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
       <div>
         <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">Testlar</h1>
-        <p className="text-muted-foreground">
-          Testlarni yeching va o'z bilimingizni sinab ko'ring
-        </p>
       </div>
-
-      {/* Stats */}
-      <div className="grid grid-cols-3 gap-4">
-        <div className="bg-card rounded-xl p-4 border border-border shadow-card">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-warning/10 flex items-center justify-center">
-              <AlertCircle className="w-5 h-5 text-warning" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-foreground">{pendingCount}</p>
-              <p className="text-sm text-muted-foreground">Kutilmoqda</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-card rounded-xl p-4 border border-border shadow-card">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-success/10 flex items-center justify-center">
-              <CheckCircle2 className="w-5 h-5 text-success" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-foreground">{completedCount}</p>
-              <p className="text-sm text-muted-foreground">Bajarilgan</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-card rounded-xl p-4 border border-border shadow-card">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-              <Trophy className="w-5 h-5 text-primary" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-foreground">{Math.round(avgScore)}%</p>
-              <p className="text-sm text-muted-foreground">O'rtacha ball</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Assignment Detail Modal */}
-      {selectedAssignment && (
-        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-card rounded-xl border border-border shadow-card max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6">
-              {/* Header */}
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex-1">
-                  <h2 className="text-2xl font-bold text-foreground">{selectedAssignment.title}</h2>
-                  <p className="text-muted-foreground mt-1">{selectedAssignment.description}</p>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => {
-                    setSelectedAssignment(null);
-                    setAnswers({});
-                    setAnsweredQuestions({});
-                    setLockedQuestions({});
-                  }}
-                >
-                  <X className="w-5 h-5" />
-                </Button>
-              </div>
-
-              {/* Real-time Score Display */}
-              {selectedAssignment.type === 'quiz' && selectedAssignment.status === 'pending' && (
-                <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/20 dark:to-purple-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-6">
-                      <div>
-                        <p className="text-sm text-muted-foreground">Javob berilgan</p>
-                        <p className="text-2xl font-bold text-foreground">
-                          {getAnsweredCount()}/{selectedAssignment.questions.length}
-                        </p>
-                      </div>
-                      <div className="h-12 w-px bg-border" />
-                      <div>
-                        <p className="text-sm text-muted-foreground">Joriy ball</p>
-                        <p className="text-2xl font-bold text-success">
-                          {calculateScore()}/{selectedAssignment.maxScore}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-sm text-muted-foreground">Foiz</p>
-                      <p className="text-2xl font-bold text-primary">
-                        {selectedAssignment.maxScore > 0 
-                          ? Math.round((calculateScore() / selectedAssignment.maxScore) * 100) 
-                          : 0}%
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Questions */}
-              <div className="space-y-6">
-                {selectedAssignment.questions.map((question, index) => {
-                  const questionId = question._id?.toString() || index.toString();
-                  const currentAnswer = answers[questionId] || '';
-                  const isAnswered = currentAnswer !== '';
-                  const isCorrect = answeredQuestions[questionId];
-                  const showResult = selectedAssignment.type === 'quiz' && isAnswered && 
-                                    (selectedAssignment.status === 'pending' || selectedAssignment.status === 'graded');
-
-                  return (
-                    <div 
-                      key={questionId} 
-                      className={cn(
-                        "border rounded-lg p-4 transition-all duration-200",
-                        showResult && isCorrect === true 
-                          ? "border-success/50 bg-success/5" 
-                          : showResult && isCorrect === false 
-                          ? "border-error/50 bg-error/5" 
-                          : "border-border"
-                      )}
-                    >
-                      <div className="mb-4">
-                        <div className="flex items-start gap-2 mb-2">
-                          <span className="font-semibold text-foreground">{index + 1}.</span>
-                          <p className="font-medium text-foreground flex-1">{question.question}</p>
-                          <div className="flex items-center gap-2">
-                            {showResult && (
-                              isCorrect ? (
-                                <Check className="w-5 h-5 text-success" />
-                              ) : (
-                                <XCircle className="w-5 h-5 text-error" />
-                              )
-                            )}
-                            <span className="text-sm text-muted-foreground">({question.points} ball)</span>
-                          </div>
-                        </div>
-                      </div>
-
-                      {question.type === 'multiple-choice' && question.options ? (
-                        <RadioGroup
-                          value={currentAnswer}
-                          onValueChange={(value) => handleAnswerChange(questionId, value, question.correctAnswer)}
-                          disabled={selectedAssignment.status === 'graded' || selectedAssignment.status === 'submitted' || lockedQuestions[questionId]}
-                        >
-                          {question.options.map((option, optIndex) => {
-                            const isSelected = currentAnswer === option;
-                            const isCorrectOption = option === question.correctAnswer;
-                            const showOptionResult = showResult && isSelected;
-                            const isLocked = lockedQuestions[questionId];
-
-                            return (
-                              <div 
-                                key={optIndex} 
-                                className={cn(
-                                  "flex items-center space-x-2 py-2 px-3 rounded-lg transition-colors",
-                                  showOptionResult && isCorrect 
-                                    ? "bg-success/10 border border-success/30" 
-                                    : showOptionResult && !isCorrect 
-                                    ? "bg-error/10 border border-error/30" 
-                                    : showResult && isCorrectOption && !isSelected
-                                    ? "bg-success/5 border border-success/20"
-                                    : isLocked && !isSelected
-                                    ? "opacity-60"
-                                    : ""
-                                )}
-                              >
-                                <RadioGroupItem 
-                                  value={option} 
-                                  id={`${questionId}-${optIndex}`}
-                                  disabled={isLocked}
-                                />
-                                <Label 
-                                  htmlFor={`${questionId}-${optIndex}`} 
-                                  className={cn(
-                                    "flex-1 flex items-center gap-2",
-                                    isLocked && !isSelected ? "cursor-not-allowed opacity-60" : "cursor-pointer"
-                                  )}
-                                >
-                                  {option}
-                                  {showResult && isCorrectOption && (
-                                    <span className="text-xs text-success font-medium">(To'g'ri javob)</span>
-                                  )}
-                                </Label>
-                              </div>
-                            );
-                          })}
-                        </RadioGroup>
-                      ) : (
-                        <Textarea
-                          value={currentAnswer}
-                          onChange={(e) => handleAnswerChange(questionId, e.target.value)}
-                          placeholder="Javobingizni yozing..."
-                          disabled={selectedAssignment.status === 'graded' || selectedAssignment.status === 'submitted'}
-                          rows={4}
-                          className="w-full"
-                        />
-                      )}
-
-                      {/* Result message */}
-                      {showResult && (
-                        <div className={cn(
-                          "mt-3 p-3 rounded-lg flex items-center gap-2",
-                          isCorrect 
-                            ? "bg-success/10 border border-success/20" 
-                            : "bg-error/10 border border-error/20"
-                        )}>
-                          {isCorrect ? (
-                            <>
-                              <Check className="w-5 h-5 text-success" />
-                              <p className="text-sm font-medium text-success">
-                                To'g'ri javob! +{question.points} ball
-                              </p>
-                            </>
-                          ) : (
-                            <>
-                              <XCircle className="w-5 h-5 text-error" />
-                              <p className="text-sm font-medium text-error">
-                                Noto'g'ri javob. To'g'ri javob: {question.correctAnswer}
-                              </p>
-                            </>
-                          )}
-                        </div>
-                      )}
-
-                      {/* Correct answer (if graded) */}
-                      {selectedAssignment.status === 'graded' && question.correctAnswer && question.type === 'multiple-choice' && !showResult && (
-                        <div className="mt-3 p-3 bg-success/10 border border-success/20 rounded-lg">
-                          <p className="text-sm font-medium text-success">To'g'ri javob: {question.correctAnswer}</p>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-
-              {/* Submission Info */}
-              {selectedAssignment.submission && (
-                <div className="mt-6 p-4 bg-muted rounded-lg">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-muted-foreground">Yuborilgan vaqt:</p>
-                      <p className="font-medium text-foreground">
-                        {selectedAssignment.submission.submittedAt 
-                          ? new Date(selectedAssignment.submission.submittedAt).toLocaleString('uz-UZ')
-                          : 'Noma\'lum'}
-                      </p>
-                    </div>
-                    {selectedAssignment.status === 'graded' && selectedAssignment.score !== undefined && (
-                      <div className="text-right">
-                        <p className="text-sm text-muted-foreground">Ball:</p>
-                        <p className="text-2xl font-bold text-success">
-                          {selectedAssignment.score}/{selectedAssignment.maxScore}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                  {selectedAssignment.submission.teacherFeedback && (
-                    <div className="mt-4">
-                      <p className="text-sm font-medium text-foreground mb-2">O'qituvchi izohi:</p>
-                      <p className="text-sm text-muted-foreground">{selectedAssignment.submission.teacherFeedback}</p>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Final Score Summary (before submit) */}
-              {selectedAssignment.status === 'pending' && selectedAssignment.type === 'quiz' && getAnsweredCount() > 0 && (
-                <div className="mt-6 p-6 bg-gradient-to-br from-primary/10 to-purple-500/10 rounded-xl border-2 border-primary/20">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-muted-foreground mb-1">Umumiy natija</p>
-                      <p className="text-3xl font-bold text-foreground">
-                        {calculateScore()}/{selectedAssignment.maxScore} ball
-                      </p>
-                      <p className="text-lg text-muted-foreground mt-1">
-                        ({Math.round((calculateScore() / selectedAssignment.maxScore) * 100)}%)
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <div className="w-20 h-20 rounded-full bg-primary/20 flex items-center justify-center">
-                        <Trophy className="w-10 h-10 text-primary" />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Actions */}
-              {selectedAssignment.status === 'pending' && (
-                <div className="mt-6 flex gap-3 justify-end">
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      setSelectedAssignment(null);
-                      setAnswers({});
-                      setAnsweredQuestions({});
-                      setLockedQuestions({});
-                    }}
-                  >
-                    Bekor qilish
-                  </Button>
-                  <Button
-                    variant="gradient"
-                    onClick={handleSubmit}
-                    disabled={isSubmitting}
-                  >
-                    {isSubmitting ? (
-                      <>
-                        <div className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin mr-2" />
-                        Yuborilmoqda...
-                      </>
-                    ) : (
-                      <>
-                        <Send className="w-4 h-4 mr-2" />
-                        Yuborish ({calculateScore()}/{selectedAssignment.maxScore} ball)
-                      </>
-                    )}
-                  </Button>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Assignments List */}
       {isLoading ? (
         <div className="text-center py-12">
           <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
           <p className="text-muted-foreground">Yuklanmoqda...</p>
         </div>
+      ) : !selectedAssignment ? (
+        <div className="bg-card rounded-xl p-6 border border-border text-center">
+          <p className="text-muted-foreground">Test topilmadi</p>
+        </div>
       ) : (
-        <div className="space-y-4">
-          {assignments.map((assignment) => (
-            <div
-              key={assignment._id}
-            className="bg-card rounded-xl p-5 border border-border shadow-card hover:shadow-card-hover transition-shadow"
-          >
-            <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-              {/* Icon */}
-              <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-                <ClipboardList className="w-6 h-6 text-primary" />
-              </div>
+        <div className="space-y-6">
+          {/* Questions (faqat multiple-choice) */}
+          <div className="space-y-6">
+            {selectedAssignment.questions.map((question, index) => {
+              const questionId = question._id?.toString() || index.toString();
+              const currentAnswer = answers[questionId] || '';
+              const isAnswered = currentAnswer !== '';
+              const isCorrect = answeredQuestions[questionId];
+              const showResult = selectedAssignment.type === 'quiz' && isAnswered;
 
-              {/* Info */}
-              <div className="flex-1 min-w-0">
-                <div className="flex flex-wrap items-center gap-2 mb-1">
-                  <h3 className="font-semibold text-foreground">{assignment.title}</h3>
-                  <span className="px-2 py-0.5 bg-muted rounded-full text-xs text-muted-foreground">
-                    {getTypeLabel(assignment.type)}
-                  </span>
-                  <span className={cn(
-                    "px-2 py-0.5 rounded-full text-xs font-medium",
-                    getStatusColor(assignment.status)
-                  )}>
-                    {getStatusLabel(assignment.status)}
-                  </span>
-                </div>
-                <p className="text-sm text-muted-foreground mb-2">{assignment.description}</p>
-                <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                  <span className="flex items-center gap-1">
-                    <Clock className="w-4 h-4" />
-                    {new Date(assignment.dueDate).toLocaleDateString('uz-UZ')}
-                  </span>
-                  {assignment.score !== undefined && (
-                    <span className="flex items-center gap-1 text-success font-medium">
-                      <Trophy className="w-4 h-4" />
-                      {assignment.score}/{assignment.maxScore} ball
-                    </span>
+              return (
+                <div
+                  key={questionId}
+                  className={cn(
+                    "border rounded-lg p-4 transition-all duration-200",
+                    showResult && isCorrect === true
+                      ? "border-success/50 bg-success/10"
+                      : showResult && isCorrect === false
+                      ? "border-error/50 bg-error/10"
+                      : "border-border"
                   )}
-                </div>
-              </div>
-
-              {/* Action */}
-              {assignment.type === 'quiz' ? (
-                <div className="flex items-center gap-2 shrink-0">
-                  <span className="text-2xl font-bold text-primary">{assignment.questions.length}</span>
-                  <span className="text-sm text-muted-foreground">ta savol</span>
-                  <Button 
-                    variant={assignment.status === 'pending' ? 'gradient' : 'outline'}
-                    onClick={() => handleOpenAssignment(assignment)}
-                  >
-                    {assignment.status === 'pending' ? (
-                      <>
-                        Boshlash
-                        <ArrowRight className="w-4 h-4 ml-2" />
-                      </>
-                    ) : assignment.status === 'graded' ? (
-                      'Natijani ko\'rish'
-                    ) : (
-                      'Ko\'rish'
-                    )}
-                  </Button>
-                </div>
-              ) : (
-                <Button 
-                  variant={assignment.status === 'pending' ? 'gradient' : 'outline'}
-                  className="shrink-0"
-                  onClick={() => handleOpenAssignment(assignment)}
                 >
-                  {assignment.status === 'pending' ? (
-                    <>
-                      Boshlash
-                      <ArrowRight className="w-4 h-4 ml-2" />
-                    </>
-                  ) : assignment.status === 'graded' ? (
-                    'Natijani ko\'rish'
-                  ) : (
-                    'Ko\'rish'
+                  <div className="mb-4">
+                    <div className="flex items-start gap-2 mb-2">
+                      <span className="font-semibold text-foreground">{index + 1}.</span>
+                      <p className="font-medium text-foreground flex-1">{question.question}</p>
+                      {showResult && (
+                        isCorrect ? (
+                          <Check className="w-5 h-5 text-success" />
+                        ) : (
+                          <XCircle className="w-5 h-5 text-error" />
+                        )
+                      )}
+                    </div>
+                  </div>
+
+                  {question.type === 'multiple-choice' && question.options ? (
+                    <RadioGroup
+                      value={currentAnswer}
+                      onValueChange={(value) => handleAnswerChange(questionId, value, question.correctAnswer)}
+                      disabled={selectedAssignment.status === 'graded' || selectedAssignment.status === 'submitted' || lockedQuestions[questionId]}
+                    >
+                      {question.options.map((option, optIndex) => {
+                        const isSelected = currentAnswer === option;
+                        const showOptionResult = showResult && isSelected;
+                        const isLocked = lockedQuestions[questionId];
+
+                        return (
+                          <div
+                            key={optIndex}
+                            className={cn(
+                              "flex items-center space-x-2 py-2 px-3 rounded-lg transition-colors",
+                              showOptionResult && isCorrect === true
+                                ? "bg-success/10 border border-success/30"
+                                : showOptionResult && isCorrect === false
+                                ? "bg-error/10 border border-error/30"
+                                : isLocked && !isSelected
+                                ? "opacity-60"
+                                : ""
+                            )}
+                          >
+                            <RadioGroupItem
+                              value={option}
+                              id={`${questionId}-${optIndex}`}
+                              disabled={isLocked}
+                            />
+                            <Label
+                              htmlFor={`${questionId}-${optIndex}`}
+                              className={cn(
+                                "flex-1",
+                                isLocked && !isSelected ? "cursor-not-allowed opacity-60" : "cursor-pointer"
+                              )}
+                            >
+                              {option}
+                            </Label>
+                          </div>
+                        );
+                      })}
+                    </RadioGroup>
+                  ) : null}
+
+                  {showResult && (
+                    <div
+                      className={cn(
+                        "mt-3 p-3 rounded-lg flex items-center gap-2",
+                        isCorrect
+                          ? "bg-success/10 border border-success/20"
+                          : "bg-error/10 border border-error/20"
+                      )}
+                    >
+                      {isCorrect ? (
+                        <>
+                          <Check className="w-5 h-5 text-success" />
+                          <p className="text-sm font-medium text-success">To'g'ri</p>
+                        </>
+                      ) : (
+                        <>
+                          <XCircle className="w-5 h-5 text-error" />
+                          <p className="text-sm font-medium text-error">Xato</p>
+                        </>
+                      )}
+                    </div>
                   )}
-                </Button>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Final result faqat hammasi bajarilganda */}
+          {isAllAnswered && (
+            <div className="p-6 bg-gradient-to-br from-primary/10 to-purple-500/10 rounded-xl border-2 border-primary/20">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <p className="text-sm text-muted-foreground mb-1">Natija</p>
+                  <p className="text-3xl font-bold text-foreground">
+                    {calculateScore()}/{selectedAssignment.maxScore}
+                  </p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-14 h-14 rounded-full bg-primary/20 flex items-center justify-center">
+                    <Trophy className="w-7 h-7 text-primary" />
+                  </div>
+                  {selectedAssignment.status !== 'graded' && (
+                    <Button variant="gradient" onClick={handleSubmit} disabled={isSubmitting}>
+                      {isSubmitting ? 'Saqlanmoqda...' : 'Natijani saqlash'}
+                    </Button>
+                  )}
+                </div>
+              </div>
+              {selectedAssignment.status === 'graded' && (
+                <p className="mt-2 text-sm text-muted-foreground">Natija MongoDB'ga saqlandi.</p>
               )}
             </div>
-          </div>
-        ))}
+          )}
         </div>
       )}
     </div>

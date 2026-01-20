@@ -159,17 +159,51 @@ export const submitAssignment = async (req, res) => {
       });
     }
 
-    // AI tomonidan dastlabki baholash
+    // Quiz (test) uchun avtomatik baholash (Telegram quiz kabi)
+    let autoScore = null;
+    if (assignment.type === 'quiz' && Array.isArray(assignment.questions)) {
+      const correctMap = new Map();
+      assignment.questions.forEach((q, idx) => {
+        const qid = q?._id?.toString() || idx.toString();
+        if (q && q.correctAnswer !== undefined) {
+          correctMap.set(qid, {
+            correctAnswer: q.correctAnswer,
+            points: q.points || 1,
+          });
+        }
+      });
+      autoScore = 0;
+      if (Array.isArray(answers)) {
+        for (const ans of answers) {
+          const qid = ans?.questionId?.toString();
+          const correct = qid ? correctMap.get(qid) : null;
+          if (correct && ans?.answer !== undefined && ans.answer === correct.correctAnswer) {
+            autoScore += correct.points;
+          }
+        }
+      }
+    }
+
+    // Amaliy / senariy uchun AI baholash (avvalgi xulqni saqlab qolamiz)
     let aiScore = null;
-    try {
-      aiScore = await gradeAssignment(assignment, answers);
-    } catch (error) {
-      console.error('AI baholash xatosi:', error);
+    if (assignment.type !== 'quiz') {
+      try {
+        aiScore = await gradeAssignment(assignment, answers);
+      } catch (error) {
+        console.error('AI baholash xatosi:', error);
+      }
     }
 
     if (submission) {
       submission.answers = answers;
-      submission.status = 'submitted';
+      // Quiz uchun darhol yakuniy natija (MongoDBda saqlanadi)
+      if (assignment.type === 'quiz' && autoScore !== null) {
+        submission.score = autoScore;
+        submission.status = 'graded';
+        submission.gradedAt = new Date();
+      } else {
+        submission.status = 'submitted';
+      }
       submission.submittedAt = new Date();
       submission.aiScore = aiScore;
       await submission.save();
@@ -178,7 +212,9 @@ export const submitAssignment = async (req, res) => {
         assignmentId: assignment._id,
         studentId: req.user._id,
         answers,
-        status: 'submitted',
+        status: assignment.type === 'quiz' && autoScore !== null ? 'graded' : 'submitted',
+        score: assignment.type === 'quiz' && autoScore !== null ? autoScore : null,
+        gradedAt: assignment.type === 'quiz' && autoScore !== null ? new Date() : null,
         submittedAt: new Date(),
         aiScore,
       });
