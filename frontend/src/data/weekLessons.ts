@@ -792,7 +792,7 @@ export const weekLessons: Record<number, WeekLesson> = {
   },
   5: {
     day: 5,
-    title: "Logistika xarajatlari va narxlash",
+    title: "Xarajatlari va narxlash",
     description: "Logistika xarajatlari turlari, narxlash usullari, xarajatlarni hisoblash, rentabellik va foyda koeffitsiyentlari.",
     duration: "",
     topics: {}

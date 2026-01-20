@@ -195,7 +195,7 @@ export default function TeacherLessonDetailPage() {
               background: #000;
             }
           `}</style>
-          <div className="bg-card rounded-xl p-4 sm:p-6 border border-border">
+          <div className="bg-card rounded-xl sm:p-4 border border-border">
             {/* 5-6 darslar uchun videolar (backend'dan yoki statik) */}
             <div className="w-full max-w-4xl mx-auto">
               {lessonData && lessonData.videos && lessonData.videos.length > 0 ? (
