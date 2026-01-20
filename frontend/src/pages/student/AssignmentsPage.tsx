@@ -122,8 +122,22 @@ export default function AssignmentsPage() {
       [questionId]: answer
     }));
 
+    if (!selectedAssignment) return;
+
+    // Har bir javobni backendga saqlash (quiz)
+    if (selectedAssignment.type === 'quiz') {
+      apiService
+        .request(`/assignments/${selectedAssignment._id}/answer`, {
+          method: 'POST',
+          body: JSON.stringify({ questionId, answer }),
+        })
+        .catch(() => {
+          toast.error('Javobni saqlashda xatolik');
+        });
+    }
+
     // Real-time natija tekshirish (faqat test topshiriqlari uchun)
-    if (selectedAssignment?.type === 'quiz' && correctAnswer !== undefined) {
+    if (correctAnswer !== undefined) {
       const isCorrect = answer === correctAnswer;
       setAnsweredQuestions(prev => ({
         ...prev,
@@ -319,7 +333,13 @@ export default function AssignmentsPage() {
                       ) : (
                         <>
                           <XCircle className="w-5 h-5 text-error" />
-                          <p className="text-sm font-medium text-error">Xato</p>
+                          <div className="flex flex-col text-sm">
+                            <span className="font-medium text-error">Xato</span>
+                            <span className="text-muted-foreground">Sizning javobingiz: {currentAnswer}</span>
+                            {question.correctAnswer && (
+                              <span className="text-error font-medium">To'g'ri javob: {question.correctAnswer}</span>
+                            )}
+                          </div>
                         </>
                       )}
                     </div>
@@ -337,6 +357,12 @@ export default function AssignmentsPage() {
                   <p className="text-sm text-muted-foreground mb-1">Natija</p>
                   <p className="text-3xl font-bold text-foreground">
                     {calculateScore()}/{selectedAssignment.maxScore}
+                  </p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    To'g'ri: {Object.values(answeredQuestions).filter(Boolean).length} | Xato: {selectedAssignment.questions.length - Object.values(answeredQuestions).filter(Boolean).length}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    Foiz: {selectedAssignment.maxScore > 0 ? Math.round((calculateScore() / selectedAssignment.maxScore) * 100) : 0}%
                   </p>
                 </div>
                 <div className="flex items-center gap-3">

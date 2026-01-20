@@ -234,6 +234,91 @@ export const submitAssignment = async (req, res) => {
 };
 
 /**
+ * @desc    Quiz javobini saqlash (har bir tanlovdan so'ng)
+ * @route   POST /api/assignments/:id/answer
+ * @access  Private (Student)
+ */
+export const saveQuizAnswer = async (req, res) => {
+  try {
+    if (req.user.role !== 'student') {
+      return res.status(403).json({
+        success: false,
+        message: 'Faqat o\'quvchilar javob yubora oladi',
+      });
+    }
+
+    const { questionId, answer } = req.body;
+    if (!questionId || answer === undefined) {
+      return res.status(400).json({
+        success: false,
+        message: 'questionId va answer yuborilishi shart',
+      });
+    }
+
+    const assignment = await Assignment.findById(req.params.id);
+    if (!assignment) {
+      return res.status(404).json({
+        success: false,
+        message: 'Topshiriq topilmadi',
+      });
+    }
+
+    if (assignment.type !== 'quiz') {
+      return res.status(400).json({
+        success: false,
+        message: 'Faqat test (quiz) uchun javob saqlanadi',
+      });
+    }
+
+    let submission = await AssignmentSubmission.findOne({
+      assignmentId: assignment._id,
+      studentId: req.user._id,
+    });
+
+    if (submission && submission.status === 'graded') {
+      return res.status(400).json({
+        success: false,
+        message: 'Bu test allaqachon yakunlangan',
+      });
+    }
+
+    // Upsert submission va javob
+    if (!submission) {
+      submission = await AssignmentSubmission.create({
+        assignmentId: assignment._id,
+        studentId: req.user._id,
+        answers: [{ questionId, answer }],
+        status: 'submitted',
+        submittedAt: new Date(),
+      });
+    } else {
+      const idx = submission.answers.findIndex(
+        (a) => a.questionId?.toString() === questionId.toString()
+      );
+      if (idx >= 0) {
+        submission.answers[idx].answer = answer;
+      } else {
+        submission.answers.push({ questionId, answer });
+      }
+      submission.status = 'submitted';
+      submission.submittedAt = new Date();
+      await submission.save();
+    }
+
+    res.json({
+      success: true,
+      message: 'Javob saqlandi',
+      data: { submission },
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Server xatosi',
+    });
+  }
+};
+
+/**
  * @desc    Topshiriqni baholash (Teacher)
  * @route   PUT /api/assignments/:id/grade
  * @access  Private (Teacher)
