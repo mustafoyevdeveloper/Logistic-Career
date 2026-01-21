@@ -350,7 +350,7 @@ export default function TeacherAssignmentsPage() {
             {selectedSubmission?.id === submission.id && (
               <div className="mt-6 pt-6 border-t border-border space-y-4">
                 {/* Test javoblari (quiz uchun) */}
-                {selectedSubmission.assignment?.type === 'quiz' && selectedSubmission.answers && selectedSubmission.answers.length > 0 ? (
+                {selectedSubmission?.assignment?.type === 'quiz' && selectedSubmission?.answers && selectedSubmission.answers.length > 0 ? (
                   <div className="space-y-4">
                     <h3 className="font-semibold text-foreground mb-4">Savollar va javoblar:</h3>
                     {selectedSubmission.answers.map((qa: QuestionAnswer, index: number) => (

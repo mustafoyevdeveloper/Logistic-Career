@@ -54,6 +54,46 @@ const assignmentSubmissionSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+
+    // Quiz/test attempt logic (2 imkoniyat)
+    attemptsUsed: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    maxAttempts: {
+      type: Number,
+      default: 2,
+      min: 1,
+    },
+    // Latest attempt result
+    correctCount: {
+      type: Number,
+      default: null,
+      min: 0,
+    },
+    totalQuestions: {
+      type: Number,
+      default: null,
+      min: 0,
+    },
+    passed: {
+      type: Boolean,
+      default: false,
+    },
+    // Sticky pass flag (once passed, certificate can be downloaded even after reset)
+    hasPassed: {
+      type: Boolean,
+      default: false,
+    },
+    certificateNumber: {
+      type: String,
+      default: null,
+    },
+    certificateIssuedAt: {
+      type: Date,
+      default: null,
+    },
   },
   {
     timestamps: true,

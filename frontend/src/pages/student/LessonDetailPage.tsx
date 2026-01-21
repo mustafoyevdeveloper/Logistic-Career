@@ -456,18 +456,28 @@ export default function LessonDetailPage() {
           Oldingi dars
         </Button>
 
-        <Button
-          onClick={() => {
-            if (dayNumber && dayNumber < 7) {
-              navigate(`/student/lessons/${dayNumber + 1}`);
-            }
-          }}
-          variant="gradient"
-          disabled={dayNumber === 7}
-        >
-          Keyingi dars
-          <ArrowLeft className="w-4 h-4 ml-2 rotate-180" />
-        </Button>
+        {dayNumber === 7 ? (
+          <Button
+            onClick={() => navigate('/student/assignments')}
+            variant="gradient"
+          >
+            Testlar paneli
+            <ArrowLeft className="w-4 h-4 ml-2 rotate-180" />
+          </Button>
+        ) : (
+          <Button
+            onClick={() => {
+              if (dayNumber && dayNumber < 7) {
+                navigate(`/student/lessons/${dayNumber + 1}`);
+              }
+            }}
+            variant="gradient"
+            disabled={dayNumber === 7}
+          >
+            Keyingi dars
+            <ArrowLeft className="w-4 h-4 ml-2 rotate-180" />
+          </Button>
+        )}
       </div>
     </div>
   );

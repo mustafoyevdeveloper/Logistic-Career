@@ -9,6 +9,8 @@ import {
   getAssignmentSubmissions,
   getAllSubmissions,
   saveQuizAnswer,
+  resetQuizSubmission,
+  downloadCertificatePng,
 } from '../controllers/assignmentController.js';
 import { protect, authorize } from '../middleware/auth.js';
 
@@ -26,6 +28,8 @@ router.get('/:id', getAssignment);
 router.get('/:id/submissions', authorize('teacher', 'admin'), getAssignmentSubmissions);
 router.post('/', authorize('teacher', 'admin'), createAssignment);
 router.post('/:id/answer', authorize('student'), saveQuizAnswer);
+router.post('/:id/reset', authorize('student'), resetQuizSubmission);
+router.get('/:id/certificate.png', authorize('student'), downloadCertificatePng);
 router.post('/:id/submit', authorize('student'), submitAssignment);
 router.put('/:id/grade', authorize('teacher', 'admin'), gradeSubmission);
 

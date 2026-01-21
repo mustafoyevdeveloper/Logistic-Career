@@ -1,6 +1,11 @@
 import Assignment from '../models/Assignment.js';
 import AssignmentSubmission from '../models/AssignmentSubmission.js';
 import { gradeAssignment } from '../services/aiService.js';
+import sharp from 'sharp';
+import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
+import fs from 'fs/promises';
+import path from 'path';
+import puppeteer from 'puppeteer';
 
 /**
  * @desc    Barcha topshiriqlarni olish
@@ -161,7 +166,10 @@ export const submitAssignment = async (req, res) => {
 
     // Quiz (test) uchun avtomatik baholash (Telegram quiz kabi)
     let autoScore = null;
+    let correctCount = null;
+    let totalQuestions = null;
     if (assignment.type === 'quiz' && Array.isArray(assignment.questions)) {
+      totalQuestions = assignment.questions.length;
       const correctMap = new Map();
       assignment.questions.forEach((q, idx) => {
         const qid = q?._id?.toString() || idx.toString();
@@ -173,12 +181,14 @@ export const submitAssignment = async (req, res) => {
         }
       });
       autoScore = 0;
+      correctCount = 0;
       if (Array.isArray(answers)) {
         for (const ans of answers) {
           const qid = ans?.questionId?.toString();
           const correct = qid ? correctMap.get(qid) : null;
           if (correct && ans?.answer !== undefined && ans.answer === correct.correctAnswer) {
             autoScore += correct.points;
+            correctCount += 1;
           }
         }
       }
@@ -201,6 +211,17 @@ export const submitAssignment = async (req, res) => {
         submission.score = autoScore;
         submission.status = 'graded';
         submission.gradedAt = new Date();
+        submission.correctCount = correctCount;
+        submission.totalQuestions = totalQuestions;
+        submission.passed = typeof correctCount === 'number' ? correctCount >= 30 : false;
+        if (submission.passed) {
+          submission.hasPassed = true;
+          if (!submission.certificateIssuedAt) submission.certificateIssuedAt = new Date();
+          if (!submission.certificateNumber) {
+            submission.certificateNumber = `LC-${submission._id.toString().slice(-6).toUpperCase()}`;
+          }
+        }
+        submission.attemptsUsed = (submission.attemptsUsed || 0) + 1;
       } else {
         submission.status = 'submitted';
       }
@@ -217,6 +238,19 @@ export const submitAssignment = async (req, res) => {
         gradedAt: assignment.type === 'quiz' && autoScore !== null ? new Date() : null,
         submittedAt: new Date(),
         aiScore,
+        correctCount: assignment.type === 'quiz' && autoScore !== null ? correctCount : null,
+        totalQuestions: assignment.type === 'quiz' && autoScore !== null ? totalQuestions : null,
+        passed: assignment.type === 'quiz' && autoScore !== null && typeof correctCount === 'number' ? correctCount >= 30 : false,
+        hasPassed: assignment.type === 'quiz' && autoScore !== null && typeof correctCount === 'number' ? correctCount >= 30 : false,
+        certificateIssuedAt:
+          assignment.type === 'quiz' && autoScore !== null && typeof correctCount === 'number' && correctCount >= 30
+            ? new Date()
+            : null,
+        certificateNumber:
+          assignment.type === 'quiz' && autoScore !== null && typeof correctCount === 'number' && correctCount >= 30
+            ? `LC-${String(new Date().getFullYear())}-${Math.random().toString(16).slice(2, 8).toUpperCase()}`
+            : null,
+        attemptsUsed: assignment.type === 'quiz' && autoScore !== null ? 1 : 0,
       });
     }
 
@@ -317,6 +351,247 @@ export const saveQuizAnswer = async (req, res) => {
     });
   }
 };
+
+/**
+ * @desc    Testni qayta ishlash uchun reset (faqat 30+ bo'lsa va 2 imkoniyatdan oshmagan bo'lsa)
+ * @route   POST /api/assignments/:id/reset
+ * @access  Private (Student)
+ */
+export const resetQuizSubmission = async (req, res) => {
+  try {
+    if (req.user.role !== 'student') {
+      return res.status(403).json({
+        success: false,
+        message: 'Faqat o\'quvchilar reset qila oladi',
+      });
+    }
+
+    const assignment = await Assignment.findById(req.params.id).lean();
+    if (!assignment) {
+      return res.status(404).json({ success: false, message: 'Topshiriq topilmadi' });
+    }
+    if (assignment.type !== 'quiz') {
+      return res.status(400).json({ success: false, message: 'Faqat test (quiz) uchun reset mavjud' });
+    }
+
+    const submission = await AssignmentSubmission.findOne({
+      assignmentId: assignment._id,
+      studentId: req.user._id,
+    });
+    if (!submission) {
+      return res.status(404).json({ success: false, message: 'Submission topilmadi' });
+    }
+
+    // Faqat 30+ bo'lsa reset qilishga ruxsat
+    if (!submission.hasPassed) {
+      return res.status(400).json({ success: false, message: 'Sertifikat ochilmagan. Reset qilish mumkin emas.' });
+    }
+
+    const maxAttempts = submission.maxAttempts || 2;
+    const attemptsUsed = submission.attemptsUsed || 0;
+    if (attemptsUsed >= maxAttempts) {
+      return res.status(400).json({ success: false, message: 'Imkoniyat tugadi (2/2)' });
+    }
+
+    submission.answers = [];
+    submission.status = 'pending';
+    submission.score = null;
+    submission.aiScore = null;
+    submission.feedback = null;
+    submission.teacherFeedback = null;
+    submission.gradedBy = null;
+    submission.gradedAt = null;
+    submission.submittedAt = null;
+    submission.correctCount = null;
+    submission.totalQuestions = null;
+    submission.passed = false;
+    // hasPassed/certificate fields intentionally kept
+
+    await submission.save();
+
+    res.json({
+      success: true,
+      message: 'Test reset qilindi',
+      data: { submission },
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message || 'Server xatosi' });
+  }
+};
+
+/**
+ * @desc    Sertifikat PNG (faqat ism-familiya; test natijasi yo'q)
+ * @route   GET /api/assignments/:id/certificate.png
+ * @access  Private (Student)
+ */
+export const downloadCertificatePng = async (req, res) => {
+  try {
+    if (req.user.role !== 'student') {
+      return res.status(403).json({ success: false, message: 'Faqat o\'quvchilar yuklab oladi' });
+    }
+
+    const assignment = await Assignment.findById(req.params.id).lean();
+    if (!assignment) {
+      return res.status(404).json({ success: false, message: 'Topshiriq topilmadi' });
+    }
+    if (assignment.type !== 'quiz') {
+      return res.status(400).json({ success: false, message: 'Sertifikat faqat test uchun' });
+    }
+
+    const submission = await AssignmentSubmission.findOne({
+      assignmentId: assignment._id,
+      studentId: req.user._id,
+    }).lean();
+
+    if (!submission || !submission.hasPassed) {
+      return res.status(403).json({ success: false, message: 'Sertifikat yopiq (30+ shart bajarilmagan)' });
+    }
+
+    const fullName = `${req.user.firstName || ''} ${req.user.lastName || ''}`.trim();
+    const certNo = submission.certificateNumber || `LC-${submission._id.toString().slice(-6).toUpperCase()}`;
+
+    const templatePath = await findCertificateTemplate();
+    if (!templatePath) {
+      return res.status(500).json({
+        success: false,
+        message: 'Sertifikat shabloni topilmadi (Elegant Certificate Of Competition Certificate.pdf)',
+      });
+    }
+
+    const templatePdfBytes = await fs.readFile(templatePath);
+    const pdfDoc = await PDFDocument.load(templatePdfBytes);
+    const page = pdfDoc.getPages()[0];
+    const { width, height } = page.getSize();
+
+    // Font
+    const font = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+
+    // Name styling & positioning (centered)
+    const nameFontSize = Number(process.env.CERT_NAME_FONT_SIZE || 40);
+    const nameTextWidth = font.widthOfTextAtSize(fullName, nameFontSize);
+    const x = Number(process.env.CERT_NAME_X || (width - nameTextWidth) / 2);
+    // PDF coordinate system: (0,0) bottom-left
+    const y = Number(process.env.CERT_NAME_Y || height * 0.49);
+
+    page.drawText(fullName, {
+      x,
+      y,
+      size: nameFontSize,
+      font,
+      color: rgb(0, 0, 0),
+    });
+
+    const editedPdfBytes = await pdfDoc.save();
+
+    // PDF -> PNG: try sharp first, fallback to puppeteer+pdfjs for reliability
+    const png = await pdfToPng(editedPdfBytes);
+
+    res.setHeader('Content-Type', 'image/png');
+    res.setHeader('Content-Disposition', `attachment; filename="certificate-${certNo}.png"`);
+    res.send(png);
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message || 'Server xatosi' });
+  }
+};
+
+async function findCertificateTemplate() {
+  // In monorepo environments, backend may run from repo root or /backend
+  const candidates = [
+    path.resolve(process.cwd(), 'frontend', 'public', 'Elegant Certificate Of Competition Certificate.pdf'),
+    path.resolve(process.cwd(), '..', 'frontend', 'public', 'Elegant Certificate Of Competition Certificate.pdf'),
+    path.resolve(process.cwd(), 'public', 'Elegant Certificate Of Competition Certificate.pdf'),
+    path.resolve(process.cwd(), 'assets', 'Elegant Certificate Of Competition Certificate.pdf'),
+  ];
+
+  for (const p of candidates) {
+    try {
+      await fs.access(p);
+      return p;
+    } catch {
+      // continue
+    }
+  }
+  return null;
+}
+
+async function pdfToPng(pdfBytes) {
+  // 1) Try sharp (fast) if PDF input is supported in current build
+  const density = Number(process.env.CERT_PDF_DENSITY || 200);
+  try {
+    return await sharp(pdfBytes, { density }).png().toBuffer();
+  } catch {
+    // ignore and fallback
+  }
+
+  // 2) Fallback: puppeteer + pdfjs in browser context
+  const browser = await puppeteer.launch({
+    headless: 'new',
+    args: [
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+      '--disable-dev-shm-usage',
+      '--disable-gpu',
+    ],
+  });
+
+  try {
+    const page = await browser.newPage();
+    const base64 = Buffer.from(pdfBytes).toString('base64');
+    const scale = Number(process.env.CERT_PDFJS_SCALE || 2); // higher => sharper
+
+    await page.setContent(
+      `<!doctype html>
+      <html>
+        <head>
+          <meta charset="utf-8" />
+          <style>
+            html, body { margin: 0; padding: 0; background: white; }
+            canvas { display: block; }
+          </style>
+        </head>
+        <body>
+          <canvas id="c"></canvas>
+          <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/build/pdf.min.js"></script>
+          <script>
+            (async () => {
+              const pdfData = Uint8Array.from(atob("${base64}"), c => c.charCodeAt(0));
+              const loadingTask = window['pdfjsLib'].getDocument({ data: pdfData });
+              const pdf = await loadingTask.promise;
+              const pg = await pdf.getPage(1);
+              const viewport = pg.getViewport({ scale: ${scale} });
+              const canvas = document.getElementById('c');
+              const ctx = canvas.getContext('2d');
+              canvas.width = Math.floor(viewport.width);
+              canvas.height = Math.floor(viewport.height);
+              await pg.render({ canvasContext: ctx, viewport }).promise;
+              window.__DONE__ = true;
+            })();
+          </script>
+        </body>
+      </html>`,
+      { waitUntil: 'load' }
+    );
+
+    await page.waitForFunction('window.__DONE__ === true', { timeout: 15000 });
+    const canvasHandle = await page.$('#c');
+    const box = await canvasHandle.boundingBox();
+    await page.setViewport({ width: Math.ceil(box.width), height: Math.ceil(box.height), deviceScaleFactor: 1 });
+
+    // Recompute box after viewport update
+    const box2 = await canvasHandle.boundingBox();
+    return await page.screenshot({
+      type: 'png',
+      clip: {
+        x: Math.floor(box2.x),
+        y: Math.floor(box2.y),
+        width: Math.ceil(box2.width),
+        height: Math.ceil(box2.height),
+      },
+    });
+  } finally {
+    await browser.close();
+  }
+}
 
 /**
  * @desc    Topshiriqni baholash (Teacher)

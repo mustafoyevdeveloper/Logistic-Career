@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { apiService } from '@/services/api';
+import { getDeviceId } from '@/utils/deviceId';
 import { Trophy, Check, XCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -37,6 +38,8 @@ export default function AssignmentsPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [answeredQuestions, setAnsweredQuestions] = useState<Record<string, boolean>>({}); // To'g'ri yoki xato
   const [lockedQuestions, setLockedQuestions] = useState<Record<string, boolean>>({}); // Javob berilgan savollar (o'zgartirib bo'lmaydi)
+  const [isDownloadingCert, setIsDownloadingCert] = useState(false);
+  const [isResetting, setIsResetting] = useState(false);
 
   useEffect(() => {
     loadAssignments();
@@ -72,12 +75,20 @@ export default function AssignmentsPage() {
       const response = await apiService.request<{ assignment: Assignment; submission?: any }>(`/assignments/${assignmentId}`);
       if (response.success && response.data) {
         const assignment = response.data.assignment;
-        setSelectedAssignment(assignment);
-        
+        const submission = response.data.submission;
+
+        // Assignmentga submission va statusni biriktiramiz (frontendda ko'rsatish uchun)
+        const assignmentWithSubmission = {
+          ...assignment,
+          submission,
+          status: submission?.status || assignment.status,
+        };
+        setSelectedAssignment(assignmentWithSubmission);
+
         // Agar submission mavjud bo'lsa, javoblarni yuklash
-        if (response.data.submission && response.data.submission.answers) {
+        if (submission && submission.answers) {
           const submissionAnswers: Record<string, string> = {};
-          response.data.submission.answers.forEach((ans: any) => {
+          submission.answers.forEach((ans: any) => {
             if (ans.questionId) {
               submissionAnswers[ans.questionId.toString()] = typeof ans.answer === 'string' ? ans.answer : JSON.stringify(ans.answer);
             }
@@ -108,6 +119,100 @@ export default function AssignmentsPage() {
       }
     } catch (error: any) {
       toast.error(error.message || 'Topshiriq ma\'lumotlarini yuklashda xatolik');
+    }
+  };
+
+  // To'g'ri javoblar soni (quiz uchun 0..40)
+  function calculateCorrectCount() {
+    if (!selectedAssignment) return 0;
+    let correct = 0;
+    selectedAssignment.questions.forEach((question, idx) => {
+      const questionId = question._id?.toString() || idx.toString();
+      const userAnswer = answers[questionId];
+      if (userAnswer !== undefined && question.correctAnswer !== undefined && userAnswer === question.correctAnswer) {
+        correct += 1;
+      }
+    });
+    return correct;
+  }
+
+  const hasPassedLocal = useMemo(() => {
+    const backendPass = selectedAssignment?.submission?.hasPassed;
+    if (backendPass !== undefined) return backendPass;
+    // Fallback: agar status graded bo'lsa va 30+ bo'lsa, frontendda ham ochib turamiz
+    return selectedAssignment?.status === 'graded' && calculateCorrectCount() >= 30;
+  }, [selectedAssignment?.submission?.hasPassed, selectedAssignment?.status, selectedAssignment, answers]);
+
+  const canDownloadCertificate = useMemo(() => {
+    return Boolean(hasPassedLocal);
+  }, [hasPassedLocal]);
+
+  const attemptsUsed = selectedAssignment?.submission?.attemptsUsed ?? 0;
+  const maxAttempts = selectedAssignment?.submission?.maxAttempts ?? 2;
+  const attemptsText = useMemo(() => {
+    return `${Math.min(attemptsUsed, maxAttempts)}/${maxAttempts}`;
+  }, [attemptsUsed, maxAttempts]);
+
+  // 1-imkoniyat tugmasi: faqat 30+ (hasPassed) bo'lganda va attemptsUsed < max
+  const canReset = useMemo(() => {
+    return Boolean(hasPassedLocal) && attemptsUsed < maxAttempts;
+  }, [hasPassedLocal, attemptsUsed, maxAttempts]);
+
+  const isSecondAttempt = attemptsUsed >= 1;
+
+  const handleReset = async () => {
+    if (!selectedAssignment) return;
+    try {
+      setIsResetting(true);
+      const resp = await apiService.request(`/assignments/${selectedAssignment._id}/reset`, {
+        method: 'POST',
+      });
+      if (resp.success) {
+        toast.success('Test qayta ochildi');
+        await loadAssignmentDetails(selectedAssignment._id);
+      } else {
+        toast.error(resp.message || 'Reset qilishda xatolik');
+      }
+    } catch (e: any) {
+      toast.error(e.message || 'Reset qilishda xatolik');
+    } finally {
+      setIsResetting(false);
+    }
+  };
+
+  const handleDownloadCertificate = async () => {
+    if (!selectedAssignment) return;
+    try {
+      setIsDownloadingCert(true);
+      const token = localStorage.getItem('auth_token');
+      const deviceId = getDeviceId();
+      const baseUrl = apiService.getCurrentBackendUrl();
+      const url = `${baseUrl}/assignments/${selectedAssignment._id}/certificate.png`;
+      const resp = await fetch(url, {
+        method: 'GET',
+        headers: {
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          ...(deviceId ? { 'X-Device-ID': deviceId } : {}),
+        },
+      });
+      if (!resp.ok) {
+        const text = await resp.text().catch(() => '');
+        throw new Error(text || `HTTP ${resp.status}`);
+      }
+      const blob = await resp.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = 'certificate.png';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(blobUrl);
+      toast.success('Sertifikat yuklab olindi');
+    } catch (e: any) {
+      toast.error(e.message || 'Sertifikatni yuklab olishda xatolik');
+    } finally {
+      setIsDownloadingCert(false);
     }
   };
 
@@ -154,20 +259,6 @@ export default function AssignmentsPage() {
       if (isCorrect) toast.success("To'g'ri", { duration: 1200 });
       else toast.error("Xato", { duration: 1200 });
     }
-  };
-
-  // Umumiy ball hisoblash
-  const calculateScore = () => {
-    if (!selectedAssignment) return 0;
-    let totalScore = 0;
-    selectedAssignment.questions.forEach((question) => {
-      const questionId = question._id?.toString() || '';
-      const userAnswer = answers[questionId];
-      if (userAnswer && question.correctAnswer && userAnswer === question.correctAnswer) {
-        totalScore += question.points || 1;
-      }
-    });
-    return totalScore;
   };
 
   // Javob berilgan savollar soni
@@ -356,13 +447,13 @@ export default function AssignmentsPage() {
                 <div>
                   <p className="text-sm text-muted-foreground mb-1">Natija</p>
                   <p className="text-3xl font-bold text-foreground">
-                    {calculateScore()}/{selectedAssignment.maxScore}
+                    {calculateCorrectCount()}/{selectedAssignment.questions.length}
                   </p>
                   <p className="text-sm text-muted-foreground mt-1">
                     To'g'ri: {Object.values(answeredQuestions).filter(Boolean).length} | Xato: {selectedAssignment.questions.length - Object.values(answeredQuestions).filter(Boolean).length}
                   </p>
                   <p className="text-sm text-muted-foreground">
-                    Foiz: {selectedAssignment.maxScore > 0 ? Math.round((calculateScore() / selectedAssignment.maxScore) * 100) : 0}%
+                    Foiz: {selectedAssignment.questions.length > 0 ? Math.round((calculateCorrectCount() / selectedAssignment.questions.length) * 100) : 0}%
                   </p>
                 </div>
                 <div className="flex items-center gap-3">
@@ -377,7 +468,38 @@ export default function AssignmentsPage() {
                 </div>
               </div>
               {selectedAssignment.status === 'graded' && (
-                <p className="mt-2 text-sm text-muted-foreground">Natija MongoDB'ga saqlandi.</p>
+                <div className="mt-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                  <div className="text-sm text-muted-foreground">
+                    Natija MongoDB'ga saqlandi. Imkoniyat:{" "}
+                    <span className="font-medium text-foreground">{attemptsText}</span>
+                    {isSecondAttempt && <span className="ml-2 text-primary font-semibold">(2-imkoniyat)</span>}
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {/* 30+ bo'lsa va imkoniyat qolgan bo'lsa: Qayta topshirish (reset) */}
+                    {canReset && (
+                      <Button
+                        variant="outline"
+                        onClick={handleReset}
+                        disabled={isResetting}
+                        title="Testni qayta boshlash (javoblar tozalanadi)"
+                      >
+                        {isResetting ? 'Qayta ochilmoqda...' : isSecondAttempt ? 'Imkoniyat tugadi' : 'Qayta topshirish'}
+                      </Button>
+                    )}
+
+                    {/* Sertifikat tugmasi: faqat 30+ bo'lganda (har ikki imkoniyatda ham) */}
+                    {canDownloadCertificate && (
+                      <Button
+                        variant="gradient"
+                        onClick={handleDownloadCertificate}
+                        disabled={isDownloadingCert}
+                        title="Sertifikatni yuklab olish"
+                      >
+                        {isDownloadingCert ? 'Yuklanmoqda...' : 'Sertifikatni yuklab olish (PNG)'}
+                      </Button>
+                    )}
+                  </div>
+                </div>
               )}
             </div>
           )}
