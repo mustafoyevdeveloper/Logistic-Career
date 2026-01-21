@@ -481,6 +481,10 @@ export const downloadCertificatePng = async (req, res) => {
     res.setHeader('Content-Disposition', `attachment; filename="certificate-${certNo}.png"`);
     res.send(png);
   } catch (error) {
+    console.error('[certificate] error', {
+      message: error.message,
+      stack: error.stack,
+    });
     res.status(500).json({ success: false, message: error.message || 'Server xatosi' });
   }
 };
@@ -515,12 +519,21 @@ async function pdfToPng(pdfBytes) {
   }
 
   // 2) Fallback: puppeteer + pdfjs in browser context
-  const executablePath = await chromium.executablePath();
+  const chromiumPath = process.env.CHROMIUM_PATH || (await chromium.executablePath());
+  if (!chromiumPath) {
+    throw new Error('Chromium topilmadi (CHROMIUM_PATH ni sozlang yoki @sparticuz/chromium o\'rnatilmagan)');
+  }
+
   const browser = await puppeteer.launch({
-    executablePath,
+    executablePath: chromiumPath,
     headless: chromium.headless,
-    args: chromium.args,
-    defaultViewport: chromium.defaultViewport,
+    args: chromium.args || [
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+      '--disable-dev-shm-usage',
+      '--disable-gpu',
+    ],
+    defaultViewport: chromium.defaultViewport || { width: 1280, height: 720 },
   });
 
   try {
