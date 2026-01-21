@@ -148,15 +148,16 @@ export default function AssignmentsPage() {
   }, [hasPassedLocal]);
 
   const attemptsUsed = selectedAssignment?.submission?.attemptsUsed ?? 0;
-  const maxAttempts = selectedAssignment?.submission?.maxAttempts ?? 2;
   const attemptsText = useMemo(() => {
-    return `${Math.min(attemptsUsed, maxAttempts)}/${maxAttempts}`;
-  }, [attemptsUsed, maxAttempts]);
+    // Imkoniyat: faqat nechta urinish bo'lganini ko'rsatamiz (1,2,3,...)
+    return `${attemptsUsed}`;
+  }, [attemptsUsed]);
 
   // 1-imkoniyat tugmasi: faqat 30+ (hasPassed) bo'lganda va attemptsUsed < max
   const canReset = useMemo(() => {
-    return Boolean(hasPassedLocal) && attemptsUsed < maxAttempts;
-  }, [hasPassedLocal, attemptsUsed, maxAttempts]);
+    // Faqat 30- bo'lsa qayta topshirish chiqsin
+    return !hasPassedLocal;
+  }, [hasPassedLocal]);
 
   const isSecondAttempt = attemptsUsed >= 1;
 
@@ -472,10 +473,10 @@ export default function AssignmentsPage() {
                   <div className="text-sm text-muted-foreground">
                     Natija MongoDB'ga saqlandi. Imkoniyat:{" "}
                     <span className="font-medium text-foreground">{attemptsText}</span>
-                    {isSecondAttempt && <span className="ml-2 text-primary font-semibold">(2-imkoniyat)</span>}
+                    {attemptsUsed > 0 && <span className="ml-2 text-primary font-semibold">({attemptsUsed}-imkoniyat)</span>}
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    {/* 30+ bo'lsa va imkoniyat qolgan bo'lsa: Qayta topshirish (reset) */}
+                    {/* Faqat 30- bo'lsa: Qayta topshirish (reset) */}
                     {canReset && (
                       <Button
                         variant="outline"
@@ -483,7 +484,7 @@ export default function AssignmentsPage() {
                         disabled={isResetting}
                         title="Testni qayta boshlash (javoblar tozalanadi)"
                       >
-                        {isResetting ? 'Qayta ochilmoqda...' : isSecondAttempt ? 'Imkoniyat tugadi' : 'Qayta topshirish'}
+                        {isResetting ? 'Qayta ochilmoqda...' : 'Qayta topshirish'}
                       </Button>
                     )}
 

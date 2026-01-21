@@ -353,7 +353,7 @@ export const saveQuizAnswer = async (req, res) => {
 };
 
 /**
- * @desc    Testni qayta ishlash uchun reset (faqat 30+ bo'lsa va 2 imkoniyatdan oshmagan bo'lsa)
+ * @desc    Testni qayta ishlash uchun reset
  * @route   POST /api/assignments/:id/reset
  * @access  Private (Student)
  */
@@ -382,17 +382,6 @@ export const resetQuizSubmission = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Submission topilmadi' });
     }
 
-    // Faqat 30+ bo'lsa reset qilishga ruxsat
-    if (!submission.hasPassed) {
-      return res.status(400).json({ success: false, message: 'Sertifikat ochilmagan. Reset qilish mumkin emas.' });
-    }
-
-    const maxAttempts = submission.maxAttempts || 2;
-    const attemptsUsed = submission.attemptsUsed || 0;
-    if (attemptsUsed >= maxAttempts) {
-      return res.status(400).json({ success: false, message: 'Imkoniyat tugadi (2/2)' });
-    }
-
     submission.answers = [];
     submission.status = 'pending';
     submission.score = null;
@@ -405,7 +394,8 @@ export const resetQuizSubmission = async (req, res) => {
     submission.correctCount = null;
     submission.totalQuestions = null;
     submission.passed = false;
-    // hasPassed/certificate fields intentionally kept
+    submission.hasPassed = false;
+    // attemptsUsed saqlanadi (necha urinish bo‘lganini hisoblash uchun)
 
     await submission.save();
 
