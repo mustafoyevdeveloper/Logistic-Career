@@ -5,7 +5,8 @@ import sharp from 'sharp';
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
 import fs from 'fs/promises';
 import path from 'path';
-import puppeteer from 'puppeteer';
+import puppeteer from 'puppeteer-core';
+import chromium from '@sparticuz/chromium';
 
 /**
  * @desc    Barcha topshiriqlarni olish
@@ -514,14 +515,12 @@ async function pdfToPng(pdfBytes) {
   }
 
   // 2) Fallback: puppeteer + pdfjs in browser context
+  const executablePath = await chromium.executablePath();
   const browser = await puppeteer.launch({
-    headless: 'new',
-    args: [
-      '--no-sandbox',
-      '--disable-setuid-sandbox',
-      '--disable-dev-shm-usage',
-      '--disable-gpu',
-    ],
+    executablePath,
+    headless: chromium.headless,
+    args: chromium.args,
+    defaultViewport: chromium.defaultViewport,
   });
 
   try {
