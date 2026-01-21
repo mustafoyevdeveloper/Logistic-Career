@@ -514,25 +514,43 @@ async function pdfToPng(pdfBytes) {
   const density = Number(process.env.CERT_PDF_DENSITY || 200);
   try {
     return await sharp(pdfBytes, { density }).png().toBuffer();
-  } catch {
+  } catch (sharpError) {
+    console.log('[certificate] sharp failed, using puppeteer fallback:', sharpError.message);
     // ignore and fallback
   }
 
-  // 2) Fallback: puppeteer + pdfjs in browser context
-  const chromiumPath = process.env.CHROMIUM_PATH || (await chromium.executablePath());
-  if (!chromiumPath) {
-    throw new Error('Chromium topilmadi (CHROMIUM_PATH ni sozlang yoki @sparticuz/chromium o\'rnatilmagan)');
+  // 2) Fallback: puppeteer-core + @sparticuz/chromium
+  let chromiumPath;
+  try {
+    if (process.env.CHROMIUM_PATH) {
+      chromiumPath = process.env.CHROMIUM_PATH;
+    } else {
+      // @sparticuz/chromium executablePath() async funksiya
+      chromiumPath = await chromium.executablePath();
+    }
+  } catch (chromiumError) {
+    console.error('[certificate] chromium.executablePath() error:', chromiumError);
+    throw new Error(`Chromium topilmadi: ${chromiumError.message}. CHROMIUM_PATH ni sozlang yoki @sparticuz/chromium o'rnatilmagan.`);
   }
+
+  if (!chromiumPath) {
+    throw new Error('Chromium executablePath topilmadi (CHROMIUM_PATH ni sozlang yoki @sparticuz/chromium o\'rnatilmagan)');
+  }
+
+  console.log('[certificate] Using chromium path:', chromiumPath);
+
+  // chromium.args va chromium.headless property'larini ishlatish
+  const browserArgs = chromium.args || [
+    '--no-sandbox',
+    '--disable-setuid-sandbox',
+    '--disable-dev-shm-usage',
+    '--disable-gpu',
+  ];
 
   const browser = await puppeteer.launch({
     executablePath: chromiumPath,
-    headless: chromium.headless,
-    args: chromium.args || [
-      '--no-sandbox',
-      '--disable-setuid-sandbox',
-      '--disable-dev-shm-usage',
-      '--disable-gpu',
-    ],
+    headless: chromium.headless !== undefined ? chromium.headless : true,
+    args: browserArgs,
     defaultViewport: chromium.defaultViewport || { width: 1280, height: 720 },
   });
 
