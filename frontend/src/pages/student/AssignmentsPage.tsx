@@ -388,8 +388,21 @@ export default function AssignmentsPage() {
         if (response.success && response.data) {
           const list = response.data.assignments || [];
           // 40 ta savol bo'lgan quiz'ni topamiz yoki har qanday quiz'ni
-          const quiz = list.find((a) => a.type === 'quiz' && a.questions?.length === 40) ||
-                       list.find((a) => a.type === 'quiz');
+          // Avval title'da "XALQARO LOGISTIKA" bo'lgan quiz'ni topamiz
+          let quiz = list.find((a) => 
+            a.type === 'quiz' && 
+            (a.title?.includes('XALQARO LOGISTIKA') || a.title?.includes('40 TA TEST'))
+          );
+          
+          // Agar topilmasa, 40 ta savol bo'lgan quiz'ni topamiz
+          if (!quiz) {
+            quiz = list.find((a) => a.type === 'quiz' && a.questions?.length === 40);
+          }
+          
+          // Agar hali ham topilmasa, har qanday quiz'ni topamiz
+          if (!quiz) {
+            quiz = list.find((a) => a.type === 'quiz');
+          }
           
           if (quiz) {
             // Real quiz topildi, uni yuklaymiz va submit qilamiz
@@ -397,12 +410,14 @@ export default function AssignmentsPage() {
             const quizDetailsResponse = await apiService.request<{ assignment: Assignment; submission?: any }>(`/assignments/${quiz._id}`);
             if (!quizDetailsResponse.success || !quizDetailsResponse.data) {
               toast.error('Test ma\'lumotlarini yuklashda xatolik');
+              setIsSubmitting(false);
               return;
             }
             
             const fullQuiz = quizDetailsResponse.data.assignment;
             
             // Keyin submit qilamiz - questionId'larni to'g'ri formatda yuboramiz
+            // Backend'da questions bo'sh bo'lishi mumkin, shuning uchun index'ni ishlatamiz
             const formattedAnswers = selectedAssignment.questions.map((q, idx) => {
               // Backend'dan kelgan quiz'ning question ID'sini ishlatamiz
               // Avval fullQuiz.questions'dan, keyin quiz.questions'dan, oxirida index'ni
@@ -411,12 +426,19 @@ export default function AssignmentsPage() {
                                        backendQuestion?._id || 
                                        quiz.questions?.[idx]?._id?.toString() ||
                                        quiz.questions?.[idx]?._id ||
-                                       `test-${idx}`;
+                                       idx.toString(); // Index'ni string sifatida ishlatamiz
+              
+              // Javobni olish
+              const userAnswer = answers[q._id?.toString() || `test-${idx}`] || 
+                                answers[idx.toString()];
+              
               return {
                 questionId: backendQuestionId,
-                answer: answers[q._id?.toString() || `test-${idx}`]
+                answer: userAnswer
               };
             });
+            
+            console.log('Submitting answers:', formattedAnswers);
             
             const submitResponse = await apiService.request(`/assignments/${quiz._id}/submit`, {
               method: 'POST',
@@ -427,26 +449,32 @@ export default function AssignmentsPage() {
               toast.success('Natija MongoDBga saqlandi!');
               // Real quiz'ni yuklaymiz
               await loadAssignmentDetails(quiz._id);
+              setIsSubmitting(false);
               return;
             } else {
+              console.error('Submit response error:', submitResponse);
               toast.error(submitResponse.message || 'Natijani saqlashda xatolik');
+              setIsSubmitting(false);
               return;
             }
           } else {
             // Quiz topilmadi, xatolik ko'rsatamiz
+            console.error('Quiz not found in backend. Available assignments:', list);
             toast.error('Backend\'da test topilmadi. Iltimos, admin bilan bog\'laning yoki sahifani yangilang.');
+            setIsSubmitting(false);
             return;
           }
         } else {
+          console.error('Failed to load assignments:', response);
           toast.error('Backend\'dan javob kelmadi. Iltimos, qayta urinib ko\'ring.');
+          setIsSubmitting(false);
           return;
         }
       } catch (err: any) {
         console.error('Error finding quiz:', err);
         toast.error(err.message || 'Backend\'da test topilmadi. Iltimos, admin bilan bog\'laning.');
-        return;
-      } finally {
         setIsSubmitting(false);
+        return;
       }
     }
 
