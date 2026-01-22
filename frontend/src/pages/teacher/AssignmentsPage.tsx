@@ -207,9 +207,9 @@ export default function TeacherAssignmentsPage() {
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
       <div>
-        <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">Testlar</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">Testlarning natijasi</h1>
         <p className="text-muted-foreground">
-          O'quvchilar testlarini tekshiring va baholang
+          O'quvchilar testlarining natijalarini ko'ring
         </p>
       </div>
 
