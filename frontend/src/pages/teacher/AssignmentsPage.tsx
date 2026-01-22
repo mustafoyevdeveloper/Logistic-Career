@@ -46,6 +46,12 @@ interface Submission {
     maxScore?: number;
     type?: string;
   };
+  // Test natijalari (quiz uchun)
+  correctCount?: number | null;
+  totalQuestions?: number | null;
+  passed?: boolean;
+  hasPassed?: boolean;
+  attemptsUsed?: number;
 }
 
 export default function TeacherAssignmentsPage() {
@@ -302,26 +308,49 @@ export default function TeacherAssignmentsPage() {
             <div className="flex flex-col sm:flex-row sm:items-center gap-4">
               {/* Student Info */}
               <div className="flex items-center gap-3 flex-1">
-                <div className="w-10 h-10 rounded-full gradient-primary flex items-center justify-center text-primary-foreground font-semibold">
+                <div className="w-12 h-12 rounded-full gradient-primary flex items-center justify-center text-primary-foreground font-semibold text-sm">
                   {submission.studentAvatar}
                 </div>
-                <div>
-                  <h3 className="font-semibold text-foreground">{submission.studentName}</h3>
+                <div className="flex-1">
+                  <h3 className="font-semibold text-foreground text-base">{submission.studentName}</h3>
                   <p className="text-sm text-muted-foreground">{submission.assignmentTitle}</p>
+                  {submission.assignment?.type === 'quiz' && submission.attemptsUsed && submission.attemptsUsed > 0 && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Imkoniyat: {submission.attemptsUsed}
+                    </p>
+                  )}
                 </div>
               </div>
 
               {/* Scores */}
               <div className="flex items-center gap-4">
-                <div className="text-center">
-                  <p className="text-sm text-muted-foreground">AI ball</p>
-                  <p className="text-lg font-semibold text-primary">{submission.aiScore}%</p>
-                </div>
-                {submission.teacherScore && (
+                {/* Test natijalari (quiz uchun) */}
+                {submission.assignment?.type === 'quiz' && submission.correctCount !== null && submission.totalQuestions !== null ? (
                   <div className="text-center">
-                    <p className="text-sm text-muted-foreground">Sizning ball</p>
-                    <p className="text-lg font-semibold text-success">{submission.teacherScore}%</p>
+                    <p className="text-sm text-muted-foreground">Test natijasi</p>
+                    <p className="text-lg font-semibold text-primary">
+                      {submission.correctCount}/{submission.totalQuestions}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {Math.round((submission.correctCount / submission.totalQuestions) * 100)}%
+                    </p>
+                    {submission.hasPassed && (
+                      <p className="text-xs text-success font-medium mt-1">✅ Sertifikat</p>
+                    )}
                   </div>
+                ) : (
+                  <>
+                    <div className="text-center">
+                      <p className="text-sm text-muted-foreground">AI ball</p>
+                      <p className="text-lg font-semibold text-primary">{submission.aiScore || 0}%</p>
+                    </div>
+                    {submission.teacherScore && (
+                      <div className="text-center">
+                        <p className="text-sm text-muted-foreground">Sizning ball</p>
+                        <p className="text-lg font-semibold text-success">{submission.teacherScore}%</p>
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
 

@@ -753,13 +753,41 @@ export const getAssignmentSubmissions = async (req, res) => {
         };
       }) || [];
 
+      // Student ma'lumotlarini formatlash
+      const studentName = submission.studentId && typeof submission.studentId === 'object'
+        ? `${submission.studentId.firstName || ''} ${submission.studentId.lastName || ''}`.trim() || 'Noma\'lum'
+        : 'Noma\'lum';
+      
+      const studentAvatar = submission.studentId && typeof submission.studentId === 'object'
+        ? `${submission.studentId.firstName?.charAt(0) || ''}${submission.studentId.lastName?.charAt(0) || ''}`.toUpperCase()
+        : '??';
+
       return {
-        ...submission,
+        id: submission._id.toString(),
+        studentName,
+        studentAvatar,
+        assignmentTitle: assignment.title || 'Topshiriq topilmadi',
+        submittedAt: submission.submittedAt 
+          ? new Date(submission.submittedAt).toLocaleString('uz-UZ') 
+          : (submission.createdAt ? new Date(submission.createdAt).toLocaleString('uz-UZ') : ''),
+        status: submission.status || 'pending',
+        aiScore: submission.aiScore || null,
+        teacherScore: submission.score || null,
+        feedback: submission.teacherFeedback || submission.feedback || null,
+        answer: '',
+        assignmentId: assignment._id.toString(),
+        studentId: submission.studentId?._id?.toString() || submission.studentId?.toString() || null,
         answers: formattedAnswers,
         assignment: {
           ...assignment,
           questions: assignment.questions
-        }
+        },
+        // Test natijalari (quiz uchun)
+        correctCount: submission.correctCount || null,
+        totalQuestions: submission.totalQuestions || null,
+        passed: submission.passed || false,
+        hasPassed: submission.hasPassed || false,
+        attemptsUsed: submission.attemptsUsed || 0,
       };
     });
 
@@ -837,6 +865,12 @@ export const getAllSubmissions = async (req, res) => {
           answer: answerText,
           assignmentId: submission.assignmentId?._id?.toString() || submission.assignmentId?.toString() || null,
           studentId: submission.studentId?._id?.toString() || submission.studentId?.toString() || null,
+          // Test natijalari (quiz uchun)
+          correctCount: submission.correctCount || null,
+          totalQuestions: submission.totalQuestions || null,
+          passed: submission.passed || false,
+          hasPassed: submission.hasPassed || false,
+          attemptsUsed: submission.attemptsUsed || 0,
         };
       });
 
