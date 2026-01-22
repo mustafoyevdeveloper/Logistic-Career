@@ -7,6 +7,7 @@ import fs from 'fs/promises';
 import path from 'path';
 import puppeteer from 'puppeteer-core';
 import chromium from '@sparticuz/chromium';
+import { test40Questions, test40AssignmentData } from '../data/testQuestions.js';
 
 /**
  * @desc    Barcha topshiriqlarni olish
@@ -28,6 +29,20 @@ export const getAssignments = async (req, res) => {
       .populate('createdBy', 'firstName lastName')
       .sort({ createdAt: -1 })
       .lean();
+
+    // Test assignment bo'lsa, questions'ni hardcoded qilib qo'yish
+    for (const assignment of assignments) {
+      if (assignment.type === 'quiz' && 
+          assignment.questions?.length === 40 &&
+          assignment.title?.includes('XALQARO LOGISTIKA BO\'YICHA 40 TA TEST')) {
+        // Hardcoded testlarni qo'yish
+        assignment.questions = test40Questions.map((q, index) => ({
+          ...q,
+          _id: assignment.questions?.[index]?._id || `test-${index}`
+        }));
+        assignment.maxScore = test40AssignmentData.maxScore;
+      }
+    }
 
     // Student uchun submission ma'lumotlari
     if (req.user.role === 'student') {
@@ -73,6 +88,18 @@ export const getAssignment = async (req, res) => {
         success: false,
         message: 'Topshiriq topilmadi',
       });
+    }
+
+    // Test assignment bo'lsa, questions'ni hardcoded qilib qo'yish
+    if (assignment.type === 'quiz' && 
+        assignment.questions?.length === 40 &&
+        assignment.title?.includes('XALQARO LOGISTIKA BO\'YICHA 40 TA TEST')) {
+      // Hardcoded testlarni qo'yish
+      assignment.questions = test40Questions.map((q, index) => ({
+        ...q,
+        _id: assignment.questions?.[index]?._id || `test-${index}`
+      }));
+      assignment.maxScore = test40AssignmentData.maxScore;
     }
 
     // Student uchun submission
@@ -152,6 +179,18 @@ export const submitAssignment = async (req, res) => {
       });
     }
 
+    // Test assignment bo'lsa, questions'ni hardcoded qilib qo'yish
+    let questions = assignment.questions || [];
+    if (assignment.type === 'quiz' && 
+        assignment.questions?.length === 40 &&
+        assignment.title?.includes('XALQARO LOGISTIKA BO\'YICHA 40 TA TEST')) {
+      // Hardcoded testlarni qo'yish
+      questions = test40Questions.map((q, index) => ({
+        ...q,
+        _id: assignment.questions?.[index]?._id || `test-${index}`
+      }));
+    }
+
     // Submission mavjudligini tekshirish
     let submission = await AssignmentSubmission.findOne({
       assignmentId: assignment._id,
@@ -169,10 +208,10 @@ export const submitAssignment = async (req, res) => {
     let autoScore = null;
     let correctCount = null;
     let totalQuestions = null;
-    if (assignment.type === 'quiz' && Array.isArray(assignment.questions)) {
-      totalQuestions = assignment.questions.length;
+    if (assignment.type === 'quiz' && Array.isArray(questions)) {
+      totalQuestions = questions.length;
       const correctMap = new Map();
-      assignment.questions.forEach((q, idx) => {
+      questions.forEach((q, idx) => {
         const qid = q?._id?.toString() || idx.toString();
         if (q && q.correctAnswer !== undefined) {
           correctMap.set(qid, {
@@ -723,6 +762,18 @@ export const getAssignmentSubmissions = async (req, res) => {
       });
     }
 
+    // Test assignment bo'lsa, questions'ni hardcoded qilib qo'yish
+    let questions = assignment.questions || [];
+    if (assignment.type === 'quiz' && 
+        assignment.questions?.length === 40 &&
+        assignment.title?.includes('XALQARO LOGISTIKA BO\'YICHA 40 TA TEST')) {
+      // Hardcoded testlarni qo'yish
+      questions = test40Questions.map((q, index) => ({
+        ...q,
+        _id: assignment.questions?.[index]?._id || `test-${index}`
+      }));
+    }
+
     const submissions = await AssignmentSubmission.find({
       assignmentId: req.params.id,
     })
@@ -732,7 +783,7 @@ export const getAssignmentSubmissions = async (req, res) => {
 
     // Format submissions with question details
     const formattedSubmissions = submissions.map((submission) => {
-      const formattedAnswers = assignment.questions?.map((question, index) => {
+      const formattedAnswers = questions.map((question, index) => {
         const questionId = question._id?.toString() || index.toString();
         const userAnswer = submission.answers?.find((ans, any) => 
           ans.questionId?.toString() === questionId
