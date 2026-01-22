@@ -120,7 +120,7 @@ export default function StudentDashboard() {
             Bugungi maqsadingiz: Logistika asoslarini o'rganishni davom ettiring
           </p>
           
-          <div className="flex flex-wrap gap-3">
+          <div className="flex flex-wrap gap-3 ">
             <Link to="/student/lessons">
               <Button variant="hero" className="bg-accent hover:bg-accent/90 text-white">
                 Davom etish
@@ -128,8 +128,14 @@ export default function StudentDashboard() {
               </Button>
             </Link>
             <Link to="/student/ai-chat">
-              <Button variant="outline" className="border-primary-foreground/30 text-black transition duration-400 bg-white/95 hover:bg-white" >
+              <Button variant="outline" className="border-none gradient-primary duration-200 text-white hover:text-white" >
                 AI bilan mashq
+                <ArrowRight className="w-4 h-4" />
+              </Button>
+            </Link>
+            <Link to="https://t.me/asliddin_fazliddinov1ch">
+              <Button variant="outline" className="border-primary-foreground/30 text-black hover:shadow-glow transition duration-400 bg-white/95 hover:bg-white" >
+                O'qituvchining telegram sahifasiga o'tish
               </Button>
             </Link>
           </div>

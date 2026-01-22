@@ -381,18 +381,42 @@ export default function AssignmentsPage() {
     // Agar mock assignment bo'lsa, backend'dan quiz'ni yuklashga harakat qilamiz
     if (selectedAssignment._id === 'test-40-questions') {
       try {
+        setIsSubmitting(true);
+        
+        // Avval barcha assignment'larni yuklaymiz
         const response = await apiService.request<{ assignments: Assignment[] }>('/assignments');
         if (response.success && response.data) {
           const list = response.data.assignments || [];
-          const quiz = list.find((a) => a.type === 'quiz');
+          // 40 ta savol bo'lgan quiz'ni topamiz yoki har qanday quiz'ni
+          const quiz = list.find((a) => a.type === 'quiz' && a.questions?.length === 40) ||
+                       list.find((a) => a.type === 'quiz');
+          
           if (quiz) {
             // Real quiz topildi, uni yuklaymiz va submit qilamiz
-            await loadAssignmentDetails(quiz._id);
-            // Keyin submit qilamiz
-            const formattedAnswers = selectedAssignment.questions.map((q, idx) => ({
-              questionId: quiz.questions?.[idx]?._id || q._id,
-              answer: answers[q._id?.toString() || '']
-            }));
+            // Avval quiz'ning to'liq ma'lumotlarini yuklaymiz
+            const quizDetailsResponse = await apiService.request<{ assignment: Assignment; submission?: any }>(`/assignments/${quiz._id}`);
+            if (!quizDetailsResponse.success || !quizDetailsResponse.data) {
+              toast.error('Test ma\'lumotlarini yuklashda xatolik');
+              return;
+            }
+            
+            const fullQuiz = quizDetailsResponse.data.assignment;
+            
+            // Keyin submit qilamiz - questionId'larni to'g'ri formatda yuboramiz
+            const formattedAnswers = selectedAssignment.questions.map((q, idx) => {
+              // Backend'dan kelgan quiz'ning question ID'sini ishlatamiz
+              // Avval fullQuiz.questions'dan, keyin quiz.questions'dan, oxirida index'ni
+              const backendQuestion = fullQuiz.questions?.[idx] || quiz.questions?.[idx];
+              const backendQuestionId = backendQuestion?._id?.toString() || 
+                                       backendQuestion?._id || 
+                                       quiz.questions?.[idx]?._id?.toString() ||
+                                       quiz.questions?.[idx]?._id ||
+                                       `test-${idx}`;
+              return {
+                questionId: backendQuestionId,
+                answer: answers[q._id?.toString() || `test-${idx}`]
+              };
+            });
             
             const submitResponse = await apiService.request(`/assignments/${quiz._id}/submit`, {
               method: 'POST',
@@ -401,16 +425,29 @@ export default function AssignmentsPage() {
             
             if (submitResponse.success) {
               toast.success('Natija MongoDBga saqlandi!');
+              // Real quiz'ni yuklaymiz
               await loadAssignmentDetails(quiz._id);
+              return;
+            } else {
+              toast.error(submitResponse.message || 'Natijani saqlashda xatolik');
+              return;
             }
+          } else {
+            // Quiz topilmadi, xatolik ko'rsatamiz
+            toast.error('Backend\'da test topilmadi. Iltimos, admin bilan bog\'laning yoki sahifani yangilang.');
             return;
           }
+        } else {
+          toast.error('Backend\'dan javob kelmadi. Iltimos, qayta urinib ko\'ring.');
+          return;
         }
-      } catch (err) {
+      } catch (err: any) {
         console.error('Error finding quiz:', err);
+        toast.error(err.message || 'Backend\'da test topilmadi. Iltimos, admin bilan bog\'laning.');
+        return;
+      } finally {
+        setIsSubmitting(false);
       }
-      toast.error('Backend\'da test topilmadi. Iltimos, admin bilan bog\'laning.');
-      return;
     }
 
     try {
