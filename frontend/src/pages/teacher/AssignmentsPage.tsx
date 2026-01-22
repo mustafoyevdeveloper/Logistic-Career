@@ -289,9 +289,9 @@ export default function TeacherAssignmentsPage() {
         </div>
       ) : (
         <div className="space-y-4">
-          {submissions.map((submission) => (
+          {submissions.map((submission, submissionIndex) => (
           <div
-            key={submission.id}
+            key={submission.id || `submission-${submissionIndex}`}
             className={cn(
               "bg-card rounded-xl p-5 border shadow-card transition-all duration-200",
               selectedSubmission?.id === submission.id
@@ -355,7 +355,7 @@ export default function TeacherAssignmentsPage() {
                     <h3 className="font-semibold text-foreground mb-4">Savollar va javoblar:</h3>
                     {selectedSubmission.answers.map((qa: QuestionAnswer, index: number) => (
                       <div 
-                        key={qa.questionId || index}
+                        key={qa.questionId || `answer-${selectedSubmission.id}-${index}`}
                         className={cn(
                           "border rounded-lg p-4",
                           qa.isCorrect 
