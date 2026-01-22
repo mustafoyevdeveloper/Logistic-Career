@@ -307,13 +307,15 @@ export default function TeacherAssignmentsPage() {
           >
             <div className="flex flex-col sm:flex-row sm:items-center gap-4">
               {/* Student Info */}
-              <div className="flex items-center gap-3 flex-1">
-                <div className="w-12 h-12 rounded-full gradient-primary flex items-center justify-center text-primary-foreground font-semibold text-sm">
-                  {submission.studentAvatar}
+              <div className="flex items-center gap-3 flex-1 min-w-0">
+                <div className="w-12 h-12 rounded-full gradient-primary flex items-center justify-center text-primary-foreground font-semibold text-sm flex-shrink-0">
+                  {submission.studentAvatar || '??'}
                 </div>
-                <div className="flex-1">
-                  <h3 className="font-semibold text-foreground text-base">{submission.studentName}</h3>
-                  <p className="text-sm text-muted-foreground">{submission.assignmentTitle}</p>
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-semibold text-foreground text-base truncate">
+                    {submission.studentName || 'Noma\'lum o\'quvchi'}
+                  </h3>
+                  <p className="text-sm text-muted-foreground truncate">{submission.assignmentTitle}</p>
                   {submission.assignment?.type === 'quiz' && submission.attemptsUsed && submission.attemptsUsed > 0 && (
                     <p className="text-xs text-muted-foreground mt-1">
                       Imkoniyat: {submission.attemptsUsed}
@@ -322,37 +324,36 @@ export default function TeacherAssignmentsPage() {
                 </div>
               </div>
 
-              {/* Scores */}
-              <div className="flex items-center gap-4">
-                {/* Test natijalari (quiz uchun) */}
-                {submission.assignment?.type === 'quiz' && submission.correctCount !== null && submission.totalQuestions !== null ? (
+              {/* Scores - Test natijalari (quiz uchun) */}
+              {submission.assignment?.type === 'quiz' && submission.correctCount !== null && submission.totalQuestions !== null ? (
+                <div className="flex items-center gap-4 flex-shrink-0">
                   <div className="text-center">
                     <p className="text-sm text-muted-foreground">Test natijasi</p>
                     <p className="text-lg font-semibold text-primary">
                       {submission.correctCount}/{submission.totalQuestions}
                     </p>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-xs font-medium text-primary">
                       {Math.round((submission.correctCount / submission.totalQuestions) * 100)}%
                     </p>
                     {submission.hasPassed && (
                       <p className="text-xs text-success font-medium mt-1">✅ Sertifikat</p>
                     )}
                   </div>
-                ) : (
-                  <>
+                </div>
+              ) : (
+                <div className="flex items-center gap-4 flex-shrink-0">
+                  <div className="text-center">
+                    <p className="text-sm text-muted-foreground">AI ball</p>
+                    <p className="text-lg font-semibold text-primary">{submission.aiScore || 0}%</p>
+                  </div>
+                  {submission.teacherScore && (
                     <div className="text-center">
-                      <p className="text-sm text-muted-foreground">AI ball</p>
-                      <p className="text-lg font-semibold text-primary">{submission.aiScore || 0}%</p>
+                      <p className="text-sm text-muted-foreground">Sizning ball</p>
+                      <p className="text-lg font-semibold text-success">{submission.teacherScore}%</p>
                     </div>
-                    {submission.teacherScore && (
-                      <div className="text-center">
-                        <p className="text-sm text-muted-foreground">Sizning ball</p>
-                        <p className="text-lg font-semibold text-success">{submission.teacherScore}%</p>
-                      </div>
-                    )}
-                  </>
-                )}
-              </div>
+                  )}
+                </div>
+              )}
 
               {/* Status & Action */}
               <div className="flex items-center gap-3">
@@ -366,11 +367,19 @@ export default function TeacherAssignmentsPage() {
                 </span>
                 
                 <Button 
-                  variant={submission.status === 'graded' ? 'outline' : 'gradient'} 
+                  variant={selectedSubmission?.id === submission.id ? 'outline' : (submission.status === 'graded' ? 'outline' : 'gradient')} 
                   size="sm"
-                  onClick={() => handleViewStudentAnswers(submission)}
+                  onClick={() => {
+                    if (selectedSubmission?.id === submission.id) {
+                      // Agar ochiq bo'lsa, yopish
+                      setSelectedSubmission(null);
+                    } else {
+                      // Agar yopiq bo'lsa, ochish
+                      handleViewStudentAnswers(submission);
+                    }
+                  }}
                 >
-                  {submission.status === 'graded' ? 'Ko\'rish' : 'Tekshirish'}
+                  {selectedSubmission?.id === submission.id ? 'Yopish' : (submission.status === 'graded' ? 'Ko\'rish' : 'Tekshirish')}
                 </Button>
               </div>
             </div>
