@@ -62,10 +62,73 @@ export default function AssignmentsPage() {
 
         if (quiz) {
           await loadAssignmentDetails(quiz._id);
+        } else {
+          // Agar quiz topilmasa, backend'dan quiz'ni yuklashga harakat qilamiz
+          // Avval barcha assignment'larni tekshiramiz
+          try {
+            const allAssignmentsResponse = await apiService.request<{ assignments: Assignment[] }>('/assignments');
+            if (allAssignmentsResponse.success && allAssignmentsResponse.data) {
+              const allList = allAssignmentsResponse.data.assignments || [];
+              const foundQuiz = allList.find((a) => a.type === 'quiz');
+              if (foundQuiz) {
+                await loadAssignmentDetails(foundQuiz._id);
+                return;
+              }
+            }
+          } catch (err) {
+            console.error('Error loading assignments:', err);
+          }
+          
+          // Agar hali ham quiz topilmasa, frontend'da to'g'ridan-to'g'ri testlarni yaratamiz
+          const mockAssignment: Assignment = {
+            _id: 'test-40-questions',
+            title: test40AssignmentData.title,
+            description: test40AssignmentData.description,
+            dueDate: new Date().toISOString(),
+            status: 'pending',
+            maxScore: test40AssignmentData.maxScore,
+            type: 'quiz',
+            questions: test40Questions.map((q, index) => ({
+              ...q,
+              _id: `test-${index}`
+            }))
+          };
+          setSelectedAssignment(mockAssignment);
         }
+      } else {
+        // Agar backend'dan javob kelmasa, frontend'da to'g'ridan-to'g'ri testlarni yaratamiz
+        const mockAssignment: Assignment = {
+          _id: 'test-40-questions',
+          title: test40AssignmentData.title,
+          description: test40AssignmentData.description,
+          dueDate: new Date().toISOString(),
+          status: 'pending',
+          maxScore: test40AssignmentData.maxScore,
+          type: 'quiz',
+          questions: test40Questions.map((q, index) => ({
+            ...q,
+            _id: `test-${index}`
+          }))
+        };
+        setSelectedAssignment(mockAssignment);
       }
     } catch (error: any) {
-      toast.error(error.message || 'Topshiriqlarni yuklashda xatolik');
+      // Xatolik bo'lsa ham, frontend'da testlarni ko'rsatamiz
+      console.error('Assignments load error:', error);
+      const mockAssignment: Assignment = {
+        _id: 'test-40-questions',
+        title: test40AssignmentData.title,
+        description: test40AssignmentData.description,
+        dueDate: new Date().toISOString(),
+        status: 'pending',
+        maxScore: test40AssignmentData.maxScore,
+        type: 'quiz',
+        questions: test40Questions.map((q, index) => ({
+          ...q,
+          _id: `test-${index}`
+        }))
+      };
+      setSelectedAssignment(mockAssignment);
     } finally {
       setIsLoading(false);
     }
@@ -79,18 +142,29 @@ export default function AssignmentsPage() {
         const submission = response.data.submission;
 
         // Test assignment bo'lsa, questions'ni TSX fayldan olish
-        if (assignment.type === 'quiz' && 
-            assignment.questions?.length === 40 &&
-            assignment.title?.includes('XALQARO LOGISTIKA BO\'YICHA 40 TA TEST')) {
-          // Hardcoded testlarni qo'yish (TSX fayldan)
-          assignment = {
-            ...assignment,
-            questions: test40Questions.map((q, index) => ({
-              ...q,
-              _id: assignment.questions?.[index]?._id || `test-${index}`
-            })),
-            maxScore: test40AssignmentData.maxScore
-          };
+        if (assignment.type === 'quiz') {
+          // Agar questions bo'sh yoki 40 ta emas bo'lsa, TSX fayldan qo'yamiz
+          if (!assignment.questions || assignment.questions.length !== 40) {
+            assignment = {
+              ...assignment,
+              questions: test40Questions.map((q, index) => ({
+                ...q,
+                _id: assignment.questions?.[index]?._id || `test-${index}`
+              })),
+              maxScore: test40AssignmentData.maxScore
+            };
+          } else if (assignment.title?.includes('XALQARO LOGISTIKA BO\'YICHA 40 TA TEST') || 
+                     assignment.questions.length === 40) {
+            // Hardcoded testlarni qo'yish (TSX fayldan)
+            assignment = {
+              ...assignment,
+              questions: test40Questions.map((q, index) => ({
+                ...q,
+                _id: assignment.questions?.[index]?._id || `test-${index}`
+              })),
+              maxScore: test40AssignmentData.maxScore
+            };
+          }
         }
 
         // Assignmentga submission va statusni biriktiramiz (frontendda ko'rsatish uchun)
@@ -247,14 +321,16 @@ export default function AssignmentsPage() {
     if (!selectedAssignment) return;
 
     // Har bir javobni backendga saqlash (quiz)
-    if (selectedAssignment.type === 'quiz') {
+    // Faqat agar assignment ID backend'dan kelgan bo'lsa (mock emas)
+    if (selectedAssignment.type === 'quiz' && selectedAssignment._id !== 'test-40-questions') {
       apiService
         .request(`/assignments/${selectedAssignment._id}/answer`, {
           method: 'POST',
           body: JSON.stringify({ questionId, answer }),
         })
         .catch(() => {
-          toast.error('Javobni saqlashda xatolik');
+          // Xatolikni faqat console'da ko'rsatamiz, chunki bu mock assignment bo'lishi mumkin
+          console.warn('Javobni saqlashda xatolik (mock assignment bo\'lishi mumkin)');
         });
     }
 
@@ -299,6 +375,41 @@ export default function AssignmentsPage() {
 
     if (unansweredQuestions.length > 0) {
       toast.error('Iltimos, barcha savollarga javob bering');
+      return;
+    }
+
+    // Agar mock assignment bo'lsa, backend'dan quiz'ni yuklashga harakat qilamiz
+    if (selectedAssignment._id === 'test-40-questions') {
+      try {
+        const response = await apiService.request<{ assignments: Assignment[] }>('/assignments');
+        if (response.success && response.data) {
+          const list = response.data.assignments || [];
+          const quiz = list.find((a) => a.type === 'quiz');
+          if (quiz) {
+            // Real quiz topildi, uni yuklaymiz va submit qilamiz
+            await loadAssignmentDetails(quiz._id);
+            // Keyin submit qilamiz
+            const formattedAnswers = selectedAssignment.questions.map((q, idx) => ({
+              questionId: quiz.questions?.[idx]?._id || q._id,
+              answer: answers[q._id?.toString() || '']
+            }));
+            
+            const submitResponse = await apiService.request(`/assignments/${quiz._id}/submit`, {
+              method: 'POST',
+              body: JSON.stringify({ answers: formattedAnswers }),
+            });
+            
+            if (submitResponse.success) {
+              toast.success('Natija MongoDBga saqlandi!');
+              await loadAssignmentDetails(quiz._id);
+            }
+            return;
+          }
+        }
+      } catch (err) {
+        console.error('Error finding quiz:', err);
+      }
+      toast.error('Backend\'da test topilmadi. Iltimos, admin bilan bog\'laning.');
       return;
     }
 
