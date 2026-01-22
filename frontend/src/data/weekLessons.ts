@@ -953,6 +953,32 @@ export const weekLessons: Record<number, WeekLesson> = {
             </div>
           </div>
 
+          <!-- O'qituvchi va O'quvchilar Chat Guruhi -->
+          <div class="mt-8 mb-8">
+            <h3 class="text-2xl font-bold mb-6 text-center text-gray-800 flex items-center justify-center">
+              <span class="mr-3">💬</span>
+              O'qituvchi va O'quvchilar Chat Guruhi
+            </h3>
+            <div class="max-w-2xl mx-auto">
+              <div class="bg-gradient-to-br from-violet-50 to-violet-100 border-2 border-violet-300 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-300">
+                <div class="flex items-center mb-4">
+                  <div class="w-16 h-16 bg-violet-500 rounded-full flex items-center justify-center mr-4">
+                    <svg class="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.562 8.161c-.18 1.897-.962 6.502-1.359 8.627-.168.9-.599 1.201-.984 1.23-.419.029-1.139-.211-1.599-.411-.621-.266-1.17-.411-1.893-.656-.798-.293-1.25-.456-2.016-.734-1.03-.375-1.816-.58-1.765-1.225.03-.344.45-.697 1.239-1.055 4.782-2.241 7.968-3.323 9.516-3.99 1.56-.68 3.003-.999 4.356-.999.45 0 .9.03 1.35.09l.36.03c.39.06.75.15 1.11.24.36.09.72.21 1.05.36.33.15.63.33.9.54.27.21.51.45.72.72.21.27.39.57.54.9.15.33.27.69.36 1.05.09.36.18.72.24 1.11.06.39.09.78.09 1.17 0 .39-.03.78-.09 1.17-.06.39-.15.75-.24 1.11-.09.36-.21.72-.36 1.05-.15.33-.33.63-.54.9-.21.27-.45.51-.72.72-.27.21-.57.39-.9.54-.33.15-.69.27-1.05.36-.36.09-.72.18-1.11.24-.39.06-.78.09-1.17.09-.39 0-.78-.03-1.17-.09-.39-.06-.75-.15-1.11-.24-.36-.09-.72-.21-1.05-.36-.33-.15-.63-.33-.9-.54-.27-.21-.51-.45-.72-.72-.21-.27-.39-.57-.54-.9-.15-.33-.27-.69-.36-1.05-.09-.36-.18-.72-.24-1.11-.06-.39-.09-.78-.09-1.17z"/>
+                    </svg>
+                  </div>
+                  <div class="flex-1">
+                    <h3 class="text-xl font-bold text-gray-800 mb-2">Logistica yuk jamoa</h3>
+                    <p class="text-sm text-gray-600 mb-3">O'qituvchi va o'quvchilar o'rtasida dars o'tkazish, savol-javob qilish va muloqot qilish uchun maxsus guruh</p>
+                  </div>
+                </div>
+                <a href="https://t.me/+yD8u10aLol43ODcy" target="_blank" class="block w-full bg-violet-500 hover:bg-violet-600 text-white font-semibold py-3 px-4 rounded-lg text-center transition-colors duration-200 text-lg">
+                  💬 Guruhga qo'shilish
+                </a>
+              </div>
+            </div>
+          </div>
+
           <!-- Telefon Raqamlari -->
           <div class="mt-12 mb-8">
             <h3 class="text-2xl font-bold mb-6 text-center text-gray-800 flex items-center justify-center">
