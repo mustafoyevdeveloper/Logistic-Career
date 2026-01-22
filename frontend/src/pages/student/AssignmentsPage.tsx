@@ -7,6 +7,7 @@ import { getDeviceId } from '@/utils/deviceId';
 import { Trophy, Check, XCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { test40Questions, test40AssignmentData } from '@/data/testQuestions';
 
 interface Question {
   _id?: string;
@@ -74,8 +75,23 @@ export default function AssignmentsPage() {
     try {
       const response = await apiService.request<{ assignment: Assignment; submission?: any }>(`/assignments/${assignmentId}`);
       if (response.success && response.data) {
-        const assignment = response.data.assignment;
+        let assignment = response.data.assignment;
         const submission = response.data.submission;
+
+        // Test assignment bo'lsa, questions'ni TSX fayldan olish
+        if (assignment.type === 'quiz' && 
+            assignment.questions?.length === 40 &&
+            assignment.title?.includes('XALQARO LOGISTIKA BO\'YICHA 40 TA TEST')) {
+          // Hardcoded testlarni qo'yish (TSX fayldan)
+          assignment = {
+            ...assignment,
+            questions: test40Questions.map((q, index) => ({
+              ...q,
+              _id: assignment.questions?.[index]?._id || `test-${index}`
+            })),
+            maxScore: test40AssignmentData.maxScore
+          };
+        }
 
         // Assignmentga submission va statusni biriktiramiz (frontendda ko'rsatish uchun)
         const assignmentWithSubmission = {
