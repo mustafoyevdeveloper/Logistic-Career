@@ -818,7 +818,7 @@ export const weekLessons: Record<number, WeekLesson> = {
           
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
             <!-- Telegram Channel 1 -->
-            <div class="bg-gradient-to-br from-blue-50 to-blue-100 border-2 border-blue-300 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
+            <div class="bg-gradient-to-br from-blue-50 to-blue-100 border-2 border-blue-300 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-300">
               <div class="flex items-center mb-4">
                 <div class="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center mr-3">
                   <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
@@ -833,7 +833,7 @@ export const weekLessons: Record<number, WeekLesson> = {
             </div>
 
             <!-- Telegram Channel 2 -->
-            <div class="bg-gradient-to-br from-purple-50 to-purple-100 border-2 border-purple-300 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
+            <div class="bg-gradient-to-br from-purple-50 to-purple-100 border-2 border-purple-300 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-300">
               <div class="flex items-center mb-4">
                 <div class="w-12 h-12 bg-purple-500 rounded-full flex items-center justify-center mr-3">
                   <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
@@ -848,7 +848,7 @@ export const weekLessons: Record<number, WeekLesson> = {
             </div>
 
             <!-- Telegram Channel 3 -->
-            <div class="bg-gradient-to-br from-green-50 to-green-100 border-2 border-green-300 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
+            <div class="bg-gradient-to-br from-green-50 to-green-100 border-2 border-green-300 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-300">
               <div class="flex items-center mb-4">
                 <div class="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center mr-3">
                   <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
@@ -863,7 +863,7 @@ export const weekLessons: Record<number, WeekLesson> = {
             </div>
 
             <!-- Telegram Channel 4 -->
-            <div class="bg-gradient-to-br from-orange-50 to-orange-100 border-2 border-orange-300 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
+            <div class="bg-gradient-to-br from-orange-50 to-orange-100 border-2 border-orange-300 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-300">
               <div class="flex items-center mb-4">
                 <div class="w-12 h-12 bg-orange-500 rounded-full flex items-center justify-center mr-3">
                   <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
@@ -878,7 +878,7 @@ export const weekLessons: Record<number, WeekLesson> = {
             </div>
 
             <!-- Telegram Channel 5 -->
-            <div class="bg-gradient-to-br from-red-50 to-red-100 border-2 border-red-300 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
+            <div class="bg-gradient-to-br from-red-50 to-red-100 border-2 border-red-300 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-300">
               <div class="flex items-center mb-4">
                 <div class="w-12 h-12 bg-red-500 rounded-full flex items-center justify-center mr-3">
                   <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
@@ -893,7 +893,7 @@ export const weekLessons: Record<number, WeekLesson> = {
             </div>
 
             <!-- Telegram Channel 6 -->
-            <div class="bg-gradient-to-br from-indigo-50 to-indigo-100 border-2 border-indigo-300 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
+            <div class="bg-gradient-to-br from-indigo-50 to-indigo-100 border-2 border-indigo-300 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-300">
               <div class="flex items-center mb-4">
                 <div class="w-12 h-12 bg-indigo-500 rounded-full flex items-center justify-center mr-3">
                   <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
@@ -908,7 +908,7 @@ export const weekLessons: Record<number, WeekLesson> = {
             </div>
 
             <!-- Telegram Channel 7 -->
-            <div class="bg-gradient-to-br from-pink-50 to-pink-100 border-2 border-pink-300 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
+            <div class="bg-gradient-to-br from-pink-50 to-pink-100 border-2 border-pink-300 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-300">
               <div class="flex items-center mb-4">
                 <div class="w-12 h-12 bg-pink-500 rounded-full flex items-center justify-center mr-3">
                   <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
@@ -923,7 +923,7 @@ export const weekLessons: Record<number, WeekLesson> = {
             </div>
 
             <!-- Telegram Channel 8 -->
-            <div class="bg-gradient-to-br from-teal-50 to-teal-100 border-2 border-teal-300 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
+            <div class="bg-gradient-to-br from-teal-50 to-teal-100 border-2 border-teal-300 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-300">
               <div class="flex items-center mb-4">
                 <div class="w-12 h-12 bg-teal-500 rounded-full flex items-center justify-center mr-3">
                   <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
@@ -938,7 +938,7 @@ export const weekLessons: Record<number, WeekLesson> = {
             </div>
 
             <!-- Telegram Channel 9 -->
-            <div class="bg-gradient-to-br from-cyan-50 to-cyan-100 border-2 border-cyan-300 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
+            <div class="bg-gradient-to-br from-cyan-50 to-cyan-100 border-2 border-cyan-300 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-300">
               <div class="flex items-center mb-4">
                 <div class="w-12 h-12 bg-cyan-500 rounded-full flex items-center justify-center mr-3">
                   <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
@@ -986,7 +986,7 @@ export const weekLessons: Record<number, WeekLesson> = {
               Telefon Raqamlari
             </h3>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-2xl mx-auto">
-              <div class="bg-gradient-to-br from-emerald-50 to-emerald-100 border-2 border-emerald-300 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
+              <div class="bg-gradient-to-br from-emerald-50 to-emerald-100 border-2 border-emerald-300 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-300">
                 <div class="flex items-center justify-between">
                   <div class="flex items-center">
                     <div class="w-14 h-14 bg-emerald-500 rounded-full flex items-center justify-center mr-4">
@@ -1004,7 +1004,7 @@ export const weekLessons: Record<number, WeekLesson> = {
                 </div>
               </div>
 
-              <div class="bg-gradient-to-br from-amber-50 to-amber-100 border-2 border-amber-300 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
+              <div class="bg-gradient-to-br from-amber-50 to-amber-100 border-2 border-amber-300 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-300">
                 <div class="flex items-center justify-between">
                   <div class="flex items-center">
                     <div class="w-14 h-14 bg-amber-500 rounded-full flex items-center justify-center mr-4">
