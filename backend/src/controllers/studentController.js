@@ -253,6 +253,15 @@ export const clearStudentDevice = async (req, res) => {
  */
 export const uploadStudentCertificate = async (req, res) => {
   try {
+    console.log('[uploadStudentCertificate] Request received:', {
+      userId: req.user?._id,
+      role: req.user?.role,
+      studentId: req.params.id,
+      hasFile: !!req.file,
+      fileSize: req.file?.size,
+      fileMimetype: req.file?.mimetype,
+    });
+
     if (req.user.role !== 'teacher' && req.user.role !== 'admin') {
       return res.status(403).json({
         success: false,
@@ -270,6 +279,7 @@ export const uploadStudentCertificate = async (req, res) => {
     }
 
     if (!req.file) {
+      console.error('[uploadStudentCertificate] No file in request');
       return res.status(400).json({
         success: false,
         message: 'Sertifikat fayli yuklanmadi',
@@ -280,21 +290,26 @@ export const uploadStudentCertificate = async (req, res) => {
     if (student.certificateUrl) {
       try {
         await deleteFromR2(student.certificateUrl);
+        console.log('[uploadStudentCertificate] Old certificate deleted from R2');
       } catch (error) {
-        console.error('Eski sertifikatni R2\'dan o\'chirishda xatolik:', error);
+        console.error('[uploadStudentCertificate] Error deleting old certificate:', error);
+        // Xatolik bo'lsa ham davom etamiz
       }
     }
 
     // Yangi sertifikatni R2'ga yuklash
+    console.log('[uploadStudentCertificate] Uploading to R2...');
     const publicUrl = await uploadToR2(
       req.file.buffer,
       req.file.originalname,
       req.file.mimetype,
       'certificates'
     );
+    console.log('[uploadStudentCertificate] Upload successful, URL:', publicUrl);
 
     student.certificateUrl = publicUrl;
     await student.save({ validateBeforeSave: false });
+    console.log('[uploadStudentCertificate] Student certificateUrl saved');
 
     res.json({
       success: true,
@@ -304,10 +319,12 @@ export const uploadStudentCertificate = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error('uploadStudentCertificate error:', error);
+    console.error('[uploadStudentCertificate] Error:', error);
+    console.error('[uploadStudentCertificate] Error stack:', error.stack);
     res.status(500).json({
       success: false,
       message: error.message || 'Sertifikat yuklashda xatolik',
+      error: process.env.NODE_ENV === 'development' ? error.stack : undefined,
     });
   }
 };

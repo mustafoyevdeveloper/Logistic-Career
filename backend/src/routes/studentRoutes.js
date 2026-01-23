@@ -18,7 +18,18 @@ router.delete('/:id', deleteStudent);
 router.put('/:id/suspend', suspendStudent);
 router.put('/:id', updateStudent);
 router.post('/:id/clear-device', clearStudentDevice);
-router.post('/:id/certificate', certificateUpload, uploadStudentCertificate);
+router.post('/:id/certificate', (req, res, next) => {
+  certificateUpload(req, res, (err) => {
+    if (err) {
+      console.error('[studentRoutes] Multer error:', err);
+      return res.status(400).json({
+        success: false,
+        message: err.message || 'Fayl yuklashda xatolik',
+      });
+    }
+    next();
+  });
+}, uploadStudentCertificate);
 
 export default router;
 
