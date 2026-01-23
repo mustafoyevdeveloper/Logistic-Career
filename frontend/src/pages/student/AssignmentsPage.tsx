@@ -576,6 +576,7 @@ export default function AssignmentsPage({ viewerMode = false }: { viewerMode?: b
                       {question.options.map((option, optIndex) => {
                         const isSelected = currentAnswer === option;
                         const showOptionResult = showResult && isSelected;
+                        const isCorrectOption = option === question.correctAnswer;
                         const isLocked = lockedQuestions[questionId];
 
                         return (
@@ -587,6 +588,8 @@ export default function AssignmentsPage({ viewerMode = false }: { viewerMode?: b
                                 ? "bg-success/10 border border-success/30"
                                 : showOptionResult && isCorrect === false
                                 ? "bg-error/10 border border-error/30"
+                                : isViewer && isCorrectOption
+                                ? "bg-success/10 border border-success/40"
                                 : isLocked && !isSelected
                                 ? "opacity-60"
                                 : ""
@@ -596,12 +599,18 @@ export default function AssignmentsPage({ viewerMode = false }: { viewerMode?: b
                               value={option}
                               id={`${questionId}-${optIndex}`}
                               disabled={isViewer || isLocked}
+                              className={cn(
+                                isViewer && isCorrectOption
+                                  ? "text-success border-success data-[state=checked]:bg-success data-[state=checked]:border-success"
+                                  : ""
+                              )}
                             />
                             <Label
                               htmlFor={`${questionId}-${optIndex}`}
                               className={cn(
                                 "flex-1",
-                                (isViewer || (isLocked && !isSelected)) ? "cursor-not-allowed opacity-60" : "cursor-pointer"
+                                (isViewer || (isLocked && !isSelected)) ? "cursor-not-allowed opacity-60" : "cursor-pointer",
+                                isViewer && isCorrectOption ? "text-success" : ""
                               )}
                             >
                               {option}
