@@ -514,7 +514,7 @@ export default function AssignmentsPage({ viewerMode = false }: { viewerMode?: b
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
       <div>
-        <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">Testlar</h1>
+        <h1 className="flex justify-between text-2xl sm:text-3xl font-bold text-foreground mb-2"><p>Testlar</p><a href="/teacher/assignments/"><Button className='bg-black text-white'>Test natijalari</Button></a></h1>
         {isViewer && (
           <p className="text-xs text-muted-foreground">
             Ko&apos;rish rejimi: bu sahifada test topshirish funksiyalari o&apos;chirilgan.
