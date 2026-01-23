@@ -2,10 +2,8 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { apiService } from '@/services/api';
+import { useNavigate } from 'react-router-dom';
 import { 
-  ClipboardList, 
-  Clock, 
-  CheckCircle2, 
   User,
   MessageSquare,
   Star,
@@ -57,6 +55,7 @@ interface Submission {
 }
 
 export default function TeacherAssignmentsPage() {
+  const navigate = useNavigate();
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null);
   const [selectedAssignmentId, setSelectedAssignmentId] = useState<string | null>(null);
@@ -208,9 +207,6 @@ export default function TeacherAssignmentsPage() {
     }
   };
 
-  const pendingCount = submissions.filter(s => s.status === 'pending' || s.status === 'submitted').length;
-  const reviewedCount = submissions.filter(s => s.status === 'graded').length;
-
   if (isLoading) {
     return (
       <div className="space-y-6 animate-fade-in">
@@ -237,98 +233,32 @@ export default function TeacherAssignmentsPage() {
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">Testlarning natijasi</h1>
-        <p className="text-muted-foreground">
-          O'quvchilar testlarining natijalarini ko'ring
-        </p>
-      </div>
-
-      {/* Testlar ro'yxati - faqat 40 ta savollik test */}
-      {quizAssignments.length > 0 && (
-        <div className="mb-6">
-          <h2 className="text-lg font-semibold mb-3">Testlar ro'yxati</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {quizAssignments
-              .filter(assignment => 
-                assignment.type === 'quiz' && 
-                assignment.questions?.length === 40 &&
-                assignment.title?.includes('XALQARO LOGISTIKA BO\'YICHA 40 TA TEST')
-              )
-              .map((assignment) => {
-                const assignmentSubmissions = quizSubmissions.filter(s => s.assignmentId === assignment._id);
-                return (
-                  <div
-                    key={assignment._id}
-                    className={cn(
-                      "bg-card rounded-xl p-4 border cursor-pointer transition-all",
-                      selectedAssignmentId === assignment._id
-                        ? "border-primary shadow-lg"
-                        : "border-border hover:border-primary/50"
-                    )}
-                    onClick={() => handleSelectAssignment(assignment._id)}
-                  >
-                    <h3 className="font-semibold text-foreground mb-2">{assignment.title}</h3>
-                    <p className="text-sm text-muted-foreground mb-3">{assignment.description}</p>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">
-                        {assignmentSubmissions.length} ta o'quvchi yechgan
-                      </span>
-                      <span className="text-sm font-medium text-primary">
-                        {assignment.questions?.length || 0} ta savol
-                      </span>
-                    </div>
-                  </div>
-                );
-              })}
-          </div>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">Testlarning natijasi</h1>
+          <p className="text-muted-foreground">
+            O'quvchilar testlarining natijalarini ko'ring
+          </p>
         </div>
-      )}
-
-      {/* Stats */}
-      <div className="grid grid-cols-2 gap-4">
-        <div className="bg-card rounded-xl p-4 border border-border shadow-card">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-warning/10 flex items-center justify-center">
-              <Clock className="w-5 h-5 text-warning" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-foreground">{pendingCount}</p>
-              <p className="text-sm text-muted-foreground">Tekshirilmagan</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-card rounded-xl p-4 border border-border shadow-card">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-success/10 flex items-center justify-center">
-              <CheckCircle2 className="w-5 h-5 text-success" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-foreground">{reviewedCount}</p>
-              <p className="text-sm text-muted-foreground">Tekshirilgan</p>
-            </div>
-          </div>
-        </div>
+        <Button
+          variant="outline"
+          onClick={() => navigate('/teacher/tests')}
+        >
+          Testlar
+        </Button>
       </div>
 
       {/* O'quvchilar ro'yxati (faqat tanlangan test uchun) */}
-      {selectedAssignmentId && (
-        <div>
-          <h2 className="text-lg font-semibold mb-3">
-            {assignments.find(a => a._id === selectedAssignmentId)?.title || 'Test'} yechgan o'quvchilar
-          </h2>
-        </div>
-      )}
+      <div>
+        <h2 className="text-lg font-semibold mb-3">
+          {quizAssignments[0]?.title || '40 ta test'} yechgan o'quvchilar
+        </h2>
+      </div>
 
       {/* Submissions List */}
-      {selectedAssignmentId && submissions.length === 0 ? (
+      {!selectedAssignmentId || (selectedAssignmentId && submissions.length === 0) ? (
         <div className="text-center py-12">
           <p className="text-muted-foreground">Bu testni yechgan o'quvchilar hozircha yo'q</p>
-        </div>
-      ) : !selectedAssignmentId ? (
-        <div className="text-center py-12">
-          <p className="text-muted-foreground">Iltimos, testni tanlang</p>
         </div>
       ) : (
         <div className="space-y-4">

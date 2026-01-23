@@ -26,6 +26,7 @@ import TeacherLessonDetailPage from "./pages/teacher/LessonDetailPage";
 import StudentsPage from "./pages/teacher/StudentsPage";
 import GroupsPage from "./pages/teacher/GroupsPage";
 import TeacherAssignmentsPage from "./pages/teacher/AssignmentsPage";
+import TeacherTestsPage from "./pages/teacher/TestsPage";
 import TeacherProfilePage from "./pages/teacher/ProfilePage";
 import SettingsPage from "./pages/teacher/SettingsPage";
 
@@ -176,6 +177,9 @@ function AppRoutes() {
       } />
       <Route path="/teacher/assignments" element={
         <ProtectedRoute allowedRole="teacher"><TeacherAssignmentsPage /></ProtectedRoute>
+      } />
+      <Route path="/teacher/tests" element={
+        <ProtectedRoute allowedRole="teacher"><TeacherTestsPage /></ProtectedRoute>
       } />
       <Route path="/teacher/profile" element={
         <ProtectedRoute allowedRole="teacher"><TeacherProfilePage /></ProtectedRoute>

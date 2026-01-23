@@ -8,6 +8,7 @@ import { Trophy, Check, XCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { test40Questions, test40AssignmentData } from '@/data/testQuestions';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface Question {
   _id?: string;
@@ -31,7 +32,9 @@ interface Assignment {
   submission?: any;
 }
 
-export default function AssignmentsPage() {
+export default function AssignmentsPage({ viewerMode = false }: { viewerMode?: boolean }) {
+  const { user } = useAuth();
+  const isViewer = viewerMode || (user?.role ? user.role !== 'student' : false);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [selectedAssignment, setSelectedAssignment] = useState<Assignment | null>(null); // faqat quiz
   const [answers, setAnswers] = useState<Record<string, string>>({});
@@ -252,6 +255,7 @@ export default function AssignmentsPage() {
   const isSecondAttempt = attemptsUsed >= 1;
 
   const handleReset = async () => {
+    if (isViewer) return;
     if (!selectedAssignment) return;
     try {
       setIsResetting(true);
@@ -272,6 +276,7 @@ export default function AssignmentsPage() {
   };
 
   const handleDownloadCertificate = async () => {
+    if (isViewer) return;
     if (!selectedAssignment) return;
     try {
       setIsDownloadingCert(true);
@@ -308,6 +313,7 @@ export default function AssignmentsPage() {
   };
 
   const handleAnswerChange = (questionId: string, answer: string, correctAnswer?: any) => {
+    if (isViewer) return;
     // Agar savol allaqachon javob berilgan bo'lsa, o'zgartirib bo'lmaydi
     if (lockedQuestions[questionId]) {
       return;
@@ -365,6 +371,7 @@ export default function AssignmentsPage() {
   }, [selectedAssignment, answers]);
 
   const handleSubmit = async () => {
+    if (isViewer) return;
     if (!selectedAssignment) return;
 
     // Barcha savollarga javob berilganini tekshirish
@@ -508,6 +515,11 @@ export default function AssignmentsPage() {
       {/* Header */}
       <div>
         <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">Testlar</h1>
+        {isViewer && (
+          <p className="text-xs text-muted-foreground">
+            Ko&apos;rish rejimi: bu sahifada test topshirish funksiyalari o&apos;chirilgan.
+          </p>
+        )}
       </div>
       {isLoading ? (
         <div className="text-center py-12">
@@ -559,7 +571,7 @@ export default function AssignmentsPage() {
                     <RadioGroup
                       value={currentAnswer}
                       onValueChange={(value) => handleAnswerChange(questionId, value, question.correctAnswer)}
-                      disabled={selectedAssignment.status === 'graded' || selectedAssignment.status === 'submitted' || lockedQuestions[questionId]}
+                      disabled={isViewer || selectedAssignment.status === 'graded' || selectedAssignment.status === 'submitted' || lockedQuestions[questionId]}
                     >
                       {question.options.map((option, optIndex) => {
                         const isSelected = currentAnswer === option;
@@ -583,13 +595,13 @@ export default function AssignmentsPage() {
                             <RadioGroupItem
                               value={option}
                               id={`${questionId}-${optIndex}`}
-                              disabled={isLocked}
+                              disabled={isViewer || isLocked}
                             />
                             <Label
                               htmlFor={`${questionId}-${optIndex}`}
                               className={cn(
                                 "flex-1",
-                                isLocked && !isSelected ? "cursor-not-allowed opacity-60" : "cursor-pointer"
+                                (isViewer || (isLocked && !isSelected)) ? "cursor-not-allowed opacity-60" : "cursor-pointer"
                               )}
                             >
                               {option}
@@ -634,7 +646,7 @@ export default function AssignmentsPage() {
           </div>
 
           {/* Final result faqat hammasi bajarilganda */}
-          {isAllAnswered && (
+          {isAllAnswered && !isViewer && (
             <div className="p-6 bg-gradient-to-br from-primary/10 to-purple-500/10 rounded-xl border-2 border-primary/20">
               <div className="flex items-center justify-between gap-4">
                 <div>
