@@ -18,6 +18,15 @@ export const getAssignments = async (req, res) => {
   try {
     let query = { isActive: true };
 
+    // Teacher/Admin uchun faqat 40 ta savollik testni ko'rsatish
+    if (req.user.role === 'teacher' || req.user.role === 'admin') {
+      query.type = 'quiz';
+      query.$or = [
+        { title: { $regex: 'XALQARO LOGISTIKA.*40.*TEST', $options: 'i' } },
+        { 'questions.39': { $exists: true } } // 40 ta savol borligini tekshirish (index 39 = 40-chi savol)
+      ];
+    }
+
     // Student faqat o'z topshiriqlarini ko'radi
     if (req.user.role === 'student') {
       // Barcha topshiriqlar (umumiy va o'quvchi uchun)
@@ -42,6 +51,20 @@ export const getAssignments = async (req, res) => {
         }));
         assignment.maxScore = test40AssignmentData.maxScore;
       }
+    }
+
+    // Teacher/Admin uchun faqat 40 ta savollik testni qaytarish
+    if (req.user.role === 'teacher' || req.user.role === 'admin') {
+      const filteredAssignments = assignments.filter(assignment => 
+        assignment.type === 'quiz' && 
+        assignment.questions?.length === 40 &&
+        assignment.title?.includes('XALQARO LOGISTIKA BO\'YICHA 40 TA TEST')
+      );
+      
+      return res.json({
+        success: true,
+        data: { assignments: filteredAssignments },
+      });
     }
 
     // Student uchun submission ma'lumotlari
@@ -868,9 +891,31 @@ export const getAllSubmissions = async (req, res) => {
       });
     }
 
-    const submissions = await AssignmentSubmission.find({})
+    // Avval 40 ta savollik test assignment'ni topish
+    const test40Assignment = await Assignment.findOne({
+      type: 'quiz',
+      title: { $regex: 'XALQARO LOGISTIKA.*40.*TEST', $options: 'i' }
+    }).lean();
+
+    // Agar 40 ta savollik test topilmasa, questions length bo'yicha qidirish
+    let test40AssignmentId = null;
+    if (test40Assignment) {
+      test40AssignmentId = test40Assignment._id;
+    } else {
+      // Fallback: 40 ta savol bo'lgan quiz'ni qidirish
+      const allQuizzes = await Assignment.find({ type: 'quiz' }).lean();
+      const foundQuiz = allQuizzes.find(q => q.questions?.length === 40);
+      if (foundQuiz) {
+        test40AssignmentId = foundQuiz._id;
+      }
+    }
+
+    // Faqat 40 ta savollik test uchun submissions'ni olish
+    const query = test40AssignmentId ? { assignmentId: test40AssignmentId } : {};
+    
+    const submissions = await AssignmentSubmission.find(query)
       .populate('studentId', 'firstName lastName email group')
-      .populate('assignmentId', 'title description type dueDate maxScore')
+      .populate('assignmentId', 'title description type dueDate maxScore questions')
       .sort({ submittedAt: -1, createdAt: -1 })
       .lean();
 

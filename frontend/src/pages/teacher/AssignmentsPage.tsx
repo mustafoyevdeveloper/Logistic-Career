@@ -37,6 +37,8 @@ interface Submission {
   studentId?: string;
   answers?: QuestionAnswer[];
   assignment?: {
+    _id?: string;
+    title?: string;
     questions?: Array<{
       _id?: string;
       question: string;
@@ -65,14 +67,35 @@ export default function TeacherAssignmentsPage() {
 
   useEffect(() => {
     loadAssignments();
-    loadSubmissions();
   }, []);
+
+  // 40 ta savollik testni avtomatik tanlash
+  useEffect(() => {
+    if (assignments.length > 0 && !selectedAssignmentId) {
+      const test40 = assignments.find(a => 
+        a.type === 'quiz' && 
+        a.questions?.length === 40 &&
+        a.title?.includes('XALQARO LOGISTIKA BO\'YICHA 40 TA TEST')
+      );
+      if (test40) {
+        setSelectedAssignmentId(test40._id);
+        loadSubmissions(test40._id);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [assignments]);
 
   const loadAssignments = async () => {
     try {
       const response = await apiService.request<{ assignments: any[] }>('/assignments');
       if (response.success && response.data) {
-        setAssignments(response.data.assignments || []);
+        // Faqat 40 ta savollik testni ko'rsatish
+        const filteredAssignments = (response.data.assignments || []).filter((a: any) => 
+          a.type === 'quiz' && 
+          a.questions?.length === 40 &&
+          a.title?.includes('XALQARO LOGISTIKA BO\'YICHA 40 TA TEST')
+        );
+        setAssignments(filteredAssignments);
       }
     } catch (error: any) {
       console.error('Assignments yuklashda xatolik:', error);
@@ -199,9 +222,17 @@ export default function TeacherAssignmentsPage() {
     );
   }
 
-  // Faqat testlar (quiz) uchun statistika
-  const quizSubmissions = submissions.filter(s => s.assignment?.type === 'quiz');
-  const quizAssignments = assignments.filter(a => a.type === 'quiz');
+  // Faqat 40 ta savollik test uchun statistika
+  const quizSubmissions = submissions.filter(s => 
+    s.assignment?.type === 'quiz' && 
+    s.assignment?.questions?.length === 40 &&
+    s.assignment?.title?.includes('XALQARO LOGISTIKA BO\'YICHA 40 TA TEST')
+  );
+  const quizAssignments = assignments.filter(a => 
+    a.type === 'quiz' && 
+    a.questions?.length === 40 &&
+    a.title?.includes('XALQARO LOGISTIKA BO\'YICHA 40 TA TEST')
+  );
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -213,37 +244,43 @@ export default function TeacherAssignmentsPage() {
         </p>
       </div>
 
-      {/* Testlar ro'yxati */}
+      {/* Testlar ro'yxati - faqat 40 ta savollik test */}
       {quizAssignments.length > 0 && (
         <div className="mb-6">
           <h2 className="text-lg font-semibold mb-3">Testlar ro'yxati</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {quizAssignments.map((assignment) => {
-              const assignmentSubmissions = quizSubmissions.filter(s => s.assignmentId === assignment._id);
-              return (
-                <div
-                  key={assignment._id}
-                  className={cn(
-                    "bg-card rounded-xl p-4 border cursor-pointer transition-all",
-                    selectedAssignmentId === assignment._id
-                      ? "border-primary shadow-lg"
-                      : "border-border hover:border-primary/50"
-                  )}
-                  onClick={() => handleSelectAssignment(assignment._id)}
-                >
-                  <h3 className="font-semibold text-foreground mb-2">{assignment.title}</h3>
-                  <p className="text-sm text-muted-foreground mb-3">{assignment.description}</p>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">
-                      {assignmentSubmissions.length} ta o'quvchi yechgan
-                    </span>
-                    <span className="text-sm font-medium text-primary">
-                      {assignment.questions?.length || 0} ta savol
-                    </span>
+            {quizAssignments
+              .filter(assignment => 
+                assignment.type === 'quiz' && 
+                assignment.questions?.length === 40 &&
+                assignment.title?.includes('XALQARO LOGISTIKA BO\'YICHA 40 TA TEST')
+              )
+              .map((assignment) => {
+                const assignmentSubmissions = quizSubmissions.filter(s => s.assignmentId === assignment._id);
+                return (
+                  <div
+                    key={assignment._id}
+                    className={cn(
+                      "bg-card rounded-xl p-4 border cursor-pointer transition-all",
+                      selectedAssignmentId === assignment._id
+                        ? "border-primary shadow-lg"
+                        : "border-border hover:border-primary/50"
+                    )}
+                    onClick={() => handleSelectAssignment(assignment._id)}
+                  >
+                    <h3 className="font-semibold text-foreground mb-2">{assignment.title}</h3>
+                    <p className="text-sm text-muted-foreground mb-3">{assignment.description}</p>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">
+                        {assignmentSubmissions.length} ta o'quvchi yechgan
+                      </span>
+                      <span className="text-sm font-medium text-primary">
+                        {assignment.questions?.length || 0} ta savol
+                      </span>
+                    </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })}
           </div>
         </div>
       )}
@@ -369,6 +406,7 @@ export default function TeacherAssignmentsPage() {
                 <Button 
                   variant={selectedSubmission?.id === submission.id ? 'outline' : (submission.status === 'graded' ? 'outline' : 'gradient')} 
                   size="sm"
+                  className='hover:bg-'
                   onClick={() => {
                     if (selectedSubmission?.id === submission.id) {
                       // Agar ochiq bo'lsa, yopish
