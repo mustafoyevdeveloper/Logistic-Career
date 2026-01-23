@@ -185,9 +185,23 @@ class ApiService {
         } as ApiResponse<T>;
       }
 
-      // Agar 500+ xatolik bo'lsa, backend ishlamayotgan bo'lishi mumkin
+      // Agar 500+ xatolik bo'lsa, backend'dan aniq xato xabarini olishga harakat qilamiz
       if (response.status >= 500) {
-        throw new Error(`Backend xatosi: ${response.status}`);
+        let errorMessage = `Backend xatosi: ${response.status}`;
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.message || errorData.error || errorMessage;
+          console.error('❌ Backend 500 xatolik:', {
+            status: response.status,
+            message: errorData.message,
+            error: errorData.error,
+            data: errorData,
+          });
+        } catch (parseError) {
+          // JSON parse qilishda xatolik bo'lsa, faqat status kodini ko'rsatamiz
+          console.error('❌ Backend 500 xatolik (JSON parse qilib bo\'lmadi):', response.status);
+        }
+        throw new Error(errorMessage);
       }
 
       // Boshqa xatoliklar (400, 401, 403) - bu backend ishlayapti, lekin so'rov noto'g'ri

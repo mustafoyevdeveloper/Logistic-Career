@@ -111,7 +111,12 @@ export default function CreateStudentDialog({ onSuccess }: CreateStudentDialogPr
           }
         } catch (err: any) {
           console.error('Sertifikat yuklash xatosi:', err);
-          toast.error(err.message || 'Sertifikatni yuklashda xatolik');
+          const errorMsg = err.message || 'Sertifikatni yuklashda xatolik';
+          toast.error(errorMsg);
+          // Agar R2 credentials muammosi bo'lsa, aniq xabar ko'rsatish
+          if (errorMsg.includes('R2') || errorMsg.includes('credentials') || errorMsg.includes('SECRET')) {
+            toast.error('R2 credentials muammosi. Iltimos, backend loglarini tekshiring.');
+          }
         }
       }
 
