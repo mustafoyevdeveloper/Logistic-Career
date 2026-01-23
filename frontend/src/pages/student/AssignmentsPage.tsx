@@ -469,7 +469,7 @@ export default function AssignmentsPage({ viewerMode = false }: { viewerMode?: b
             });
             
             if (submitResponse.success) {
-              toast.success('Natija saqlandi!');
+              toast.success('Natija MongoDBga saqlandi!');
               // Real quiz'ni yuklaymiz
               await loadAssignmentDetails(quiz._id);
               setIsSubmitting(false);
@@ -516,7 +516,7 @@ export default function AssignmentsPage({ viewerMode = false }: { viewerMode?: b
       });
 
       if (response.success) {
-        toast.success('Natija saqlandi!');
+        toast.success('Natija MongoDBga saqlandi!');
         await loadAssignmentDetails(selectedAssignment._id);
       }
     } catch (error: any) {
@@ -686,15 +686,9 @@ export default function AssignmentsPage({ viewerMode = false }: { viewerMode?: b
             <div className="p-6 bg-gradient-to-br from-primary/10 to-purple-500/10 rounded-xl border-2 border-primary/20">
               <div className="flex items-center justify-between gap-4">
                 <div>
-                  <p className="text-sm text-muted-foreground mb-1">Natija</p>
-                  <p className="text-3xl font-bold text-foreground">
-                    {calculateCorrectCount()}/{selectedAssignment.questions.length}
-                  </p>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    To'g'ri: {Object.values(answeredQuestions).filter(Boolean).length} | Xato: {selectedAssignment.questions.length - Object.values(answeredQuestions).filter(Boolean).length}
-                  </p>
+                  <p className="text-3xl font-bold text-foreground mb-1">Natija</p>
                   <p className="text-sm text-muted-foreground">
-                    Foiz: {selectedAssignment.questions.length > 0 ? Math.round((calculateCorrectCount() / selectedAssignment.questions.length) * 100) : 0}%
+                    {calculateCorrectCount()}/{selectedAssignment.questions.length} | Foiz: {selectedAssignment.questions.length > 0 ? Math.round((calculateCorrectCount() / selectedAssignment.questions.length) * 100) : 0}%
                   </p>
                 </div>
                 <div className="flex items-center gap-3">
@@ -711,9 +705,8 @@ export default function AssignmentsPage({ viewerMode = false }: { viewerMode?: b
               {selectedAssignment.status === 'graded' && (
                 <div className="mt-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                   <div className="text-sm text-muted-foreground">
-                    Natija saqlandi. Imkoniyat:{" "}
-                    <span className="font-medium text-foreground">{attemptsText}</span>
-                    {attemptsUsed > 0 && <span className="ml-2 text-primary font-semibold">({attemptsUsed}-imkoniyat)</span>}
+                    Natija saqlandi. Urinishlar soni:{" "}
+                    <span className="font-medium text-muted-foreground">{attemptsText}</span>
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {/* Faqat 30- bo'lsa: Qayta topshirish (reset) */}
@@ -735,6 +728,7 @@ export default function AssignmentsPage({ viewerMode = false }: { viewerMode?: b
                         onClick={handleDownloadCertificate}
                         disabled={isDownloadingCert}
                         title="Sertifikatni yuklab olish"
+                        className='w-full'
                       >
                         {isDownloadingCert ? 'Yuklanmoqda...' : 'Sertifikatni yuklab oling'}
                       </Button>
