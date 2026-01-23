@@ -27,44 +27,41 @@ if (!r2AccountId || !r2AccessKeyId || !r2SecretAccessKey) {
   });
 }
 
-// HTTPS agent SSL/TLS muammolarini hal qilish uchun
-// Cloudflare R2 uchun SSL/TLS sozlamalari
-// Render.com'da SSL handshake muammosini hal qilish uchun
-// Render.com'da SSL handshake muammosini hal qilish uchun, ehtimol,
-// Node.js versiyasi yoki OpenSSL versiyasi bilan bog'liq bo'lishi mumkin
-// Barcha variantlarni sinab ko'ramiz
-const httpsAgent = new https.Agent({
-  rejectUnauthorized: true,
-  keepAlive: true,
-  maxSockets: 50,
-  // TLS versiyasini aniq belgilash - Render.com uchun
-  // secureProtocol ishlatamiz (Node.js 12+ uchun)
-  secureProtocol: 'TLSv1_2_method',
-  // SSL handshake muammosini hal qilish uchun qo'shimcha sozlamalar
-  // Cloudflare R2 uchun mos ciphers (string format)
-  ciphers: 'ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-DSS-AES128-GCM-SHA256:kEDH+AESGCM:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA:ECDHE-ECDSA-AES256-SHA:DHE-RSA-AES128-SHA256:DHE-RSA-AES128-SHA:DHE-RSA-AES256-SHA256:DHE-RSA-AES256-SHA:AES128-GCM-SHA256:AES256-GCM-SHA384:AES128-SHA256:AES256-SHA256:AES128-SHA:AES256-SHA:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!MD5:!PSK:!SRP:!CAMELLIA',
-  // SSL handshake muammosini hal qilish uchun qo'shimcha sozlamalar
-  honorCipherOrder: true,
-});
+// R2 TLS muammolari uchun ixtiyoriy "insecure" rejim.
+// Default: xavfsiz (rejectUnauthorized=true) va AWS SDK default sozlamalari.
+// Agar Render muhitida SSL handshake muammosi bo‘lsa, Render Environment'ga:
+//   R2_INSECURE_TLS=true
+// deb qo‘yib ko‘ring (faqat vaqtincha diagnostika uchun).
+const r2InsecureTls = String(process.env.R2_INSECURE_TLS || '').toLowerCase() === 'true';
+
+const httpsAgent = r2InsecureTls
+  ? new https.Agent({
+      rejectUnauthorized: false,
+      keepAlive: true,
+      maxSockets: 50,
+    })
+  : undefined;
 
 // R2 client - har safar yangi instance yaratish (SSL muammosini oldini olish uchun)
 // AWS SDK v3'da requestHandler ni to'g'ri ishlatish uchun NodeHttpHandler ishlatamiz
 const createR2Client = () => {
-  // NodeHttpHandler orqali httpsAgent ni to'g'ri ishlatish
-  const requestHandler = new NodeHttpHandler({
-    httpsAgent,
-  });
-
-  return new S3Client({
+  const baseConfig = {
     region: 'auto',
     endpoint: r2AccountId ? `https://${r2AccountId}.r2.cloudflarestorage.com` : undefined,
     credentials: {
       accessKeyId: r2AccessKeyId || '',
       secretAccessKey: r2SecretAccessKey || '',
     },
-    requestHandler,
     forcePathStyle: false, // R2 uchun path-style emas, virtual-hosted style
-  });
+  };
+
+  // Faqat insecure rejimda custom httpsAgent ishlatamiz
+  if (httpsAgent) {
+    const requestHandler = new NodeHttpHandler({ httpsAgent });
+    return new S3Client({ ...baseConfig, requestHandler });
+  }
+
+  return new S3Client(baseConfig);
 };
 
 // Global client (fallback)
@@ -105,6 +102,11 @@ export const uploadToR2 = async (fileBuffer, originalName, mimeType, folder = 'm
       size: fileBuffer.length,
       mimeType,
       folder,
+    });
+    console.log('[R2] Runtime info:', {
+      node: process.version,
+      openssl: process.versions?.openssl,
+      insecureTls: r2InsecureTls,
     });
 
     // R2'ga yuklash

@@ -49,6 +49,7 @@ interface Student {
   group?: string;
   progress: number;
   inputPassword?: string; // Parolni hash qilinmasdan saqlash
+  certificateUrl?: string | null;
   deviceId?: string;
   deviceInfo?: {
     platform?: string;
@@ -131,6 +132,10 @@ export default function StudentsPage() {
     email: '',
     password: '',
   });
+  const [editCertificateFile, setEditCertificateFile] = useState<File | null>(null);
+  const [editUploadedCertificateUrl, setEditUploadedCertificateUrl] = useState<string | null>(null);
+  const [editCertificatePreview, setEditCertificatePreview] = useState<string | null>(null);
+  const [isUploadingEditCertificate, setIsUploadingEditCertificate] = useState(false);
   const [passwordUpdated, setPasswordUpdated] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [hasPassword, setHasPassword] = useState(false); // Parol mavjudligini belgilash
@@ -200,7 +205,19 @@ export default function StudentsPage() {
       e.preventDefault();
     }
     
+    console.log('[Edit] Opening edit dialog for student:', { 
+      id: student._id, 
+      name: `${student.firstName} ${student.lastName}`,
+      certificateUrl: student.certificateUrl 
+    });
+    
     setStudentToEdit(student);
+    setEditCertificateFile(null);
+    setEditCertificatePreview(null);
+    // Student'da certificateUrl bo'lsa, uni ko'rsatamiz
+    const certUrl = student.certificateUrl || null;
+    console.log('[Edit] Setting certificate URL:', certUrl);
+    setEditUploadedCertificateUrl(certUrl);
     // Parolni inputPassword dan olish
     setEditForm({
       firstName: student.firstName,
@@ -233,7 +250,63 @@ export default function StudentsPage() {
 
       await apiService.updateStudent(studentToEdit._id, updateData);
       toast.success('O\'quvchi muvaffaqiyatli yangilandi');
-      setEditDialogOpen(false);
+
+      // Agar sertifikat fayli tanlangan bo'lsa, uni alohida yuklaymiz
+      if (editCertificateFile) {
+        const file = editCertificateFile;
+        if (file.size > 5 * 1024 * 1024) {
+          toast.error('Sertifikat hajmi 5MB dan oshmasligi kerak');
+          return; // Early return, dialog ochiq qoladi
+        } else {
+          const allowedTypes = ['application/pdf', 'image/png', 'image/jpeg', 'image/webp'];
+          if (!allowedTypes.includes(file.type)) {
+            toast.error('Faqat PDF, PNG, JPG, JPEG va WEBP sertifikatlar qabul qilinadi');
+            return; // Early return, dialog ochiq qoladi
+          } else {
+            setIsUploadingEditCertificate(true);
+            const tId = toast.loading('Sertifikat cloudga yuklanmoqda...');
+            try {
+              console.log('[Edit] Uploading certificate:', { studentId: studentToEdit._id, fileName: file.name, fileSize: file.size });
+              const uploadRes = await apiService.uploadStudentCertificate(studentToEdit._id, file);
+              console.log('[Edit] Upload response:', uploadRes);
+              
+              if (!uploadRes.success) {
+                toast.error(uploadRes.message || 'Sertifikatni yuklashda xatolik');
+                toast.dismiss(tId);
+              } else {
+                const certUrl = uploadRes.data?.certificateUrl || null;
+                console.log('[Edit] Certificate URL:', certUrl);
+                setEditUploadedCertificateUrl(certUrl);
+                setEditCertificateFile(null); // Upload bo'lgandan keyin local faylni tozalash
+                setEditCertificatePreview(null); // Preview'ni ham tozalash
+                toast.dismiss(tId);
+                toast.success('Sertifikat cloudga yuklandi!');
+                // Local state'da ham yangilab qo'yamiz
+                setStudents((prev) =>
+                  prev.map((s) =>
+                    s._id === studentToEdit._id ? { ...s, certificateUrl: certUrl } : s
+                  )
+                );
+              }
+            } catch (e: any) {
+              console.error('[Edit] Upload error:', e);
+              toast.dismiss(tId);
+              const errorMsg = e?.message || 'Sertifikatni yuklashda xatolik';
+              // SSL handshake muammosini aniq ko'rsatish
+              if (errorMsg.includes('EPROTO') || errorMsg.includes('SSL') || errorMsg.includes('handshake')) {
+                toast.error('SSL xatolik: Cloudflare R2\'ga ulanib bo\'lmadi. Iltimos, backend loglarini tekshiring yoki localhost backend\'ni ishlatib ko\'ring.');
+              } else {
+                toast.error(errorMsg);
+              }
+            } finally {
+              setIsUploadingEditCertificate(false);
+            }
+          }
+        }
+      } else {
+        // Agar sertifikat fayli tanlanmagan bo'lsa, dialog yopiladi
+        setEditDialogOpen(false);
+      }
       // Form tozalash onOpenChange handler'da qilinadi, bu yerda faqat data yangilash
       loadData();
     } catch (error: any) {
@@ -498,6 +571,10 @@ export default function StudentsPage() {
           // Dialog yopilganda parol va form ma'lumotlarini tozalash
           if (!open) {
             setEditForm({ firstName: '', lastName: '', groupId: '', email: '', password: '' });
+            setEditCertificateFile(null);
+            setEditCertificatePreview(null);
+            setEditUploadedCertificateUrl(null);
+            setIsUploadingEditCertificate(false);
             setPasswordUpdated(false);
             setShowPassword(false);
             setHasPassword(false);
@@ -505,7 +582,7 @@ export default function StudentsPage() {
           }
         }}
       >
-        <DialogContent>
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>O'quvchini yangilash</DialogTitle>
             <DialogDescription>
@@ -594,6 +671,120 @@ export default function StudentsPage() {
                 ))}
               </select>
             </div>
+
+            {/* Sertifikat (edit) */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Sertifikat</label>
+              <Input
+                type="file"
+                accept=".pdf,image/png,image/jpeg,image/webp"
+                onChange={(e) => {
+                  const file = e.target.files?.[0] || null;
+                  if (file && file.size > 5 * 1024 * 1024) {
+                    toast.error('Sertifikat hajmi 5MB dan oshmasligi kerak');
+                    e.target.value = '';
+                    setEditCertificateFile(null);
+                    setEditCertificatePreview(null);
+                    return;
+                  }
+                  
+                  // Fayl tanlangandan keyin darhol preview yaratish
+                  if (file) {
+                    setEditCertificateFile(file);
+                    // Agar rasm bo'lsa, preview yaratish
+                    if (file.type.startsWith('image/')) {
+                      const reader = new FileReader();
+                      reader.onloadend = () => {
+                        setEditCertificatePreview(reader.result as string);
+                      };
+                      reader.readAsDataURL(file);
+                    } else {
+                      // PDF bo'lsa, preview yo'q
+                      setEditCertificatePreview(null);
+                    }
+                  } else {
+                    setEditCertificateFile(null);
+                    setEditCertificatePreview(null);
+                  }
+                }}
+              />
+              <p className="text-xs text-muted-foreground">
+                Ruxsat etilgan formatlar: PDF, PNG, JPG, JPEG, WEBP. Maksimal hajm: 5MB.
+              </p>
+
+              {/* Fayl tanlangandan keyin darhol ko'rsatish */}
+              {editCertificateFile && (
+                <div className="mt-2 rounded-lg border border-primary/40 bg-primary/5 p-3 space-y-2">
+                  <p className="text-xs font-medium text-primary">
+                    ✓ {editCertificateFile.name}
+                  </p>
+                  {editCertificatePreview ? (
+                    <div className="space-y-2">
+                      <img
+                        src={editCertificatePreview}
+                        alt="Sertifikat preview"
+                        className="w-full max-h-48 object-contain rounded-md bg-background border border-border"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        "Saqlash" tugmasini bosing va sertifikat cloudga yuklanishini kuting.
+                      </p>
+                    </div>
+                  ) : editCertificateFile.type === 'application/pdf' ? (
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 p-3 bg-muted rounded-md">
+                        <span className="text-2xl">📄</span>
+                        <div>
+                          <p className="text-sm font-medium">PDF fayl</p>
+                          <p className="text-xs text-muted-foreground">
+                            {(editCertificateFile.size / 1024).toFixed(2)} KB
+                          </p>
+                        </div>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        "Saqlash" tugmasini bosing va sertifikat cloudga yuklanishini kuting.
+                      </p>
+                    </div>
+                  ) : null}
+                </div>
+              )}
+
+              {/* Cloudga yuklangandan keyin ko'rsatish */}
+              {editUploadedCertificateUrl && !editCertificateFile && (
+                <div className="mt-2 rounded-lg border border-success/40 bg-success/10 p-3 space-y-2">
+                  <p className="text-xs font-medium text-success">✓ Sertifikat cloudga yuklangan</p>
+                  {editUploadedCertificateUrl.toLowerCase().includes('.pdf') || editUploadedCertificateUrl.toLowerCase().includes('application/pdf') ? (
+                    <a
+                      href={editUploadedCertificateUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-sm text-primary underline hover:text-primary/80"
+                    >
+                      PDF'ni ko'rish (yangi oynada)
+                    </a>
+                  ) : (
+                    <div className="space-y-2">
+                      <img
+                        src={editUploadedCertificateUrl}
+                        alt="Sertifikat"
+                        className="w-full max-h-48 object-contain rounded-md bg-background border border-border"
+                        onError={(e) => {
+                          console.error('[Edit] Image load error:', editUploadedCertificateUrl);
+                          e.currentTarget.style.display = 'none';
+                        }}
+                      />
+                      <a
+                        href={editUploadedCertificateUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-xs text-primary underline hover:text-primary/80"
+                      >
+                        To'liq ko'rish
+                      </a>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
             
             {/* Device Clear Button */}
             {studentToEdit?.deviceId && (
@@ -625,8 +816,8 @@ export default function StudentsPage() {
               <Button variant="outline" onClick={() => setEditDialogOpen(false)} className="flex-1">
                 Bekor qilish
               </Button>
-              <Button onClick={handleUpdate} className="flex-1">
-                Saqlash
+              <Button onClick={handleUpdate} className="flex-1" disabled={isUploadingEditCertificate}>
+                {isUploadingEditCertificate ? 'Sertifikat yuklanmoqda...' : 'Saqlash'}
               </Button>
             </div>
           </div>

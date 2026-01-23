@@ -5,6 +5,11 @@ import { getDeviceId } from '@/utils/deviceId';
 const getApiBaseUrls = (): string[] => {
   const urls: string[] = [];
   
+  // Local development (faqat development mode'da) - birinchi o'ringa qo'yamiz
+  if (import.meta.env.DEV || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+    urls.push('http://localhost:5000/api');
+  }
+  
   // Environment variable'dan URL (agar mavjud bo'lsa)
   const envUrl = import.meta.env.VITE_API_BASE_URL;
   if (envUrl) {
@@ -15,11 +20,6 @@ const getApiBaseUrls = (): string[] => {
   
   // Production backend (Render.com)
   urls.push('https://logistic-career.onrender.com/api');
-  
-  // Local development (faqat development mode'da)
-  if (import.meta.env.DEV || window.location.hostname === 'localhost') {
-    urls.push('http://localhost:5000/api');
-  }
   
   // Duplikatlarni olib tashlash
   return [...new Set(urls)];
