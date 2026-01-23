@@ -30,6 +30,7 @@ export default function CreateStudentDialog({ onSuccess }: CreateStudentDialogPr
     groupId: '',
     password: '',
   });
+  const [certificateFile, setCertificateFile] = useState<File | null>(null);
   const [groups, setGroups] = useState<any[]>([]);
   const [createdPassword, setCreatedPassword] = useState<string | null>(null);
   const [passwordCopied, setPasswordCopied] = useState(false);
@@ -50,6 +51,7 @@ export default function CreateStudentDialog({ onSuccess }: CreateStudentDialogPr
         groupId: '',
         password: '',
       });
+      setCertificateFile(null);
       setCreatedPassword(null);
       setPasswordCopied(false);
       setShowPassword(false);
@@ -84,6 +86,34 @@ export default function CreateStudentDialog({ onSuccess }: CreateStudentDialogPr
         groupId: formData.groupId || undefined,
         password: formData.password || undefined,
       });
+
+      // Agar sertifikat fayli tanlangan bo'lsa, uni alohida yuklaymiz
+      if (certificateFile && result.student?.id) {
+        try {
+          const file = certificateFile;
+          if (file.size > 5 * 1024 * 1024) {
+            toast.error('Sertifikat hajmi 5MB dan oshmasligi kerak');
+          } else {
+            const allowedTypes = [
+              'application/pdf',
+              'image/png',
+              'image/jpeg',
+              'image/webp',
+            ];
+            if (!allowedTypes.includes(file.type)) {
+              toast.error('Faqat PDF, PNG, JPG, JPEG va WEBP sertifikatlar qabul qilinadi');
+            } else {
+              const uploadRes = await apiService.uploadStudentCertificate(result.student.id, file);
+              if (!uploadRes.success) {
+                toast.error(uploadRes.message || 'Sertifikatni yuklashda xatolik');
+              }
+            }
+          }
+        } catch (err: any) {
+          console.error('Sertifikat yuklash xatosi:', err);
+          toast.error(err.message || 'Sertifikatni yuklashda xatolik');
+        }
+      }
 
       setCreatedPassword(result.password);
       toast.success('O\'quvchi muvaffaqiyatli yaratildi!');
@@ -255,6 +285,28 @@ export default function CreateStudentDialog({ onSuccess }: CreateStudentDialogPr
                   )}
                 </button>
               </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="certificate">Sertifikat (ixtiyoriy)</Label>
+              <Input
+                id="certificate"
+                type="file"
+                accept=".pdf,image/png,image/jpeg,image/webp"
+                onChange={(e) => {
+                  const file = e.target.files?.[0] || null;
+                  if (file && file.size > 5 * 1024 * 1024) {
+                    toast.error('Sertifikat hajmi 5MB dan oshmasligi kerak');
+                    e.target.value = '';
+                    setCertificateFile(null);
+                    return;
+                  }
+                  setCertificateFile(file);
+                }}
+              />
+              <p className="text-xs text-muted-foreground">
+                Ruxsat etilgan formatlar: PDF, PNG, JPG, JPEG, WEBP. Maksimal hajm: 5MB.
+              </p>
             </div>
 
             <div className="flex gap-2">

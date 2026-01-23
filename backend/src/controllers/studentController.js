@@ -1,5 +1,30 @@
 import User from '../models/User.js';
 import Group from '../models/Group.js';
+import multer from 'multer';
+import { uploadToR2, deleteFromR2 } from '../services/r2Service.js';
+
+// Sertifikat yuklash uchun Multer konfiguratsiyasi (memory storage, 5MB, ruxsat etilgan turlar)
+const certificateStorage = multer.memoryStorage();
+export const certificateUpload = multer({
+  storage: certificateStorage,
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB
+  },
+  fileFilter: (req, file, cb) => {
+    const allowedMimes = [
+      'application/pdf',
+      'image/png',
+      'image/jpeg',
+      'image/webp',
+    ];
+
+    if (allowedMimes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Faqat PDF, PNG, JPG, JPEG va WEBP fayllar qabul qilinadi'), false);
+    }
+  },
+}).single('certificate');
 
 /**
  * @desc    O'quvchini o'chirish (hard delete - bazadan to'liq o'chirish)
@@ -22,6 +47,15 @@ export const deleteStudent = async (req, res) => {
         success: false,
         message: 'O\'quvchi topilmadi',
       });
+    }
+
+    // Agar sertifikati bo'lsa, R2'dan o'chirishga harakat qilish
+    if (student.certificateUrl) {
+      try {
+        await deleteFromR2(student.certificateUrl);
+      } catch (error) {
+        console.error('Sertifikatni R2\'dan o\'chirishda xatolik:', error);
+      }
     }
 
     // Group student count yangilash (o'chirishdan oldin)
@@ -211,4 +245,71 @@ export const clearStudentDevice = async (req, res) => {
     });
   }
 };
+
+/**
+ * @desc    O'quvchi sertifikatini yuklash (Cloudflare R2)
+ * @route   POST /api/students/:id/certificate
+ * @access  Private (Teacher/Admin)
+ */
+export const uploadStudentCertificate = async (req, res) => {
+  try {
+    if (req.user.role !== 'teacher' && req.user.role !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Faqat o\'qituvchi yoki admin o\'quvchi sertifikatini yuklashi mumkin',
+      });
+    }
+
+    const student = await User.findById(req.params.id);
+
+    if (!student || student.role !== 'student') {
+      return res.status(404).json({
+        success: false,
+        message: 'O\'quvchi topilmadi',
+      });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: 'Sertifikat fayli yuklanmadi',
+      });
+    }
+
+    // Eski sertifikat bo'lsa, R2'dan o'chirishga harakat qilamiz
+    if (student.certificateUrl) {
+      try {
+        await deleteFromR2(student.certificateUrl);
+      } catch (error) {
+        console.error('Eski sertifikatni R2\'dan o\'chirishda xatolik:', error);
+      }
+    }
+
+    // Yangi sertifikatni R2'ga yuklash
+    const publicUrl = await uploadToR2(
+      req.file.buffer,
+      req.file.originalname,
+      req.file.mimetype,
+      'certificates'
+    );
+
+    student.certificateUrl = publicUrl;
+    await student.save({ validateBeforeSave: false });
+
+    res.json({
+      success: true,
+      message: 'Sertifikat muvaffaqiyatli yuklandi',
+      data: {
+        certificateUrl: publicUrl,
+      },
+    });
+  } catch (error) {
+    console.error('uploadStudentCertificate error:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Sertifikat yuklashda xatolik',
+    });
+  }
+};
+
 

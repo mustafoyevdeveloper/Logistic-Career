@@ -22,13 +22,14 @@ const r2Client = new S3Client({
 });
 
 /**
- * Video yoki audio faylni R2'ga yuklash
+ * Faylni R2'ga yuklash
  * @param {Buffer} fileBuffer - Fayl buffer
  * @param {string} originalName - Original fayl nomi
- * @param {string} mimeType - MIME type (video/mp4, audio/mpeg, etc.)
+ * @param {string} mimeType - MIME type (video/mp4, audio/mpeg, application/pdf, image/png, etc.)
+ * @param {string} [folder='media'] - Bucket ichidagi papka nomi (media, certificates, va hokazo)
  * @returns {Promise<string>} - Public URL
  */
-export const uploadToR2 = async (fileBuffer, originalName, mimeType) => {
+export const uploadToR2 = async (fileBuffer, originalName, mimeType, folder = 'media') => {
   try {
     if (!process.env.R2_BUCKET || !process.env.R2_PUBLIC_BASE_URL) {
       throw new Error('R2_BUCKET va R2_PUBLIC_BASE_URL environment variable\'lar to\'ldirilishi kerak');
@@ -37,7 +38,7 @@ export const uploadToR2 = async (fileBuffer, originalName, mimeType) => {
     // Fayl nomini yaratish (UUID + original extension)
     const fileExtension = originalName.split('.').pop();
     const fileName = `${uuidv4()}.${fileExtension}`;
-    const key = `media/${fileName}`;
+    const key = `${folder}/${fileName}`;
 
     // R2'ga yuklash
     // Note: R2'da ACL ishlamaydi, bucket public bo'lishi kerak

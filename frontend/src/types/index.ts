@@ -8,6 +8,8 @@ export interface User {
   role: UserRole;
   group?: string;
   avatar?: string;
+   // Admin yuklagan sertifikat (Cloudflare R2 URL)
+  certificateUrl?: string;
   progress?: number;
   currentLevel?: string;
   isActive?: boolean;

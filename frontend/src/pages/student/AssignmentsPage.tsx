@@ -282,6 +282,20 @@ export default function AssignmentsPage({ viewerMode = false }: { viewerMode?: b
     if (!selectedAssignment) return;
     try {
       setIsDownloadingCert(true);
+
+      // Agar admin o'quvchi uchun sertifikat yuklagan bo'lsa, to'g'ridan-to'g'ri R2'dan yuklab olamiz
+      if (user?.certificateUrl) {
+        const a = document.createElement('a');
+        a.href = user.certificateUrl;
+        a.download = 'certificate';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        toast.success('Sertifikat yuklab olindi');
+        return;
+      }
+
+      // Aks holda backend orqali generatsiya qilingan PNG sertifikatni yuklaymiz (fallback)
       const token = localStorage.getItem('auth_token');
       const deviceId = getDeviceId();
       const baseUrl = apiService.getCurrentBackendUrl();

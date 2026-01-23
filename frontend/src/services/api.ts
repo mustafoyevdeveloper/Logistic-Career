@@ -388,6 +388,16 @@ class ApiService {
     });
   }
 
+  async uploadStudentCertificate(studentId: string, file: File) {
+    const formData = new FormData();
+    formData.append('certificate', file);
+
+    return this.request<{ certificateUrl: string }>(`/students/${studentId}/certificate`, {
+      method: 'POST',
+      body: formData,
+    });
+  }
+
   async clearStudentDevice(studentId: string) {
     return this.request(`/students/${studentId}/clear-device`, {
       method: 'POST',

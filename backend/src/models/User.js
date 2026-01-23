@@ -46,6 +46,11 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: null,
     },
+    // O'quvchi sertifikati (Cloudflare R2 URL)
+    certificateUrl: {
+      type: String,
+      default: null,
+    },
     progress: {
       type: Number,
       default: 0,
