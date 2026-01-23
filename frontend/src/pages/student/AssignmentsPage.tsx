@@ -469,7 +469,7 @@ export default function AssignmentsPage({ viewerMode = false }: { viewerMode?: b
             });
             
             if (submitResponse.success) {
-              toast.success('Natija MongoDBga saqlandi!');
+              toast.success('Natija saqlandi!');
               // Real quiz'ni yuklaymiz
               await loadAssignmentDetails(quiz._id);
               setIsSubmitting(false);
@@ -516,7 +516,7 @@ export default function AssignmentsPage({ viewerMode = false }: { viewerMode?: b
       });
 
       if (response.success) {
-        toast.success('Natija MongoDBga saqlandi!');
+        toast.success('Natija saqlandi!');
         await loadAssignmentDetails(selectedAssignment._id);
       }
     } catch (error: any) {
@@ -711,7 +711,7 @@ export default function AssignmentsPage({ viewerMode = false }: { viewerMode?: b
               {selectedAssignment.status === 'graded' && (
                 <div className="mt-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                   <div className="text-sm text-muted-foreground">
-                    Natija MongoDB'ga saqlandi. Imkoniyat:{" "}
+                    Natija saqlandi. Imkoniyat:{" "}
                     <span className="font-medium text-foreground">{attemptsText}</span>
                     {attemptsUsed > 0 && <span className="ml-2 text-primary font-semibold">({attemptsUsed}-imkoniyat)</span>}
                   </div>
