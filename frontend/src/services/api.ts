@@ -426,6 +426,28 @@ class ApiService {
     });
   }
 
+  async downloadStudentCertificate(): Promise<Blob> {
+    const token = localStorage.getItem('auth_token');
+    const deviceId = getDeviceId();
+    const baseUrl = this.getCurrentBackendUrl();
+    const url = `${baseUrl}/students/certificate/download`;
+    
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...(deviceId ? { 'X-Device-ID': deviceId } : {}),
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || 'Sertifikatni yuklab olishda xatolik');
+    }
+
+    return response.blob();
+  }
+
   async clearStudentDevice(studentId: string) {
     return this.request(`/students/${studentId}/clear-device`, {
       method: 'POST',

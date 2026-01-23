@@ -1,4 +1,4 @@
-import { S3Client, PutObjectCommand, DeleteObjectCommand, HeadObjectCommand } from '@aws-sdk/client-s3';
+import { S3Client, PutObjectCommand, DeleteObjectCommand, HeadObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
 import { NodeHttpHandler } from '@smithy/node-http-handler';
 import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
@@ -218,5 +218,50 @@ export const checkFileExists = async (url) => {
     return true;
   } catch (error) {
     return false;
+  }
+};
+
+/**
+ * R2'dan faylni o'qib olish (proxy uchun)
+ * @param {string} url - Public URL
+ * @returns {Promise<{buffer: Buffer, contentType: string}>}
+ */
+export const downloadFromR2 = async (url) => {
+  try {
+    if (!process.env.R2_BUCKET || !process.env.R2_PUBLIC_BASE_URL) {
+      throw new Error('R2_BUCKET va R2_PUBLIC_BASE_URL environment variable\'lar to\'ldirilishi kerak');
+    }
+
+    // URL'dan key ni olish
+    const baseUrl = process.env.R2_PUBLIC_BASE_URL;
+    if (!url.startsWith(baseUrl)) {
+      throw new Error('Noto\'g\'ri URL format');
+    }
+
+    const key = url.replace(baseUrl + '/', '');
+
+    // R2'dan o'qib olish
+    const command = new GetObjectCommand({
+      Bucket: process.env.R2_BUCKET,
+      Key: key,
+    });
+
+    const client = createR2Client();
+    const response = await client.send(command);
+    
+    // Stream'ni buffer'ga o'tkazish
+    const chunks = [];
+    for await (const chunk of response.Body) {
+      chunks.push(chunk);
+    }
+    const buffer = Buffer.concat(chunks);
+
+    return {
+      buffer,
+      contentType: response.ContentType || 'application/octet-stream',
+    };
+  } catch (error) {
+    console.error('[R2] Download error:', error);
+    throw new Error(`R2'dan o'qib olishda xatolik: ${error.message}`);
   }
 };

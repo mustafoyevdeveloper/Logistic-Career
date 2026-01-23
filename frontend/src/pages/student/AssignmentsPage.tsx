@@ -283,23 +283,18 @@ export default function AssignmentsPage({ viewerMode = false }: { viewerMode?: b
     try {
       setIsDownloadingCert(true);
 
-      // Agar admin o'quvchi uchun sertifikat yuklagan bo'lsa, R2'dan yuklab olamiz
+      // Agar admin o'quvchi uchun sertifikat yuklagan bo'lsa, backend orqali proxy qilib yuklab olamiz
       if (user?.certificateUrl) {
         try {
-          // Faylni fetch qilib, blob yaratib, keyin yuklab olamiz
-          const response = await fetch(user.certificateUrl);
-          if (!response.ok) {
-            throw new Error('Sertifikatni yuklab bo\'lmadi');
-          }
-          
-          const blob = await response.blob();
+          // Backend orqali proxy qilib yuklab olish (CORS muammosini hal qilish uchun)
+          const blob = await apiService.downloadStudentCertificate();
           const blobUrl = window.URL.createObjectURL(blob);
           
           // Fayl nomini URL'dan olish yoki default nom
           const urlParts = user.certificateUrl.split('/');
           const fileName = urlParts[urlParts.length - 1] || 'certificate';
           // Fayl kengaytmasini aniqlash
-          const fileExtension = fileName.includes('.') ? fileName.split('.').pop() : (blob.type.includes('pdf') ? 'pdf' : 'png');
+          const fileExtension = fileName.includes('.') ? fileName.split('.').pop() : (blob.type.includes('pdf') ? 'pdf' : blob.type.includes('jpeg') || blob.type.includes('jpg') ? 'jpg' : 'png');
           const downloadFileName = `certificate.${fileExtension}`;
           
           const a = document.createElement('a');
@@ -313,9 +308,7 @@ export default function AssignmentsPage({ viewerMode = false }: { viewerMode?: b
           return;
         } catch (error: any) {
           console.error('Sertifikatni yuklab olishda xatolik:', error);
-          toast.error('Sertifikatni yuklab olishda xatolik. URL\'ni to\'g\'ridan-to\'g\'ri ochib ko\'ring.');
-          // Fallback: URL'ni yangi oynada ochish
-          window.open(user.certificateUrl, '_blank');
+          toast.error(error?.message || 'Sertifikatni yuklab olishda xatolik');
           return;
         }
       }

@@ -114,7 +114,7 @@ export default function CreateStudentDialog({ onSuccess }: CreateStudentDialogPr
             if (!allowedTypes.includes(file.type)) {
               toast.error('Faqat PDF, PNG, JPG, JPEG va WEBP sertifikatlar qabul qilinadi');
             } else {
-              const tId = toast.loading('Sertifikat cloudga yuklanmoqda...');
+              const tId = toast.loading('Sertifikat yuklanmoqda...');
               const uploadRes = await apiService.uploadStudentCertificate(result.student.id, file);
               if (!uploadRes.success) {
                 toast.error(uploadRes.message || 'Sertifikatni yuklashda xatolik');
@@ -125,7 +125,7 @@ export default function CreateStudentDialog({ onSuccess }: CreateStudentDialogPr
                 setCertificateFile(null); // Upload bo'lgandan keyin local faylni tozalash
                 setCertificatePreview(null); // Preview'ni ham tozalash
                 toast.dismiss(tId);
-                toast.success('Sertifikat cloudga yuklandi!');
+                toast.success('Sertifikat yuklandi!');
               }
             }
           }
@@ -371,7 +371,7 @@ export default function CreateStudentDialog({ onSuccess }: CreateStudentDialogPr
                         className="w-full max-h-48 object-contain rounded-md bg-background border border-border"
                       />
                       <p className="text-xs text-muted-foreground">
-                        "Yaratish" tugmasini bosing va sertifikat cloudga yuklanishini kuting.
+                        "Yaratish" tugmasini bosing va sertifikat yuklanishini kuting.
                       </p>
                     </div>
                   ) : certificateFile.type === 'application/pdf' ? (
@@ -386,7 +386,7 @@ export default function CreateStudentDialog({ onSuccess }: CreateStudentDialogPr
                         </div>
                       </div>
                       <p className="text-xs text-muted-foreground">
-                        "Yaratish" tugmasini bosing va sertifikat cloudga yuklanishini kuting.
+                        "Yaratish" tugmasini bosing va sertifikat yuklanishini kuting.
                       </p>
                     </div>
                   ) : null}
@@ -396,7 +396,7 @@ export default function CreateStudentDialog({ onSuccess }: CreateStudentDialogPr
               {/* Cloudga yuklangandan keyin ko'rsatish */}
               {uploadedCertificateUrl && !certificateFile && (
                 <div className="mt-2 rounded-lg border border-success/40 bg-success/10 p-3 space-y-2">
-                  <p className="text-xs font-medium text-success">✓ Sertifikat cloudga yuklangan</p>
+                  <p className="text-xs font-medium text-success">✓ Sertifikat yuklangan</p>
                   {uploadedCertificateUrl.toLowerCase().endsWith('.pdf') || uploadedCertificateUrl.toLowerCase().includes('application/pdf') ? (
                     <a
                       href={uploadedCertificateUrl}

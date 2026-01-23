@@ -1,7 +1,7 @@
 import User from '../models/User.js';
 import Group from '../models/Group.js';
 import multer from 'multer';
-import { uploadToR2, deleteFromR2 } from '../services/r2Service.js';
+import { uploadToR2, deleteFromR2, downloadFromR2 } from '../services/r2Service.js';
 
 // Sertifikat yuklash uchun Multer konfiguratsiyasi (memory storage, 5MB, ruxsat etilgan turlar)
 const certificateStorage = multer.memoryStorage();
@@ -333,6 +333,53 @@ export const uploadStudentCertificate = async (req, res) => {
       success: false,
       message: error.message || 'Sertifikat yuklashda xatolik',
       error: process.env.NODE_ENV === 'development' ? error.stack : undefined,
+    });
+  }
+};
+
+/**
+ * @desc    O'quvchi sertifikatini yuklab olish (R2'dan proxy orqali)
+ * @route   GET /api/students/certificate/download
+ * @access  Private (Student)
+ */
+export const downloadStudentCertificate = async (req, res) => {
+  try {
+    if (req.user.role !== 'student') {
+      return res.status(403).json({
+        success: false,
+        message: 'Faqat o\'quvchilar sertifikatni yuklab olishi mumkin',
+      });
+    }
+
+    // O'quvchi o'z sertifikatini yuklab olmoqchi
+    const student = await User.findById(req.user._id);
+
+    if (!student || !student.certificateUrl) {
+      return res.status(404).json({
+        success: false,
+        message: 'Sertifikat topilmadi',
+      });
+    }
+
+    // R2'dan faylni o'qib olish
+    const { buffer, contentType } = await downloadFromR2(student.certificateUrl);
+
+    // Fayl nomini URL'dan olish
+    const urlParts = student.certificateUrl.split('/');
+    const fileName = urlParts[urlParts.length - 1] || 'certificate';
+    
+    // Content-Type va Content-Disposition header'larini o'rnatish
+    res.setHeader('Content-Type', contentType);
+    res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+    res.setHeader('Content-Length', buffer.length);
+
+    // Buffer'ni yuborish
+    res.send(buffer);
+  } catch (error) {
+    console.error('[downloadStudentCertificate] Error:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Sertifikatni yuklab olishda xatolik',
     });
   }
 };

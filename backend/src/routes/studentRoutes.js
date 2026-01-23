@@ -6,12 +6,18 @@ import {
   clearStudentDevice,
   uploadStudentCertificate,
   certificateUpload,
+  downloadStudentCertificate,
 } from '../controllers/studentController.js';
 import { protect, authorize } from '../middleware/auth.js';
 
 const router = express.Router();
 
 router.use(protect);
+
+// Student uchun alohida route (teacher/admin route'lardan oldin)
+router.get('/certificate/download', authorize('student'), downloadStudentCertificate);
+
+// Teacher/Admin uchun route'lar
 router.use(authorize('teacher', 'admin'));
 
 router.delete('/:id', deleteStudent);

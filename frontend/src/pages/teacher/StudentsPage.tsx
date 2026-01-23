@@ -264,7 +264,7 @@ export default function StudentsPage() {
             return; // Early return, dialog ochiq qoladi
           } else {
             setIsUploadingEditCertificate(true);
-            const tId = toast.loading('Sertifikat cloudga yuklanmoqda...');
+            const tId = toast.loading('Sertifikat yuklanmoqda...');
             try {
               console.log('[Edit] Uploading certificate:', { studentId: studentToEdit._id, fileName: file.name, fileSize: file.size });
               const uploadRes = await apiService.uploadStudentCertificate(studentToEdit._id, file);
@@ -280,7 +280,7 @@ export default function StudentsPage() {
                 setEditCertificateFile(null); // Upload bo'lgandan keyin local faylni tozalash
                 setEditCertificatePreview(null); // Preview'ni ham tozalash
                 toast.dismiss(tId);
-                toast.success('Sertifikat cloudga yuklandi!');
+                toast.success('Sertifikat yuklandi!');
                 // Local state'da ham yangilab qo'yamiz
                 setStudents((prev) =>
                   prev.map((s) =>
@@ -726,7 +726,7 @@ export default function StudentsPage() {
                         className="w-full max-h-48 object-contain rounded-md bg-background border border-border"
                       />
                       <p className="text-xs text-muted-foreground">
-                        "Saqlash" tugmasini bosing va sertifikat cloudga yuklanishini kuting.
+                        "Saqlash" tugmasini bosing va sertifikat yuklanishini kuting.
                       </p>
                     </div>
                   ) : editCertificateFile.type === 'application/pdf' ? (
@@ -741,7 +741,7 @@ export default function StudentsPage() {
                         </div>
                       </div>
                       <p className="text-xs text-muted-foreground">
-                        "Saqlash" tugmasini bosing va sertifikat cloudga yuklanishini kuting.
+                        "Saqlash" tugmasini bosing va sertifikat yuklanishini kuting.
                       </p>
                     </div>
                   ) : null}
@@ -751,7 +751,7 @@ export default function StudentsPage() {
               {/* Cloudga yuklangandan keyin ko'rsatish */}
               {editUploadedCertificateUrl && !editCertificateFile && (
                 <div className="mt-2 rounded-lg border border-success/40 bg-success/10 p-3 space-y-2">
-                  <p className="text-xs font-medium text-success">✓ Sertifikat cloudga yuklangan</p>
+                  <p className="text-xs font-medium text-success">✓ Sertifikat yuklangan</p>
                   {editUploadedCertificateUrl.toLowerCase().includes('.pdf') || editUploadedCertificateUrl.toLowerCase().includes('application/pdf') ? (
                     <a
                       href={editUploadedCertificateUrl}
