@@ -243,6 +243,7 @@ export default function TeacherAssignmentsPage() {
         <Button
           variant="outline"
           onClick={() => navigate('/teacher/tests')}
+          className='bg-white/80 hover:bg-white shadow-glow border border-black text-black'
         >
           Testlar
         </Button>

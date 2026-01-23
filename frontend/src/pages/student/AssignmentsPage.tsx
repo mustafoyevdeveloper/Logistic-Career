@@ -8,6 +8,7 @@ import { Trophy, Check, XCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { test40Questions, test40AssignmentData } from '@/data/testQuestions';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface Question {
@@ -35,6 +36,7 @@ interface Assignment {
 export default function AssignmentsPage({ viewerMode = false }: { viewerMode?: boolean }) {
   const { user } = useAuth();
   const isViewer = viewerMode || (user?.role ? user.role !== 'student' : false);
+  const navigate = useNavigate();
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [selectedAssignment, setSelectedAssignment] = useState<Assignment | null>(null); // faqat quiz
   const [answers, setAnswers] = useState<Record<string, string>>({});
@@ -514,7 +516,18 @@ export default function AssignmentsPage({ viewerMode = false }: { viewerMode?: b
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
       <div>
-        <h1 className="flex justify-between text-2xl sm:text-3xl font-bold text-foreground mb-2"><p>Testlar</p><a href="/teacher/assignments/"><Button className='bg-black text-white'>Test natijalari</Button></a></h1>
+        <div className="flex items-center justify-between gap-3 mb-2">
+          <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Testlar</h1>
+          {isViewer && (
+            <Button
+              variant="outline"
+              onClick={() => navigate('/teacher/assignments')}
+              className="bg-white/80 hover:bg-white shadow-glow border border-black text-black"
+            >
+              Natijalar
+            </Button>
+          )}
+        </div>
         {isViewer && (
           <p className="text-xs text-muted-foreground">
             Ko&apos;rish rejimi: bu sahifada test topshirish funksiyalari o&apos;chirilgan.
