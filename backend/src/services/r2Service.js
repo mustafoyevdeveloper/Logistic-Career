@@ -31,14 +31,32 @@ const r2Client = new S3Client({
  */
 export const uploadToR2 = async (fileBuffer, originalName, mimeType, folder = 'media') => {
   try {
+    // Environment variables tekshiruvi
     if (!process.env.R2_BUCKET || !process.env.R2_PUBLIC_BASE_URL) {
       throw new Error('R2_BUCKET va R2_PUBLIC_BASE_URL environment variable\'lar to\'ldirilishi kerak');
+    }
+
+    if (!process.env.R2_ACCOUNT_ID || !process.env.R2_ACCESS_KEY_ID || !process.env.R2_SECRET_ACCESS_KEY) {
+      console.error('[R2] Missing credentials:', {
+        hasAccountId: !!process.env.R2_ACCOUNT_ID,
+        hasAccessKeyId: !!process.env.R2_ACCESS_KEY_ID,
+        hasSecretAccessKey: !!process.env.R2_SECRET_ACCESS_KEY,
+      });
+      throw new Error('R2 credentials (R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY) to\'ldirilishi kerak');
     }
 
     // Fayl nomini yaratish (UUID + original extension)
     const fileExtension = originalName.split('.').pop();
     const fileName = `${uuidv4()}.${fileExtension}`;
     const key = `${folder}/${fileName}`;
+
+    console.log('[R2] Uploading file:', {
+      bucket: process.env.R2_BUCKET,
+      key,
+      size: fileBuffer.length,
+      mimeType,
+      folder,
+    });
 
     // R2'ga yuklash
     // Note: R2'da ACL ishlamaydi, bucket public bo'lishi kerak
@@ -50,13 +68,20 @@ export const uploadToR2 = async (fileBuffer, originalName, mimeType, folder = 'm
     });
 
     await r2Client.send(command);
+    console.log('[R2] Upload successful');
 
     // Public URL
     const publicUrl = `${process.env.R2_PUBLIC_BASE_URL}/${key}`;
     return publicUrl;
   } catch (error) {
-    console.error('R2 upload xatosi:', error);
-    throw new Error(`R2'ga yuklashda xatolik: ${error.message}`);
+    console.error('[R2] Upload error:', error);
+    console.error('[R2] Error details:', {
+      name: error.name,
+      message: error.message,
+      code: error.Code || error.code,
+      statusCode: error.$metadata?.httpStatusCode,
+    });
+    throw new Error(`R2'ga yuklashda xatolik: ${error.message || error.Code || 'Noma\'lum xatolik'}`);
   }
 };
 

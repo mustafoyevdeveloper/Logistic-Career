@@ -299,6 +299,14 @@ export const uploadStudentCertificate = async (req, res) => {
 
     // Yangi sertifikatni R2'ga yuklash
     console.log('[uploadStudentCertificate] Uploading to R2...');
+    console.log('[uploadStudentCertificate] R2 Config check:', {
+      hasAccountId: !!process.env.R2_ACCOUNT_ID,
+      hasAccessKeyId: !!process.env.R2_ACCESS_KEY_ID,
+      hasSecretAccessKey: !!process.env.R2_SECRET_ACCESS_KEY,
+      hasBucket: !!process.env.R2_BUCKET,
+      hasPublicBaseUrl: !!process.env.R2_PUBLIC_BASE_URL,
+    });
+    
     const publicUrl = await uploadToR2(
       req.file.buffer,
       req.file.originalname,
