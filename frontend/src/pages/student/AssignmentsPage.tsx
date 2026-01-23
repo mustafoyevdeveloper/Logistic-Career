@@ -283,16 +283,41 @@ export default function AssignmentsPage({ viewerMode = false }: { viewerMode?: b
     try {
       setIsDownloadingCert(true);
 
-      // Agar admin o'quvchi uchun sertifikat yuklagan bo'lsa, to'g'ridan-to'g'ri R2'dan yuklab olamiz
+      // Agar admin o'quvchi uchun sertifikat yuklagan bo'lsa, R2'dan yuklab olamiz
       if (user?.certificateUrl) {
-        const a = document.createElement('a');
-        a.href = user.certificateUrl;
-        a.download = 'certificate';
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        toast.success('Sertifikat yuklab olindi');
-        return;
+        try {
+          // Faylni fetch qilib, blob yaratib, keyin yuklab olamiz
+          const response = await fetch(user.certificateUrl);
+          if (!response.ok) {
+            throw new Error('Sertifikatni yuklab bo\'lmadi');
+          }
+          
+          const blob = await response.blob();
+          const blobUrl = window.URL.createObjectURL(blob);
+          
+          // Fayl nomini URL'dan olish yoki default nom
+          const urlParts = user.certificateUrl.split('/');
+          const fileName = urlParts[urlParts.length - 1] || 'certificate';
+          // Fayl kengaytmasini aniqlash
+          const fileExtension = fileName.includes('.') ? fileName.split('.').pop() : (blob.type.includes('pdf') ? 'pdf' : 'png');
+          const downloadFileName = `certificate.${fileExtension}`;
+          
+          const a = document.createElement('a');
+          a.href = blobUrl;
+          a.download = downloadFileName;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          window.URL.revokeObjectURL(blobUrl);
+          toast.success('Sertifikat yuklab olindi');
+          return;
+        } catch (error: any) {
+          console.error('Sertifikatni yuklab olishda xatolik:', error);
+          toast.error('Sertifikatni yuklab olishda xatolik. URL\'ni to\'g\'ridan-to\'g\'ri ochib ko\'ring.');
+          // Fallback: URL'ni yangi oynada ochish
+          window.open(user.certificateUrl, '_blank');
+          return;
+        }
       }
 
       // Aks holda backend orqali generatsiya qilingan PNG sertifikatni yuklaymiz (fallback)
