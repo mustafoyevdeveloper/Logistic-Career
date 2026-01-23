@@ -736,7 +736,7 @@ export default function AssignmentsPage({ viewerMode = false }: { viewerMode?: b
                         disabled={isDownloadingCert}
                         title="Sertifikatni yuklab olish"
                       >
-                        {isDownloadingCert ? 'Yuklanmoqda...' : 'Sertifikatni yuklab olish (PNG)'}
+                        {isDownloadingCert ? 'Yuklanmoqda...' : 'Sertifikatni yuklab oling'}
                       </Button>
                     )}
                   </div>
