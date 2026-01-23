@@ -12,12 +12,25 @@ const __dirname = dirname(__filename);
 dotenv.config({ path: join(__dirname, '../../.env') });
 
 // Cloudflare R2 S3-compatible client
+// Environment variables tekshiruvi
+const r2AccountId = process.env.R2_ACCOUNT_ID;
+const r2AccessKeyId = process.env.R2_ACCESS_KEY_ID;
+const r2SecretAccessKey = process.env.R2_SECRET_ACCESS_KEY;
+
+if (!r2AccountId || !r2AccessKeyId || !r2SecretAccessKey) {
+  console.warn('[R2] ⚠️ R2 credentials to\'liq emas:', {
+    hasAccountId: !!r2AccountId,
+    hasAccessKeyId: !!r2AccessKeyId,
+    hasSecretAccessKey: !!r2SecretAccessKey,
+  });
+}
+
 const r2Client = new S3Client({
   region: 'auto',
-  endpoint: `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+  endpoint: r2AccountId ? `https://${r2AccountId}.r2.cloudflarestorage.com` : undefined,
   credentials: {
-    accessKeyId: process.env.R2_ACCESS_KEY_ID || '',
-    secretAccessKey: process.env.R2_SECRET_ACCESS_KEY || '',
+    accessKeyId: r2AccessKeyId || '',
+    secretAccessKey: r2SecretAccessKey || '',
   },
 });
 
