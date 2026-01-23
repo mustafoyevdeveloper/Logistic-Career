@@ -1,8 +1,10 @@
 import { S3Client, PutObjectCommand, DeleteObjectCommand, HeadObjectCommand } from '@aws-sdk/client-s3';
+import { NodeHttpHandler } from '@aws-sdk/node-http-handler';
 import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import { v4 as uuidv4 } from 'uuid';
+import https from 'https';
 
 // ES modules uchun __dirname
 const __filename = fileURLToPath(import.meta.url);
@@ -25,14 +27,39 @@ if (!r2AccountId || !r2AccessKeyId || !r2SecretAccessKey) {
   });
 }
 
-const r2Client = new S3Client({
-  region: 'auto',
-  endpoint: r2AccountId ? `https://${r2AccountId}.r2.cloudflarestorage.com` : undefined,
-  credentials: {
-    accessKeyId: r2AccessKeyId || '',
-    secretAccessKey: r2SecretAccessKey || '',
-  },
+// HTTPS agent SSL/TLS muammolarini hal qilish uchun
+// Cloudflare R2 uchun SSL/TLS sozlamalari
+// Render.com'da SSL handshake muammosini hal qilish uchun
+const httpsAgent = new https.Agent({
+  rejectUnauthorized: true,
+  keepAlive: true,
+  maxSockets: 50,
+  // TLS versiyasini aniq belgilash
+  minVersion: 'TLSv1.2',
+  maxVersion: 'TLSv1.3',
 });
+
+// R2 client - har safar yangi instance yaratish (SSL muammosini oldini olish uchun)
+const createR2Client = () => {
+  // AWS SDK v3 uchun NodeHttpHandler ishlatish
+  const requestHandler = new NodeHttpHandler({
+    httpsAgent,
+  });
+
+  return new S3Client({
+    region: 'auto',
+    endpoint: r2AccountId ? `https://${r2AccountId}.r2.cloudflarestorage.com` : undefined,
+    credentials: {
+      accessKeyId: r2AccessKeyId || '',
+      secretAccessKey: r2SecretAccessKey || '',
+    },
+    requestHandler,
+    forcePathStyle: false, // R2 uchun path-style emas, virtual-hosted style
+  });
+};
+
+// Global client (fallback)
+const r2Client = createR2Client();
 
 /**
  * Faylni R2'ga yuklash
@@ -80,7 +107,9 @@ export const uploadToR2 = async (fileBuffer, originalName, mimeType, folder = 'm
       ContentType: mimeType,
     });
 
-    await r2Client.send(command);
+    // SSL handshake muammosini oldini olish uchun yangi client yaratish
+    const client = createR2Client();
+    await client.send(command);
     console.log('[R2] Upload successful');
 
     // Public URL
