@@ -34,16 +34,30 @@ let currentApiUrl = API_BASE_URLS[0] || 'http://localhost:5000/api';
 const STORAGE_KEY = 'logistic_career_api_url';
 
 // Saqlangan URL'ni yuklash va tozalash
+// Localhost'da ishlayotgan bo'lsak, localhost backend'ni birinchi o'ringa qo'yamiz
 if (typeof window !== 'undefined') {
-  const savedUrl = localStorage.getItem(STORAGE_KEY);
-  if (savedUrl) {
-    // URL'ni tozalash (vergul, bo'sh joy va boshqa belgilarni olib tashlash)
-    const cleanedUrl = savedUrl.trim().split(',')[0].trim();
-    if (cleanedUrl && API_BASE_URLS.includes(cleanedUrl)) {
-      currentApiUrl = cleanedUrl;
-    } else {
-      // Noto'g'ri URL'ni localStorage'dan olib tashlash
+  const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+  
+  if (isLocalhost) {
+    // Localhost'da ishlayotgan bo'lsak, localhost backend'ni majburiy qilib qo'yamiz
+    const localhostUrl = 'http://localhost:5000/api';
+    if (API_BASE_URLS.includes(localhostUrl)) {
+      currentApiUrl = localhostUrl;
+      // localStorage'ni tozalash (eski Render URL'ni o'chirish)
       localStorage.removeItem(STORAGE_KEY);
+    }
+  } else {
+    // Production'da saqlangan URL'ni ishlatish
+    const savedUrl = localStorage.getItem(STORAGE_KEY);
+    if (savedUrl) {
+      // URL'ni tozalash (vergul, bo'sh joy va boshqa belgilarni olib tashlash)
+      const cleanedUrl = savedUrl.trim().split(',')[0].trim();
+      if (cleanedUrl && API_BASE_URLS.includes(cleanedUrl)) {
+        currentApiUrl = cleanedUrl;
+      } else {
+        // Noto'g'ri URL'ni localStorage'dan olib tashlash
+        localStorage.removeItem(STORAGE_KEY);
+      }
     }
   }
 }

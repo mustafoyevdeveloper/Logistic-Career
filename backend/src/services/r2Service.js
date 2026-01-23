@@ -32,13 +32,33 @@ if (!r2AccountId || !r2AccessKeyId || !r2SecretAccessKey) {
 // Agar Render muhitida SSL handshake muammosi bo‘lsa, Render Environment'ga:
 //   R2_INSECURE_TLS=true
 // deb qo‘yib ko‘ring (faqat vaqtincha diagnostika uchun).
-const r2InsecureTls = String(process.env.R2_INSECURE_TLS || '').toLowerCase() === 'true';
+// Development'da avtomatik ravishda insecure rejimni ishlatamiz (SSL muammosini hal qilish uchun)
+const isDevelopment = process.env.NODE_ENV !== 'production';
+const r2InsecureTls = String(process.env.R2_INSECURE_TLS || '').toLowerCase() === 'true' || isDevelopment;
 
+// Windows'da SSL muammosini hal qilish uchun NODE_TLS_REJECT_UNAUTHORIZED ni o'rnatish
+if (r2InsecureTls && typeof process.env.NODE_TLS_REJECT_UNAUTHORIZED === 'undefined') {
+  // Faqat development'da va agar o'rnatilmagan bo'lsa
+  process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+  console.log('[R2] ⚠️ NODE_TLS_REJECT_UNAUTHORIZED=0 o\'rnatildi (development mode)');
+}
+
+// Windows'da SSL handshake muammosini hal qilish uchun
+// OpenSSL 3.5+ bilan muammo bo'lishi mumkin, shuning uchun qo'shimcha sozlamalar
 const httpsAgent = r2InsecureTls
   ? new https.Agent({
       rejectUnauthorized: false,
       keepAlive: true,
       maxSockets: 50,
+      // Windows'da SSL handshake muammosini hal qilish uchun
+      // TLS versiyasini aniq belgilash
+      minVersion: 'TLSv1.2',
+      maxVersion: 'TLSv1.3',
+      // Windows'da muammo bo'lishi mumkin, shuning uchun qo'shimcha sozlamalar
+      secureProtocol: undefined, // Default protocol ishlatish
+      // Cipher suites'ni o'zgartirish (string format)
+      ciphers: 'ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-DSS-AES128-GCM-SHA256:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA:ECDHE-ECDSA-AES256-SHA:DHE-RSA-AES128-SHA256:DHE-RSA-AES128-SHA:DHE-RSA-AES256-SHA256:DHE-RSA-AES256-SHA:AES128-GCM-SHA256:AES256-GCM-SHA384:AES128-SHA256:AES256-SHA256:AES128-SHA:AES256-SHA',
+      honorCipherOrder: true,
     })
   : undefined;
 
