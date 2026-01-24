@@ -461,7 +461,7 @@ export default function LessonDetailPage() {
             onClick={() => navigate('/student/assignments')}
             variant="gradient"
           >
-            Testlarni yeching
+            Testlar paneli
             <ArrowLeft className="w-4 h-4 ml-2 rotate-180" />
           </Button>
         ) : (

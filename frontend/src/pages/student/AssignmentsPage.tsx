@@ -248,11 +248,11 @@ export default function AssignmentsPage({ viewerMode = false }: { viewerMode?: b
     return `${attemptsUsed}`;
   }, [attemptsUsed]);
 
-  // 1-imkoniyat tugmasi: faqat 30+ (hasPassed) bo'lganda va attemptsUsed < max
+  // Reset: 30+ bo'lsa cheksiz urinish; 30- bo'lsa faqat 2 ta urinish
   const canReset = useMemo(() => {
-    // Faqat 30- bo'lsa qayta topshirish chiqsin
-    return !hasPassedLocal;
-  }, [hasPassedLocal]);
+    if (hasPassedLocal) return true;
+    return attemptsUsed < 2;
+  }, [hasPassedLocal, attemptsUsed]);
 
   const isSecondAttempt = attemptsUsed >= 1;
 

@@ -128,10 +128,23 @@ export const getAssignment = async (req, res) => {
     // Student uchun submission
     let submission = null;
     if (req.user.role === 'student') {
-      submission = await AssignmentSubmission.findOne({
+      let sub = await AssignmentSubmission.findOne({
         assignmentId: assignment._id,
         studentId: req.user._id,
-      }).lean();
+      });
+
+      if (sub && assignment.type === 'quiz') {
+        const attemptsUsed = sub.attemptsUsed ?? 0;
+        // 2-urinishda to'liq yechmay, saqlash tugmasini bosmay refresh qilsa: natija saqlanmasin, test qayta 2-urinish sifatida ochilsin
+        if (sub.status === 'submitted' && attemptsUsed >= 1) {
+          sub.answers = [];
+          sub.status = 'pending';
+          sub.submittedAt = null;
+          await sub.save();
+        }
+      }
+
+      submission = sub ? await AssignmentSubmission.findById(sub._id).lean() : null;
     }
 
     res.json({
@@ -445,6 +458,15 @@ export const resetQuizSubmission = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Submission topilmadi' });
     }
 
+    const attemptsUsed = submission.attemptsUsed ?? 0;
+    const hasPassedSticky = submission.hasPassed === true;
+    if (!hasPassedSticky && attemptsUsed >= 2) {
+      return res.status(400).json({
+        success: false,
+        message: '2 ta urinish tugadi. Qayta topshirish imkoni yo\'q.',
+      });
+    }
+
     submission.answers = [];
     submission.status = 'pending';
     submission.score = null;
@@ -457,7 +479,13 @@ export const resetQuizSubmission = async (req, res) => {
     submission.correctCount = null;
     submission.totalQuestions = null;
     submission.passed = false;
-    submission.hasPassed = false;
+    if (!hasPassedSticky) {
+      submission.hasPassed = false;
+      submission.certificateNumber = null;
+      submission.certificateIssuedAt = null;
+    } else {
+      submission.maxAttempts = 999;
+    }
     // attemptsUsed saqlanadi (necha urinish bo‘lganini hisoblash uchun)
 
     await submission.save();

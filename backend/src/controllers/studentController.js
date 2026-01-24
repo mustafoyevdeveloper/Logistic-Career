@@ -1,5 +1,6 @@
 import User from '../models/User.js';
 import Group from '../models/Group.js';
+import AssignmentSubmission from '../models/AssignmentSubmission.js';
 import multer from 'multer';
 import { uploadToR2, deleteFromR2, downloadFromR2 } from '../services/r2Service.js';
 
@@ -63,6 +64,9 @@ export const deleteStudent = async (req, res) => {
     if (groupId) {
       await Group.updateStudentCount(groupId);
     }
+
+    // Test natijalarini (AssignmentSubmission) o'chirish — Testlarning natijasi sahifasidan ham ketadi
+    await AssignmentSubmission.deleteMany({ studentId: req.params.id });
 
     // Hard delete - bazadan to'liq o'chirish
     await User.findByIdAndDelete(req.params.id);
