@@ -134,9 +134,8 @@ export const getAssignment = async (req, res) => {
       });
 
       if (sub && assignment.type === 'quiz') {
-        const attemptsUsed = sub.attemptsUsed ?? 0;
-        // 2-urinishda to'liq yechmay, saqlash tugmasini bosmay refresh qilsa: natija saqlanmasin, test qayta 2-urinish sifatida ochilsin
-        if (sub.status === 'submitted' && attemptsUsed >= 1) {
+        // Agar o'quvchi submit tugmasini bosmay refresh qilsa (status === 'submitted'): javoblar tozalanadi
+        if (sub.status === 'submitted') {
           sub.answers = [];
           sub.status = 'pending';
           sub.submittedAt = null;

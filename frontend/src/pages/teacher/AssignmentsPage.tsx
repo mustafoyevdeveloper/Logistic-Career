@@ -385,15 +385,6 @@ export default function TeacherAssignmentsPage() {
                           )}
                         </div>
                         <div className="ml-6 space-y-2">
-                          <div>
-                            <p className="text-sm text-muted-foreground mb-1">O'quvchi javobi:</p>
-                            <p className={cn(
-                              "text-sm font-medium",
-                              qa.isCorrect ? "text-success" : "text-error"
-                            )}>
-                              {qa.answer || 'Javob berilmagan'}
-                            </p>
-                          </div>
                           {qa.correctAnswer && (
                             <div>
                               <p className="text-sm text-muted-foreground mb-1">To'g'ri javob:</p>
@@ -418,10 +409,6 @@ export default function TeacherAssignmentsPage() {
                 ) : (
                   /* Oddiy topshiriq javobi */
                   <div>
-                    <p className="text-sm font-medium text-foreground mb-2">O'quvchi javobi:</p>
-                    <div className="bg-muted rounded-lg p-4 text-sm text-muted-foreground">
-                      {submission.answer}
-                    </div>
                   </div>
                 )}
 
@@ -429,55 +416,15 @@ export default function TeacherAssignmentsPage() {
                   <>
                     {/* Score Input */}
                     <div>
-                      <p className="text-sm font-medium text-foreground mb-2">Ball (0-100):</p>
-                      <div className="flex items-center gap-2">
-                        {[60, 70, 80, 90, 100].map((s) => (
-                          <Button
-                            key={s}
-                            variant={score === String(s) ? 'default' : 'outline'}
-                            size="sm"
-                            onClick={() => setScore(String(s))}
-                          >
-                            {s}
-                          </Button>
-                        ))}
-                      </div>
                     </div>
-
                     {/* Feedback */}
                     <div>
-                      <p className="text-sm font-medium text-foreground mb-2">Izoh:</p>
-                      <Textarea
-                        placeholder="O'quvchiga izoh yozing..."
-                        value={feedback}
-                        onChange={(e) => setFeedback(e.target.value)}
-                        rows={3}
-                      />
+                  
                     </div>
 
-                    {/* Submit */}
-                    <div className="flex gap-2">
-                      <Button 
-                        variant="outline" 
-                        onClick={() => setSelectedSubmission(null)}
-                      >
-                        Bekor qilish
-                      </Button>
-                      <Button 
-                        variant="gradient"
-                        onClick={handleSubmitReview}
-                      >
-                        <Send className="w-4 h-4 mr-2" />
-                        Saqlash
-                      </Button>
-                    </div>
                   </>
                 ) : (
                   <div>
-                    <p className="text-sm font-medium text-foreground mb-2">Sizning izohingiz:</p>
-                    <div className="bg-success/5 border border-success/20 rounded-lg p-4 text-sm text-foreground">
-                      {submission.feedback}
-                    </div>
                   </div>
                 )}
               </div>
