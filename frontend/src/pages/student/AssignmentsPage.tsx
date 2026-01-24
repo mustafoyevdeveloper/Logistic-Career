@@ -487,7 +487,7 @@ export default function AssignmentsPage({ viewerMode = false }: { viewerMode?: b
             });
             
             if (submitResponse.success) {
-              toast.success('Natija MongoDBga saqlandi!');
+              toast.success('Natija saqlandi!');
               // Real quiz'ni yuklaymiz
               await loadAssignmentDetails(quiz._id);
               setIsSubmitting(false);
@@ -534,7 +534,7 @@ export default function AssignmentsPage({ viewerMode = false }: { viewerMode?: b
       });
 
       if (response.success) {
-        toast.success('Natija MongoDBga saqlandi!');
+        toast.success('Natija saqlandi!');
         await loadAssignmentDetails(selectedAssignment._id);
       }
     } catch (error: any) {
