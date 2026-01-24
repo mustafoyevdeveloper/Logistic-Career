@@ -248,11 +248,10 @@ export default function AssignmentsPage({ viewerMode = false }: { viewerMode?: b
     return `${attemptsUsed}`;
   }, [attemptsUsed]);
 
-  // Reset: 30+ bo'lsa cheksiz urinish; 30- bo'lsa faqat 2 ta urinish
+  // Reset: 30+ bo'lsa reset tugmasi YO'Q (sertifikat olindi); 30- bo'lsa cheksiz urinish
   const canReset = useMemo(() => {
-    if (hasPassedLocal) return true;
-    return attemptsUsed < 2;
-  }, [hasPassedLocal, attemptsUsed]);
+    return !hasPassedLocal;
+  }, [hasPassedLocal]);
 
   const isSecondAttempt = attemptsUsed >= 1;
 

@@ -458,12 +458,11 @@ export const resetQuizSubmission = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Submission topilmadi' });
     }
 
-    const attemptsUsed = submission.attemptsUsed ?? 0;
     const hasPassedSticky = submission.hasPassed === true;
-    if (!hasPassedSticky && attemptsUsed >= 2) {
+    if (hasPassedSticky) {
       return res.status(400).json({
         success: false,
-        message: '2 ta urinish tugadi. Qayta topshirish imkoni yo\'q.',
+        message: 'Sertifikat olindi. Qayta topshirish imkoni yo\'q.',
       });
     }
 
@@ -483,8 +482,6 @@ export const resetQuizSubmission = async (req, res) => {
       submission.hasPassed = false;
       submission.certificateNumber = null;
       submission.certificateIssuedAt = null;
-    } else {
-      submission.maxAttempts = 999;
     }
     // attemptsUsed saqlanadi (necha urinish bo‘lganini hisoblash uchun)
 
