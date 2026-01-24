@@ -334,22 +334,24 @@ export default function TeacherAssignmentsPage() {
                   {(submission.status === 'pending' || submission.status === 'submitted') ? 'Kutilmoqda' : 'Tekshirilgan'}
                 </span>
                 
-                <Button 
-                  variant={selectedSubmission?.id === submission.id ? 'outline' : (submission.status === 'graded' ? 'outline' : 'gradient')} 
-                  size="sm"
-                  className='hover:bg-'
-                  onClick={() => {
-                    if (selectedSubmission?.id === submission.id) {
-                      // Agar ochiq bo'lsa, yopish
-                      setSelectedSubmission(null);
-                    } else {
-                      // Agar yopiq bo'lsa, ochish
-                      handleViewStudentAnswers(submission);
-                    }
-                  }}
-                >
-                  {selectedSubmission?.id === submission.id ? 'Yopish' : (submission.status === 'graded' ? 'Ko\'rish' : 'Tekshirish')}
-                </Button>
+                {(submission.status === 'submitted' || submission.status === 'graded') && (
+                  <Button 
+                    variant={selectedSubmission?.id === submission.id ? 'outline' : (submission.status === 'graded' ? 'outline' : 'gradient')} 
+                    size="sm"
+                    className='hover:bg-'
+                    onClick={() => {
+                      if (selectedSubmission?.id === submission.id) {
+                        // Agar ochiq bo'lsa, yopish
+                        setSelectedSubmission(null);
+                      } else {
+                        // Agar yopiq bo'lsa, ochish
+                        handleViewStudentAnswers(submission);
+                      }
+                    }}
+                  >
+                    {selectedSubmission?.id === submission.id ? 'Yopish' : (submission.status === 'graded' ? 'Ko\'rish' : 'Tekshirish')}
+                  </Button>
+                )}
               </div>
             </div>
 
