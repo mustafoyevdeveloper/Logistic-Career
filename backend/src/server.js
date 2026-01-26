@@ -14,6 +14,7 @@ import studentRoutes from './routes/studentRoutes.js';
 import groupRoutes from './routes/groupRoutes.js';
 import notificationRoutes from './routes/notificationRoutes.js';
 import mediaRoutes from './routes/mediaRoutes.js';
+import proxyRoutes from './routes/proxyRoutes.js';
 
 // Load env vars
 dotenv.config();
@@ -111,6 +112,7 @@ app.use('/api/students', studentRoutes);
 app.use('/api/groups', groupRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/media', mediaRoutes);
+app.use('/api/proxy', proxyRoutes);
 
 // Debug: Route'larni tekshirish
 console.log('✅ Routes loaded:');

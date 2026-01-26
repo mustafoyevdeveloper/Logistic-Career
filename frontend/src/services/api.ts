@@ -5,8 +5,12 @@ import { getDeviceId } from '@/utils/deviceId';
 const getApiBaseUrls = (): string[] => {
   const urls: string[] = [];
   
+  // Frontend HTTPS da bo'lsa yoki yo'qligini aniqlash
+  const isHttps = typeof window !== 'undefined' && window.location.protocol === 'https:';
+  const isLocalhost = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+  
   // Local development (faqat development mode'da) - birinchi o'ringa qo'yamiz
-  if (import.meta.env.DEV || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+  if (import.meta.env.DEV || isLocalhost) {
     urls.push('http://localhost:5000/api');
   }
   
@@ -18,8 +22,13 @@ const getApiBaseUrls = (): string[] => {
     urls.push(...envUrls);
   }
   
-  // External API backend
+  // External API backend - HTTP versiyasini qo'shamiz (proxy orqali ishlaydi)
   urls.push('http://163.245.212.101:5000/api');
+  
+  // HTTPS versiyasini ham qo'shamiz (agar mavjud bo'lsa)
+  if (isHttps) {
+    urls.push('https://163.245.212.101:5000/api');
+  }
   
   // Production backend (Render.com)
   urls.push('https://logistic-career.onrender.com/api');
@@ -119,6 +128,49 @@ class ApiService {
       return response.ok;
     } catch (error) {
       return false;
+    }
+  }
+
+  /**
+   * Proxy orqali so'rov yuborish (mixed content muammosini hal qilish uchun)
+   */
+  private async requestViaProxy<T>(
+    targetUrl: string,
+    endpoint: string,
+    options: RequestInit
+  ): Promise<ApiResponse<T>> {
+    // Joriy backend URL'ni olish (proxy server)
+    // Avval HTTPS backend'larni topish, keyin HTTP
+    const proxyBaseUrl = API_BASE_URLS.find(url => 
+      (url.includes('onrender.com') || 
+       url.includes('vercel.app') ||
+       url.includes('asliddin-logistic.online')) &&
+      url.startsWith('https://')
+    ) || API_BASE_URLS.find(url => 
+      url.includes('localhost') || 
+      url.includes('onrender.com') || 
+      url.includes('vercel.app') ||
+      url.includes('asliddin-logistic.online')
+    ) || API_BASE_URLS[0] || 'http://localhost:5000/api';
+
+    // Endpoint'ni tozalash va query parametrlarni ajratish
+    const [endpointPath, queryString] = endpoint.split('?');
+    const proxyEndpoint = endpointPath || '';
+    
+    // Proxy URL'ni yaratish
+    const proxyUrl = `${proxyBaseUrl}/proxy${proxyEndpoint}?target=${encodeURIComponent(targetUrl)}${queryString ? '&' + queryString : ''}`;
+
+    try {
+      const response = await fetch(proxyUrl, options);
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Proxy orqali so\'rov xatolik');
+      }
+
+      return data;
+    } catch (error: any) {
+      throw new Error(`Proxy xatolik: ${error.message}`);
     }
   }
 
@@ -238,6 +290,46 @@ class ApiService {
       throw new Error(errorMessage);
     } catch (error: any) {
       lastError = error;
+
+      // Mixed content xatolikni aniqlash (HTTPS frontend HTTP backend'ga so'rov yuborish)
+      const isHttps = typeof window !== 'undefined' && window.location.protocol === 'https:';
+      const isHttpBackend = cleanCurrentUrl.startsWith('http://') && !cleanCurrentUrl.includes('localhost');
+      const isMixedContentError = 
+        isHttps && isHttpBackend && (
+          error.message?.includes('Mixed Content') ||
+          error.message?.includes('blocked:mixed-content') ||
+          error.message?.includes('Failed to fetch') ||
+          error.message?.includes('NetworkError') ||
+          error.name === 'TypeError'
+        );
+
+      // Mixed content xatolik bo'lsa, proxy orqali so'rov yuborish
+      if (isMixedContentError) {
+        if (import.meta.env.DEV) {
+          console.warn(`⚠️ Mixed content xatolik: ${cleanCurrentUrl}, proxy orqali so'rov yuborilmoqda...`);
+        }
+
+        try {
+          // Proxy orqali so'rov yuborish
+          const proxyResponse = await this.requestViaProxy<T>(cleanCurrentUrl, endpoint, config);
+          
+          if (import.meta.env.DEV) {
+            console.log(`✅ Proxy orqali so'rov muvaffaqiyatli: ${cleanCurrentUrl}`);
+          }
+
+          // Proxy orqali ishlagan URL'ni saqlash (keyingi so'rovlar uchun)
+          if (typeof window !== 'undefined') {
+            localStorage.setItem(STORAGE_KEY, cleanCurrentUrl);
+          }
+
+          return proxyResponse;
+        } catch (proxyError: any) {
+          if (import.meta.env.DEV) {
+            console.error('❌ Proxy orqali so\'rov xatolik:', proxyError);
+          }
+          // Proxy ham ishlamasa, boshqa backend'ni sinab ko'rish
+        }
+      }
 
       // Network xatolik yoki 500+ xatolik bo'lsa, boshqa backend'ni sinab ko'rish
       if (
