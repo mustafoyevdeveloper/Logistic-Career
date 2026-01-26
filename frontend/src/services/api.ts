@@ -18,6 +18,9 @@ const getApiBaseUrls = (): string[] => {
     urls.push(...envUrls);
   }
   
+  // External API backend
+  urls.push('http://163.245.212.101:5000/api');
+  
   // Production backend (Render.com)
   urls.push('https://logistic-career.onrender.com/api');
   

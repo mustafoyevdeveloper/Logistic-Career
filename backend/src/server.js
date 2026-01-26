@@ -32,6 +32,7 @@ const isProduction = process.env.NODE_ENV === 'production';
 const defaultOrigins = [
   'http://localhost:8080',
   'http://localhost:5173',
+  'http://163.245.212.101:5000',
   'https://logistic-career.vercel.app',
   'https://logistic-career-git-main.vercel.app',
   'https://logistic-career-*.vercel.app', // Vercel preview URLs
