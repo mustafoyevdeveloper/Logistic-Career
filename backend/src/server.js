@@ -64,6 +64,11 @@ const corsOptions = {
       return callback(null, true);
     }
     
+    // BARCHA asliddin-logistic.online domain'larini qo'llab-quvvatlash
+    if (origin.includes('asliddin-logistic.online')) {
+      return callback(null, true);
+    }
+    
     // Ruxsat berilgan origin'lar ro'yxatida bo'lsa
     if (uniqueOrigins.includes(origin)) {
       return callback(null, true);

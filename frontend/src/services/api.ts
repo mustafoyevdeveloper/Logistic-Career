@@ -63,11 +63,25 @@ if (typeof window !== 'undefined') {
     const savedUrl = localStorage.getItem(STORAGE_KEY);
     if (savedUrl) {
       // URL'ni tozalash (vergul, bo'sh joy va boshqa belgilarni olib tashlash)
-      const cleanedUrl = savedUrl.trim().split(',')[0].trim();
-      if (cleanedUrl && API_BASE_URLS.includes(cleanedUrl)) {
-        currentApiUrl = cleanedUrl;
-      } else {
-        // Noto'g'ri URL'ni localStorage'dan olib tashlash
+      let cleanedUrl = savedUrl.trim().split(',')[0].trim();
+      
+      // Noto'g'ri URL'larni filtrlash (ikkita URL birlashtirilgan)
+      if (cleanedUrl.includes('http://') && cleanedUrl.includes('https://')) {
+        // Noto'g'ri URL - localStorage'dan olib tashlash
+        localStorage.removeItem(STORAGE_KEY);
+        cleanedUrl = '';
+      }
+      
+      // URL validatsiyasi
+      if (cleanedUrl && (cleanedUrl.startsWith('http://') || cleanedUrl.startsWith('https://'))) {
+        if (API_BASE_URLS.includes(cleanedUrl)) {
+          currentApiUrl = cleanedUrl;
+        } else {
+          // Noto'g'ri URL'ni localStorage'dan olib tashlash
+          localStorage.removeItem(STORAGE_KEY);
+        }
+      } else if (cleanedUrl) {
+        // Noto'g'ri format - localStorage'dan olib tashlash
         localStorage.removeItem(STORAGE_KEY);
       }
     }
@@ -102,17 +116,48 @@ class ApiService {
    */
   private async testBackendUrl(url: string): Promise<boolean> {
     try {
-      // URL'ni tozalash
-      const cleanUrl = url.trim().split(',')[0].trim();
+      // URL'ni tozalash va validatsiya qilish
+      let cleanUrl = url.trim().split(',')[0].trim();
       if (!cleanUrl) return false;
 
-      // Health check endpoint'ni sinab ko'rish
-      const healthUrl = cleanUrl.endsWith('/api') 
-        ? `${cleanUrl}/health` 
-        : cleanUrl.includes('/api/') 
-          ? `${cleanUrl.replace(/\/api\/.*$/, '/api/health')}`
-          : `${cleanUrl}/api/health`;
-      
+      // Noto'g'ri URL'larni filtrlash (masalan, ikkita URL birlashtirilgan)
+      if (cleanUrl.includes('http://') && cleanUrl.includes('https://')) {
+        // Agar ikkita protocol bo'lsa, birinchisini olish
+        const httpIndex = cleanUrl.indexOf('http://');
+        const httpsIndex = cleanUrl.indexOf('https://');
+        if (httpIndex < httpsIndex) {
+          cleanUrl = cleanUrl.substring(0, httpsIndex);
+        } else {
+          cleanUrl = cleanUrl.substring(0, httpIndex);
+        }
+        cleanUrl = cleanUrl.trim();
+      }
+
+      // URL validatsiyasi
+      if (!cleanUrl.startsWith('http://') && !cleanUrl.startsWith('https://')) {
+        return false;
+      }
+
+      // Health check endpoint'ni yaratish
+      let healthUrl: string;
+      if (cleanUrl.endsWith('/api')) {
+        healthUrl = `${cleanUrl}/health`;
+      } else if (cleanUrl.endsWith('/api/')) {
+        healthUrl = `${cleanUrl}health`;
+      } else if (cleanUrl.includes('/api/')) {
+        // /api/ dan keyingi qismni /health bilan almashtirish
+        healthUrl = cleanUrl.replace(/\/api\/.*$/, '/api/health');
+      } else {
+        healthUrl = `${cleanUrl}/api/health`;
+      }
+
+      // URL'ni yana bir bor validatsiya qilish
+      try {
+        new URL(healthUrl);
+      } catch {
+        return false;
+      }
+
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 3000); // 3 soniya timeout
 
@@ -178,22 +223,69 @@ class ApiService {
    * Ishlayotgan backend URL'ni topish
    */
   private async findWorkingBackend(): Promise<string | null> {
+    const isHttps = typeof window !== 'undefined' && window.location.protocol === 'https:';
+    
     // Avval saqlangan URL'ni sinab ko'rish
     if (typeof window !== 'undefined') {
       const savedUrl = localStorage.getItem(STORAGE_KEY);
-      if (savedUrl && await this.testBackendUrl(savedUrl)) {
-        return savedUrl;
+      if (savedUrl) {
+        // URL'ni tozalash
+        let cleanUrl = savedUrl.trim().split(',')[0].trim();
+        
+        // Noto'g'ri URL'larni filtrlash
+        if (cleanUrl.includes('http://') && cleanUrl.includes('https://')) {
+          return null; // Noto'g'ri URL
+        }
+
+        // HTTPS da bo'lsa va HTTP backend bo'lsa, proxy orqali ishlatish mumkin
+        if (cleanUrl && await this.testBackendUrl(cleanUrl)) {
+          return cleanUrl;
+        }
       }
     }
 
     // Barcha URL'larni sinab ko'rish
-    for (const url of API_BASE_URLS) {
-      if (await this.testBackendUrl(url)) {
-        // Ishlayotgan URL'ni saqlash
-        if (typeof window !== 'undefined') {
-          localStorage.setItem(STORAGE_KEY, url);
+    // HTTPS da bo'lsa, avval HTTPS URL'larni sinab ko'rish
+    const urlsToTest = isHttps 
+      ? [...API_BASE_URLS.filter(url => url.startsWith('https://')), ...API_BASE_URLS.filter(url => url.startsWith('http://'))]
+      : API_BASE_URLS;
+
+    for (const url of urlsToTest) {
+      // HTTPS da bo'lsa va HTTP URL bo'lsa, proxy orqali ishlatish mumkin
+      if (isHttps && url.startsWith('http://') && !url.includes('localhost')) {
+        // Proxy orqali sinab ko'rish
+        try {
+          const proxyBaseUrl = API_BASE_URLS.find(u => 
+            (u.includes('onrender.com') || u.includes('asliddin-logistic.online')) &&
+            u.startsWith('https://')
+          );
+          if (proxyBaseUrl) {
+            // Proxy orqali health check
+            const proxyUrl = `${proxyBaseUrl}/proxy/health?target=${encodeURIComponent(url)}`;
+            const response = await fetch(proxyUrl, {
+              method: 'GET',
+              headers: { 'Content-Type': 'application/json' },
+            });
+            if (response.ok) {
+              if (typeof window !== 'undefined') {
+                localStorage.setItem(STORAGE_KEY, url);
+              }
+              return url;
+            }
+          }
+        } catch {
+          // Proxy ishlamasa, keyingi URL'ni sinab ko'rish
+          continue;
         }
-        return url;
+      } else {
+        // To'g'ridan-to'g'ri sinab ko'rish
+        if (await this.testBackendUrl(url)) {
+          // Ishlayotgan URL'ni saqlash
+          if (typeof window !== 'undefined') {
+            localStorage.setItem(STORAGE_KEY, url);
+          }
+          return url;
+        }
       }
     }
 
