@@ -255,22 +255,38 @@ class ApiService {
       if (isHttps && url.startsWith('http://') && !url.includes('localhost')) {
         // Proxy orqali sinab ko'rish
         try {
-          const proxyBaseUrl = API_BASE_URLS.find(u => 
-            (u.includes('onrender.com') || u.includes('asliddin-logistic.online')) &&
-            u.startsWith('https://')
+          // Avval barcha HTTPS backend'larni sinab ko'rish (proxy server sifatida)
+          const proxyCandidates = API_BASE_URLS.filter(u => 
+            u.startsWith('https://') && 
+            (u.includes('onrender.com') || 
+             u.includes('asliddin-logistic.online') ||
+             u.includes('vercel.app'))
           );
-          if (proxyBaseUrl) {
-            // Proxy orqali health check
-            const proxyUrl = `${proxyBaseUrl}/proxy/health?target=${encodeURIComponent(url)}`;
-            const response = await fetch(proxyUrl, {
-              method: 'GET',
-              headers: { 'Content-Type': 'application/json' },
-            });
-            if (response.ok) {
-              if (typeof window !== 'undefined') {
-                localStorage.setItem(STORAGE_KEY, url);
+          
+          for (const proxyBaseUrl of proxyCandidates) {
+            try {
+              // Proxy orqali health check
+              const proxyUrl = `${proxyBaseUrl}/proxy/health?target=${encodeURIComponent(url)}`;
+              const controller = new AbortController();
+              const timeoutId = setTimeout(() => controller.abort(), 5000);
+              
+              const response = await fetch(proxyUrl, {
+                method: 'GET',
+                headers: { 'Content-Type': 'application/json' },
+                signal: controller.signal,
+              });
+              
+              clearTimeout(timeoutId);
+              
+              if (response.ok) {
+                if (typeof window !== 'undefined') {
+                  localStorage.setItem(STORAGE_KEY, url);
+                }
+                return url;
               }
-              return url;
+            } catch (proxyError) {
+              // Bu proxy ishlamadi, keyingisini sinab ko'rish
+              continue;
             }
           }
         } catch {

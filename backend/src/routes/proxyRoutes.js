@@ -95,15 +95,24 @@ router.all('/*', async (req, res) => {
 
     const response = await fetch(finalUrl, fetchOptions);
 
-    // Response header'larni olish
+    // Response header'larni olish va CORS header'larini qo'shish
     const responseHeaders = {};
+    const origin = req.headers.origin || '*';
+    
+    // CORS header'larini qo'shish
+    responseHeaders['Access-Control-Allow-Origin'] = origin;
+    responseHeaders['Access-Control-Allow-Credentials'] = 'true';
+    responseHeaders['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, PATCH, OPTIONS';
+    responseHeaders['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Device-ID, Accept, Origin, X-Requested-With';
+    
+    // Original response header'larini qo'shish (CORS header'larni override qilmaslik)
     response.headers.forEach((value, key) => {
-      // CORS header'larni o'zgartirish
-      if (key.toLowerCase() === 'access-control-allow-origin') {
-        responseHeaders['Access-Control-Allow-Origin'] = req.headers.origin || '*';
-      } else {
-        responseHeaders[key] = value;
+      const lowerKey = key.toLowerCase();
+      // CORS header'larni skip qilish (yuqorida qo'shildi)
+      if (lowerKey.startsWith('access-control-')) {
+        return;
       }
+      responseHeaders[key] = value;
     });
 
     // Response body'ni olish
