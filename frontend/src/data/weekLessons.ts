@@ -742,7 +742,7 @@ export const weekLessons: Record<number, WeekLesson> = {
             <li><strong>Yukning narxi</strong> — to'lov shakli (Перечисление, Наличи, Комбо)</li>
             <li><strong>Qanday mashina kerak ekanligi</strong> — Tent, REF, Paravoz, Ploshadka</li>
             <li><strong>Qachon yuklanishi</strong> — yuklash sanasi</li>
-            <li><strong>Затаможка ва растаможка жойлари</strong> — bojxona joylari</li>
+            <li><strong>Zatamojka va Rastamojka joylari</strong> — bojxona joylari</li>
             <li><strong>Dakumentlari</strong> — SMR, TIR CARNET, DAZVOL</li>
           </ol>
 
