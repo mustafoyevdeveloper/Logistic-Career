@@ -743,7 +743,7 @@ export const weekLessons: Record<number, WeekLesson> = {
             <li><strong>Qanday mashina kerak ekanligi</strong> — Tent, REF, Paravoz, Ploshadka</li>
             <li><strong>Qachon yuklanishi</strong> — yuklash sanasi</li>
             <li><strong>Zatamojka va Rastamojka joylari</strong> — bojxona joylari</li>
-            <li><strong>Dakumentlari</strong> — SMR, TIR CARNET, DAZVOL</li>
+            <li><strong>Hujjatlari</strong> — SMR, TIR CARNET, DAZVOL</li>
           </ol>
 
           <h3 class="text-xl font-semibold mb-3 mt-6">📋 To'lov shakllari:</h3>
