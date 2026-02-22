@@ -20,7 +20,7 @@ export default defineConfig(({ mode }) => ({
         name: "Asliddin Logistic",
         short_name: "Asliddin Logistic",
         description: "Xalqaro logistikani 0 darajadan dispetcherlik darajasigacha AI yordamida o'rganing",
-        theme_color: "#2563eb",
+        theme_color: "#1e293b",
         background_color: "#1e293b",
         display: "standalone",
         orientation: "portrait-primary",
