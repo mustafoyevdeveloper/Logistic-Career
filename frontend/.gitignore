@@ -11,6 +11,11 @@ node_modules
 dist
 dist-ssr
 *.local
+BACKEND_FALLBACK.md
+DEPLOY_CHECKLIST.md
+QUICK_SETUP.md
+VERCEWL_DEPLOY.md
+VERCEL_ENV_SETUP.md
 
 # Environment variables
 .env

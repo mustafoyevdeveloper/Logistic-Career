@@ -11,6 +11,11 @@ package-lock.json
 logs/
 *.log
 npm-debug.log*
+README.md
+DEPLOY.md
+RENDER_CORS.md
+RENDER_ENV_SETUP.md
+SETUP.md
 
 # OS files
 .DS_Store
