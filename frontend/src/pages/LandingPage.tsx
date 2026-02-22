@@ -55,7 +55,7 @@ export default function LandingPage() {
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
               <a href={APK_URL} download="AsliddinLogistic.apk">
-                <Button variant="outline" size="lg" className="border-primary-foreground/40 text-black hover:bg-white/80 hover:text-black hover:border-primary-foreground/60">
+                <Button variant="outline" size="lg" className="text-white hover:text-white bg-gradient-to-r from-[#0849B0] to-[#0B61EC]">
                   <Download className="w-5 h-5 mr-2" />
                   Ilovani yuklab oling
                 </Button>
@@ -205,7 +205,7 @@ export default function LandingPage() {
               <div className="mt-8 pt-8 border-t border-border">
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
                   <a href={APK_URL} download="AsliddinLogistic.apk">
-                <Button variant="outline" size="lg" className=" text-white hover:text-white bg-gradient-to-r from-[#0849B0] to-[#0B61EC]">
+                <Button variant="outline" size="lg" className="text-white hover:text-white bg-gradient-to-r from-[#0849B0] to-[#0B61EC]">
                   <Download className="w-5 h-5 mr-2 text-white" />
                   Ilovani yuklab oling
                 </Button>

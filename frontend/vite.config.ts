@@ -34,7 +34,8 @@ export default defineConfig(({ mode }) => ({
         lang: "uz",
       },
       workbox: {
-        globPatterns: ["**/*.{js,css,html,ico,jpg,png,svg,woff2}"],
+        // index.html precache dan chiqarildi — har kirishda tarmoqdan yangi sahifa olinadi
+        globPatterns: ["**/*.{js,css,ico,jpg,png,svg,woff2}"],
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
