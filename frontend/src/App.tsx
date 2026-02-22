@@ -4,7 +4,10 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
-import { useRef, useEffect } from "react";
+import { useEffect } from "react";
+import { useOnlineStatus } from "./hooks/useOnlineStatus";
+import { hidePwaSplash } from "./components/PwaSplash";
+import OfflinePage from "./pages/OfflinePage";
 
 // Pages
 import LoginPage from "./pages/LoginPage";
@@ -132,7 +135,12 @@ function LoginRouteWrapper() {
 }
 
 function AppRoutes() {
+  const online = useOnlineStatus();
   const { isAuthenticated, user, isLoading } = useAuth();
+
+  if (!online) {
+    return <OfflinePage />;
+  }
   
   return (
     <Routes>
@@ -197,15 +205,28 @@ function AppRoutes() {
   );
 }
 
+function AppContent() {
+  useEffect(() => {
+    requestAnimationFrame(() => {
+      setTimeout(hidePwaSplash, 100);
+    });
+  }, []);
+  return (
+    <>
+      <Toaster />
+      <Sonner />
+      <BrowserRouter>
+        <AppRoutes />
+      </BrowserRouter>
+    </>
+  );
+}
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
       <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <AppRoutes />
-        </BrowserRouter>
+        <AppContent />
       </TooltipProvider>
     </AuthProvider>
   </QueryClientProvider>
