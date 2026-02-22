@@ -55,7 +55,7 @@ export default function LandingPage() {
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
               <a href={APK_URL} download="AsliddinLogistic.apk">
-                <Button variant="outline" size="lg" className="text-white border-none hover:text-white bg-gradient-to-r from-[#0849B0] to-[#0B61EC]">
+                <Button variant="outline" size="lg" className="text-black bg-white/80 hover:bg-white hover:text-black hover:shadow-glow transition duration-400">
                   <Download className="w-5 h-5 mr-2" />
                   Ilovani yuklab oling
                 </Button>
