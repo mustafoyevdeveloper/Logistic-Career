@@ -16,7 +16,8 @@ DEPLOY.md
 RENDER_CORS.md
 RENDER_ENV_SETUP.md
 SETUP.md
-
+502_FIX.md
+cloudflare.cloud
 # OS files
 .DS_Store
 Thumbs.db
