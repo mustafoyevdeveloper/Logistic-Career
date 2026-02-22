@@ -8,6 +8,7 @@ import { useEffect } from "react";
 import { useOnlineStatus } from "./hooks/useOnlineStatus";
 import { hidePwaSplash } from "./components/PwaSplash";
 import { waitForBackendReady } from "./services/api";
+import OfflinePage from "./pages/OfflinePage";
 
 // Pages
 import LoginPage from "./pages/LoginPage";
@@ -139,8 +140,7 @@ function AppRoutes() {
   const { isAuthenticated, user, isLoading } = useAuth();
 
   if (!online) {
-    window.location.replace("/offline.html");
-    return null;
+    return <OfflinePage />;
   }
   
   return (
