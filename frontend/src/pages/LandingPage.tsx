@@ -54,8 +54,13 @@ export default function LandingPage() {
               0 darajadan dispetcherlik darajasigacha AI yordamida bosqichma-bosqich o'qing
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+<<<<<<< HEAD
               {/* <a href={APK_URL} download="AsliddinLogistic.apk">
                 <Button variant="outline" size="lg" className="text-black bg-white/80 hover:bg-white hover:text-black hover:shadow-glow transition duration-400">
+=======
+              <a href={APK_URL} download="AsliddinLogistic.apk">
+                <Button variant="outline" size="lg" className="text-black bg-white hover:bg-white hover:text-black hover:shadow-glow transition duration-400">
+>>>>>>> c29f947dcae53e9d2b3056b7fa47731126afc626
                   <Download className="w-5 h-5 mr-2" />
                   Ilovani yuklab oling
                 </Button>
