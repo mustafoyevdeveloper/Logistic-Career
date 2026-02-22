@@ -2,14 +2,19 @@
 node_modules/
 package-lock.json
 bun.lockb
-README.md
-DEPLOY_CHECKLIST.md
 
-# Environment variables
+# Markdown va sayt strukturasi / hujjatlar (kalitlar, qo'llanmalar)
+*.md
+
+# Environment variables va kalitlar (.env va o'xshashlar)
 .env
+.env.*
 .env.local
 .env.production
+.env.development
+.env.test
 .env.*.local
+!.env.example
 
 # Logs
 logs/
@@ -35,7 +40,7 @@ desktop.ini
 dist/
 build/
 *.tsbuildinfo
-SAYT_STRUKTURASI.md
+
 # Temporary files
 *.tmp
 *.temp

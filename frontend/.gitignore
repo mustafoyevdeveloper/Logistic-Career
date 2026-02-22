@@ -11,18 +11,17 @@ node_modules
 dist
 dist-ssr
 *.local
-BACKEND_FALLBACK.md
-DEPLOY_CHECKLIST.md
-QUICK_SETUP.md
-VERCEWL_DEPLOY.md
-VERCEL_ENV_SETUP.md
 
-# Environment variables
+# Markdown va hujjatlar (sayt strukturasi, kalitlar, qo'llanmalar)
+*.md
+
+# Environment variables va kalitlar
 .env
+.env.*
 .env.local
 .env.production
 .env.development
-.env.example
+.env.*.local
 
 # Editor directories and files
 .vscode/*
@@ -34,4 +33,3 @@ VERCEL_ENV_SETUP.md
 *.njsproj
 *.sln
 *.sw?
-.env

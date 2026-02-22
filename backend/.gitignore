@@ -2,22 +2,22 @@
 node_modules/
 package-lock.json
 
-# Environment variables
+# Environment variables va kalitlar
 .env
+.env.*
 .env.local
 .env.production
+.env.development
+.env.*.local
+
+# Markdown va hujjatlar (sayt strukturasi, kalitlar, qo'llanmalar)
+*.md
+cloudflare.cloud
 
 # Logs
 logs/
 *.log
 npm-debug.log*
-README.md
-DEPLOY.md
-RENDER_CORS.md
-RENDER_ENV_SETUP.md
-SETUP.md
-502_FIX.md
-cloudflare.cloud
 # OS files
 .DS_Store
 Thumbs.db
