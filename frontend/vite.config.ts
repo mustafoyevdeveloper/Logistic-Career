@@ -15,7 +15,7 @@ export default defineConfig(({ mode }) => ({
     mode === "development" && componentTagger(),
     VitePWA({
       registerType: "autoUpdate",
-      includeAssets: ["favicon.jpg", "robots.txt"],
+      includeAssets: ["favicon.jpg", "robots.txt", "offline.html"],
       manifest: {
         name: "Asliddin Logistic",
         short_name: "Asliddin Logistic",

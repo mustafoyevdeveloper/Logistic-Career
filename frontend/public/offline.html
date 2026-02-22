@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="uz">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Internet ulanmagan — Asliddin Logistic</title>
+    <meta name="theme-color" content="#f8fafc" />
+    <style>
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: 'Inter', system-ui, -apple-system, sans-serif;
+        background: hsl(210, 20%, 98%);
+        color: hsl(222, 47%, 11%);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 1.5rem;
+      }
+      .wrap { text-align: center; max-width: 28rem; width: 100%; }
+      .brand {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        margin-bottom: 0.5rem;
+      }
+      .brand img { width: 2.5rem; height: 2.5rem; border-radius: 9999px; object-fit: cover; }
+      .brand span { font-size: 1.125rem; font-weight: 600; color: hsl(222, 47%, 11%); }
+      .icon-wrap {
+        width: 5rem; height: 5rem;
+        margin: 0 auto 1.5rem;
+        border-radius: 1rem;
+        background: linear-gradient(135deg, hsl(217, 91%, 50%) 0%, hsl(217, 91%, 35%) 100%);
+        box-shadow: 0 0 40px hsl(217 91% 50% / 0.2);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .icon-wrap svg { width: 2.5rem; height: 2.5rem; color: white; }
+      h1 { font-size: 1.5rem; font-weight: 700; margin: 0 0 0.5rem; color: hsl(222, 47%, 11%); }
+      @media (min-width: 640px) { h1 { font-size: 1.875rem; } }
+      .lead { color: hsl(215, 16%, 47%); margin: 0 0 2rem; line-height: 1.5; }
+      .card {
+        background: white;
+        border: 1px solid hsl(214, 32%, 91%);
+        border-radius: 0.75rem;
+        padding: 1.25rem;
+        text-align: left;
+        margin-bottom: 2rem;
+        box-shadow: 0 4px 6px -1px hsl(222 47% 11% / 0.1), 0 2px 4px -2px hsl(222 47% 11% / 0.1);
+      }
+      .card h2 {
+        font-size: 0.875rem; font-weight: 600; margin: 0 0 0.75rem;
+        color: hsl(222, 47%, 11%);
+        display: flex; align-items: center; gap: 0.5rem;
+      }
+      .card h2 span { color: hsl(217, 91%, 50%); }
+      .card ul { margin: 0; padding-left: 1.25rem; font-size: 0.875rem; color: hsl(215, 16%, 47%); line-height: 1.8; }
+      .card li { margin-bottom: 0.25rem; }
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        padding: 0.75rem 2rem;
+        font-size: 1rem;
+        font-weight: 500;
+        color: white;
+        background: linear-gradient(135deg, hsl(217, 91%, 50%) 0%, hsl(217, 91%, 35%) 100%);
+        border: none;
+        border-radius: 0.5rem;
+        cursor: pointer;
+        box-shadow: 0 4px 6px -1px hsl(222 47% 11% / 0.1);
+        font-family: inherit;
+      }
+      .btn:hover { filter: brightness(1.05); }
+      .btn:active { transform: scale(0.98); }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="brand">
+        <span>Asliddin Logistic</span>
+      </div>
+      <div class="icon-wrap">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h.01"/><path d="M8.5 20h7"/><path d="M4.93 4.93a10 10 0 0 1 14.14 0"/><path d="M2 8.5c0 2 2 2 4 4 2 0 2 2 4 2s2-2 4-2 2-2 4-2 2 2 4 2 2-4 4-4"/><path d="m3 3 18 18"/></svg>
+      </div>
+      <h1>Internet ulanmagan</h1>
+      <p class="lead">Tarmoq bilan aloqa yo'q. Qayta urinib ko'ring.</p>
+      <button type="button" class="btn" onclick="window.location.reload()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+        Qayta urinish
+      </button>
+    </div>
+  </body>
+</html>

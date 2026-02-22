@@ -1,35 +1,62 @@
-import { WifiOff, RefreshCw } from "lucide-react";
+import { WifiOff, RefreshCw, Settings2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export default function OfflinePage() {
   const handleRetry = () => window.location.reload();
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-6">
-      <div className="gradient-hero relative overflow-hidden rounded-2xl max-w-md w-full shadow-xl">
-        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmZmZmYiIGZpbGwtb3BhY2l0eT0iMC4wNSI+PHBhdGggZD0iTTM2IDM0djItSDI0di0yaDEyek0zNiAyNHYySDI0di0yaDEyeiIvPjwvZz48L2c+PC9zdmc+')] opacity-50" />
-        <div className="relative z-10 p-8 sm:p-10 text-center">
-          <div className="w-20 h-20 rounded-2xl bg-white/10 flex items-center justify-center mx-auto mb-6">
-            <WifiOff className="w-10 h-10 text-primary-foreground" />
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-primary-foreground mb-2">
-            Internet ulanmagan
-          </h1>
-          <p className="text-primary-foreground/80 mb-8">
-            Tarmoq bilan aloqa yo'q. Iltimos, internetingizni tekshiring yoki keyinroq qayta urinib ko'ring.
-          </p>
-          <Button
-            variant="secondary"
-            size="lg"
-            onClick={handleRetry}
-            className="bg-white/20 hover:bg-white/30 text-primary-foreground border-0"
-          >
-            <RefreshCw className="w-4 h-4 mr-2" />
-            Qayta urinish
-          </Button>
+    <div className="min-h-screen flex flex-col items-center justify-center bg-background p-6">
+      <div className="text-center max-w-md w-full">
+        {/* Logo / brend */}
+        <div className="flex justify-center mb-2">
+          <img
+            src="/favicon.jpg"
+            alt="Asliddin Logistic"
+            className="h-10 w-10 rounded-full object-cover"
+          />
+          <span className="ml-2 text-lg font-semibold text-foreground self-center">
+            Asliddin Logistic
+          </span>
         </div>
-        <div className="absolute bottom-0 right-0 w-40 h-40 bg-accent/10 rounded-full blur-3xl" />
-        <div className="absolute top-0 left-0 w-24 h-24 bg-primary/20 rounded-full blur-2xl" />
+
+        {/* Asosiy blok — NotFound sahifasi uslubida */}
+        <div className="w-20 h-20 rounded-2xl gradient-primary flex items-center justify-center mx-auto mb-6 shadow-glow">
+          <WifiOff className="w-10 h-10 text-primary-foreground" />
+        </div>
+
+        <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">
+          Internet ulanmagan
+        </h1>
+        <p className="text-muted-foreground mb-8">
+          Tarmoq bilan aloqa yo'q. Quyidagilarni tekshiring yoki keyinroq qayta urinib ko'ring.
+        </p>
+
+        {/* Urinib ko'ring — Chrome offline sahifasidagi "Try:" ga mos */}
+        <div className="bg-card border border-border rounded-xl p-5 text-left shadow-card mb-8">
+          <h2 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+            <Settings2 className="w-4 h-4 text-primary" />
+            Urinib ko'ring:
+          </h2>
+          <ul className="space-y-2 text-sm text-muted-foreground">
+            <li className="flex items-start gap-2">
+              <span className="text-primary mt-0.5">•</span>
+              Wi-Fi yoki mobil internetni qayta ulang
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="text-primary mt-0.5">•</span>
+              Router va modem simlari to'g'ri ulanganini tekshiring
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="text-primary mt-0.5">•</span>
+              Boshqa qurilmada internet bor-yo'qligini tekshiring
+            </li>
+          </ul>
+        </div>
+
+        <Button variant="gradient" size="lg" onClick={handleRetry}>
+          <RefreshCw className="w-4 h-4 mr-2" />
+          Qayta urinish
+        </Button>
       </div>
     </div>
   );
