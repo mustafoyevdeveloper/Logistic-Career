@@ -8,7 +8,6 @@ import { useEffect } from "react";
 import { useOnlineStatus } from "./hooks/useOnlineStatus";
 import { hidePwaSplash } from "./components/PwaSplash";
 import { waitForBackendReady } from "./services/api";
-import OfflinePage from "./pages/OfflinePage";
 
 // Pages
 import LoginPage from "./pages/LoginPage";
@@ -135,12 +134,35 @@ function LoginRouteWrapper() {
   return <LoginPage />;
 }
 
+/** Offline paytda offline.html mazmuni iframe da (URL o'zgarmaydi). */
+function OfflineFrame() {
+  useEffect(() => {
+    const handler = (e: MessageEvent) => {
+      if (e.data?.type !== 'OFFLINE_RETRY') return;
+      if (navigator.onLine) {
+        window.location.reload();
+      } else {
+        setTimeout(() => {}, 1000);
+      }
+    };
+    window.addEventListener('message', handler);
+    return () => window.removeEventListener('message', handler);
+  }, []);
+  return (
+    <iframe
+      src="/offline.html"
+      title="Internet ulanmagan"
+      className="fixed inset-0 w-full h-full border-0 block"
+    />
+  );
+}
+
 function AppRoutes() {
   const online = useOnlineStatus();
   const { isAuthenticated, user, isLoading } = useAuth();
 
   if (!online) {
-    return <OfflinePage />;
+    return <OfflineFrame />;
   }
   
   return (
