@@ -7,6 +7,7 @@ import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { useEffect } from "react";
 import { useOnlineStatus } from "./hooks/useOnlineStatus";
 import { hidePwaSplash } from "./components/PwaSplash";
+import { waitForBackendReady } from "./services/api";
 
 // Pages
 import LoginPage from "./pages/LoginPage";
@@ -207,9 +208,12 @@ function AppRoutes() {
 
 function AppContent() {
   useEffect(() => {
-    requestAnimationFrame(() => {
-      setTimeout(hidePwaSplash, 100);
-    });
+    let cancelled = false;
+    (async () => {
+      await waitForBackendReady({ timeoutMs: 20000, retryIntervalMs: 600 });
+      if (!cancelled) hidePwaSplash();
+    })();
+    return () => { cancelled = true; };
   }, []);
   return (
     <>

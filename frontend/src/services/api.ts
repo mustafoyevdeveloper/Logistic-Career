@@ -762,3 +762,43 @@ class ApiService {
 
 export const apiService = new ApiService();
 
+/**
+ * Backend /api/health javob bergunicha kutadi. Splash screen backend yuklangach yopilishi uchun ishlatiladi.
+ * @param options timeoutMs - maksimum kutish (ms), default 20s; retryIntervalMs - qayta urinish orasidagi vaqt
+ * @returns true agar backend tayyor bo'lsa, false agar timeout bo'lsa
+ */
+export async function waitForBackendReady(options?: {
+  timeoutMs?: number;
+  retryIntervalMs?: number;
+}): Promise<boolean> {
+  const timeoutMs = options?.timeoutMs ?? 20000;
+  const retryIntervalMs = options?.retryIntervalMs ?? 600;
+  const start = Date.now();
+  const urls = apiService.getAvailableBackendUrls();
+
+  const toHealthUrl = (base: string): string => {
+    const b = base.trim();
+    if (b.endsWith('/api')) return `${b}/health`;
+    if (b.endsWith('/api/')) return `${b}health`;
+    if (b.includes('/api/')) return b.replace(/\/api\/.*$/, '/api/health');
+    return `${b.replace(/\/$/, '')}/api/health`;
+  };
+
+  while (Date.now() - start < timeoutMs) {
+    for (const base of urls) {
+      try {
+        const healthUrl = toHealthUrl(base);
+        const controller = new AbortController();
+        const t = setTimeout(() => controller.abort(), 4000);
+        const res = await fetch(healthUrl, { method: 'GET', signal: controller.signal });
+        clearTimeout(t);
+        if (res.ok) return true;
+      } catch {
+        // keyingi URL
+      }
+    }
+    await new Promise((r) => setTimeout(r, retryIntervalMs));
+  }
+  return false;
+}
+
